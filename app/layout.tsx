@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   title: 'Dr. Melwin Vincent | Strategy. Infrastructure. Execution.',
   description: 'Startup strategist, consultant, and builder. Global markets expertise, zero-capital execution, pitch deck architecture.',
   generator: 'v0.app',
+  icons: {
+    icon: '/logo.png',
+  }
 }
 
 export default function RootLayout({
