@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import ShinyText from './ui/shiny-text'
 
 export function BioSection() {
   return (
@@ -9,7 +10,7 @@ export function BioSection() {
         <div className="flex flex-col gap-8 md:gap-32 justify-between h-full md:pr-8 max-md:gap-6">
           <h2 className="text-7xl max-md:text-6xl md:text-8xl font-bold tracking-tighter text-[#111111]">Hey!</h2>
           <p className="text-xl max-md:text-lg md:text-2xl font-medium text-[#111111] leading-snug">
-            I'm Dr. Melwin, a mentor dedicated to guiding students toward a successful career and a brighter future.
+            This is <ShinyText text="Dr. Melwin" speed={3} color="#111111" shineColor="#8a8a8a" />, a mentor dedicated to guiding students toward a successful career and a brighter future.
           </p>
         </div>
 

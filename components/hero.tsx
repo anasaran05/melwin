@@ -69,7 +69,25 @@ export function Hero() {
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           style={{ y: imgY, rotateY: imgRotateY, filter: imgFilter, transformStyle: "preserve-3d" }}
-          className="relative w-[280px] h-[320px] md:w-[320px] md:h-[360px] rounded-[32px] shadow-2xl mx-auto"
+          className="relative hidden md:block w-[280px] h-[320px] md:w-[320px] md:h-[360px] rounded-[32px] shadow-2xl mx-auto"
+        >
+          <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+            <Image 
+              src="/melwin.jpeg" 
+              alt="Dr. Melwin Vincent"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          style={{ filter: imgFilter }}
+          className="relative md:hidden w-[280px] h-[320px] md:w-[320px] md:h-[360px] rounded-[32px] shadow-2xl mx-auto"
         >
           <div className="absolute inset-0 rounded-[32px] overflow-hidden">
             <Image 

@@ -5,7 +5,7 @@ import Image from "next/image"
 const projects = [
   {
     title: "Zane ProEd",
-    category: "Edu-Tech",
+    category: "Education & Careers",
     color: "from-fuchsia-200 to-purple-300",
     image: "/zaneproed.png",
     link: "https://zaneproed.com"
