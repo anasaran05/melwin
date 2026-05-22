@@ -6,30 +6,33 @@ import { SquigglyText } from '@/components/ui/squiggly-text'
 
 export function Hero() {
   const scrollToSection = (id: string) => {
-    const element = document.getElementById(id)
-    element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    // First dispatch the event to open the accordion
+    window.dispatchEvent(new CustomEvent('openService', { detail: id }))
+    
+    // Then wait for the accordion to render/expand, and scroll to the inner content centered
+    setTimeout(() => {
+      const element = document.getElementById(`${id}-content`) || document.getElementById(id)
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 350)
   }
 
   const { scrollY } = useScroll()
   const imgY = useTransform(scrollY, [0, 800], [0, 600])
   const imgRotateY = useTransform(scrollY, [0, 800], [0, 360])
-  const imgGrayscale = useTransform(scrollY, [0, 600], [1, 0])
-  const imgFilter = useTransform(imgGrayscale, g => `grayscale(${g * 100}%)`)
   const imgScale = useTransform(scrollY, [0, 800], [0.75, 1])
 
   return (
     <section className="relative min-h-screen w-full flex flex-col justify-center items-center text-[#111111] pt-24 pb-12">
       
-      {/* Decorative Shape 1 (Plus) */}
+      {/* Decorative Star 1 */}
       <motion.div
         initial={{ opacity: 0, scale: 0, rotate: -45 }}
-        animate={{ opacity: 1, scale: 1, rotate: 15 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{ delay: 1.4, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute z-20 top-[10%] left-[4%] w-12 h-12 md:w-20 md:h-20 hidden md:block"
+        className="absolute z-20 top-[15%] left-[8%] w-16 h-16 md:w-24 md:h-24 hidden md:block"
       >
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect x="40" y="10" width="20" height="80" rx="10" fill="#111" />
-          <rect x="10" y="40" width="80" height="20" rx="10" fill="#111" />
+          <path d="M50 0C50 27.6142 27.6142 50 0 50C27.6142 50 50 72.3858 50 100C50 72.3858 72.3858 50 100 50C72.3858 50 50 27.6142 50 0Z" fill="#111" />
         </svg>
       </motion.div>
 
@@ -39,16 +42,9 @@ export function Hero() {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[8vw] leading-[0.9] font-black tracking-tighter uppercase flex flex-row items-center justify-center"
+          className="text-[7.5vw] leading-[0.9] font-black tracking-tighter flex flex-row items-center justify-center whitespace-nowrap"
         >
-          <span>buildwith</span>
-          <SquigglyText
-            stepDuration={70}
-            scale={[6, 9]}
-            className="text-[#E55A12]"
-          >
-            MELWIN
-          </SquigglyText>
+          Build with Melwin
           <img 
             src="https://img.icons8.com/stickers/500/verified-badge.png" 
             alt="Verified Badge" 
@@ -57,28 +53,15 @@ export function Hero() {
         </motion.h1>
       </div>
 
-
-      {/* Decorative Shape 3 (Circle) */}
+      {/* Decorative Star 2 */}
       <motion.div
-        initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1.6, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute z-20 top-[75%] left-[12%] w-10 h-10 md:w-16 md:h-16 hidden md:block"
+        initial={{ opacity: 0, scale: 0, rotate: 45 }}
+        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        transition={{ delay: 1.8, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute z-20 top-[45%] right-[12%] w-12 h-12 md:w-20 md:h-20 hidden md:block"
       >
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="50" cy="50" r="40" stroke="#111" strokeWidth="12" />
-        </svg>
-      </motion.div>
-
-      {/* Decorative Shape 4 (Triangle) */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0, rotate: 180 }}
-        animate={{ opacity: 1, scale: 1, rotate: 15 }}
-        transition={{ delay: 2.0, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute z-20 top-[80%] right-[22%] w-8 h-8 md:w-14 md:h-14 hidden md:block"
-      >
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <polygon points="50,15 90,85 10,85" fill="none" stroke="#111" strokeWidth="12" strokeLinejoin="round" />
+        <svg viewBox="-10 -10 120 130" fill="none" xmlns="http://www.w3.org/2000/svg" className="overflow-visible">
+          <path d="M43.3013 0L56.6987 35.3392L93.3013 25L67.1472 55.454L93.3013 85L56.6987 74.6608L43.3013 110L29.9038 74.6608L-6.69873 85L19.4553 55.454L-6.69873 25L29.9038 35.3392L43.3013 0Z" fill="#111" />
         </svg>
       </motion.div>
 
@@ -89,8 +72,8 @@ export function Hero() {
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            style={{ rotateY: imgRotateY, filter: imgFilter, transformStyle: "preserve-3d" }}
-            className="relative w-[320px] h-[360px] rounded-[32px] shadow-2xl mx-auto"
+            style={{ rotateY: imgRotateY, transformStyle: "preserve-3d" }}
+            className="relative w-[360px] h-[400px] rounded-[32px] shadow-2xl mx-auto"
           >
             <div className="absolute inset-0 rounded-[32px] overflow-hidden">
               <Image 
@@ -112,7 +95,7 @@ export function Hero() {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-24 h-24 rounded-full overflow-hidden shadow-lg mb-4"
+          className="relative w-32 h-32 rounded-full overflow-hidden shadow-lg mb-4"
         >
           <Image 
             src="/melwin.jpeg" 
@@ -124,26 +107,21 @@ export function Hero() {
         </motion.div>
         
         {/* Mobile Name */}
-        <motion.h1
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.5, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[28px] font-black tracking-tighter uppercase text-[#111111] mb-6 flex flex-row items-center justify-center"
+          className="flex flex-row items-center justify-center mb-6 w-full"
         >
-          <span>buildwith</span>
-          <SquigglyText
-            stepDuration={70}
-            scale={[3, 5]}
-            className="text-[#E55A12]"
-          >
-            MELWIN
-          </SquigglyText>
-          <img 
-            src="https://img.icons8.com/stickers/500/verified-badge.png" 
-            alt="Verified Badge" 
-            className="w-7 h-7 ml-2 object-contain"
-          />
-        </motion.h1>
+          <h1 className="text-[22px] font-black tracking-tighter text-[#111111] leading-none flex items-center justify-center whitespace-nowrap">
+            Build with Melwin
+            <img 
+              src="https://img.icons8.com/stickers/500/verified-badge.png" 
+              alt="Verified Badge" 
+              className="w-6 h-6 ml-2 object-contain"
+            />
+          </h1>
+        </motion.div>
 
         {/* Mobile Linktree Style Links */}
         <motion.div
@@ -173,8 +151,17 @@ export function Hero() {
               href: 'https://whatsapp.com/channel/0029Vb7Y5f00wajjbzlEfQ1Z' 
             },
             { 
+              icon: <span className="text-xl">🤝</span>, 
+              name: "Explore Brand Collabs & Partnerships", 
+              href: '#partnerships',
+              onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault();
+                scrollToSection('partnerships');
+              }
+            },
+            { 
               icon: <span className="text-xl">💼</span>, 
-              name: "Brand Partnerships & Career Guidance", 
+              name: "Unlock Expert Career Guidance", 
               href: '#career',
               onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault();
@@ -206,17 +193,7 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* Mobile Background Image */}
-      <div className="absolute inset-0 z-0 md:hidden overflow-hidden pointer-events-none">
-        <Image 
-          src="/melwin.jpeg" 
-          alt="Dr. Melwin Vincent Background"
-          fill
-          className="object-cover grayscale opacity-20"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#f2f2f2]/60 via-[#f2f2f2]/80 to-[#f2f2f2]/90 mix-blend-overlay"></div>
-      </div>
+
 
       {/* Bottom Floating Details */}
       <div className="absolute bottom-8 max-md:bottom-4 w-full px-8 md:px-16 flex flex-row justify-between items-end text-xs font-semibold tracking-wider uppercase z-30">

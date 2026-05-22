@@ -5,11 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MoreHorizontal, X } from 'lucide-react'
 
 const navLinks = [
-  { name: 'Home', href: '/' },
-  { name: 'About Me', href: '/#about' },
-  { name: 'Services', href: '/#services' },
-  { name: 'Projects', href: '/#projects' },
-  { name: 'Contact', href: '/#consultation' },
+  { name: 'Home', href: '#', id: 'home' },
+  { name: 'About Me', href: '#bio', id: 'bio' },
+  { name: 'Services', href: '#services', id: 'services' },
+  { name: 'Contact', href: '#consultation', id: 'consultation' },
 ]
 
 export function Navbar() {
@@ -55,8 +54,21 @@ export function Navbar() {
                 <a 
                   key={link.name} 
                   href={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className="bg-white text-black px-4 py-1.5 rounded-lg text-[13px] font-medium hover:bg-neutral-200 transition-colors inline-block"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsOpen(false);
+                    setTimeout(() => {
+                      if (link.id === 'home') {
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      } else {
+                        const element = document.getElementById(link.id);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                      }
+                    }, 50);
+                  }}
+                  className="bg-white text-black px-4 py-1.5 rounded-lg text-[13px] font-medium hover:bg-neutral-200 transition-colors inline-block w-full text-center"
                 >
                   {link.name}
                 </a>
@@ -68,3 +80,4 @@ export function Navbar() {
     </motion.div>
   )
 }
+

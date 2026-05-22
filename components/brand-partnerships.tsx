@@ -96,7 +96,7 @@ export function BrandPartnerships() {
   }
 
   return (
-    <section id="partnerships" className="py-20 max-md:py-16 md:py-32 px-4 md:px-8 bg-zinc-50 border-t border-zinc-200">
+    <section id="partnerships-content" className="py-20 max-md:py-16 md:py-32 px-4 md:px-8 bg-zinc-50 border-t border-zinc-200">
       <div className="max-w-6xl mx-auto">
         <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest mb-12">// Partnerships</p>
 

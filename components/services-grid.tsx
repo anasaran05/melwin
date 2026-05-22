@@ -50,12 +50,29 @@ export function ServicesGrid() {
       }
     };
 
+    const handleOpenService = (e: CustomEvent<string>) => {
+      const id = e.detail;
+      if (id === 'consultation' || id === 'strategy') {
+        setActiveService('strategy');
+      } else if (id === 'partnerships' || id === 'partnership' || id === 'brand') {
+        setActiveService('brand');
+      } else if (id === 'career') {
+        setActiveService('career');
+      }
+    };
+
     // Check on mount
     handleHashChange();
 
     // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    // Listen for custom openService event
+    window.addEventListener('openService', handleOpenService as EventListener);
+    
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('openService', handleOpenService as EventListener);
+    };
   }, []);
 
   const containerVars = {
