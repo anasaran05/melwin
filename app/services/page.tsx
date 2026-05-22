@@ -16,20 +16,20 @@ export default function ServicesPage() {
       <div className="grain-overlay" />
       <Navbar />
       <div className="max-w-[1400px] mx-auto px-6 md:px-16 mb-4">
-        <h1 className="text-[4rem] md:text-[6rem] leading-[1] font-black tracking-tight">
+        <h1 className="text-[4rem] max-md:text-[3rem] md:text-[6rem] leading-[1] font-black tracking-tight">
           Services
         </h1>
-        <p className="text-xl md:text-2xl text-neutral-500 mt-6 max-w-2xl">
+        <p className="text-xl max-md:text-lg md:text-2xl text-neutral-500 mt-6 max-w-2xl">
           Strategic infrastructure, brand collaborations, and career repositioning for focused growth.
         </p>
 
         {/* Tab Buttons */}
-        <div className="flex flex-wrap gap-6 md:gap-12 mt-16 border-b border-neutral-200 pb-px">
+        <div className="flex overflow-x-auto md:flex-wrap gap-6 md:gap-12 mt-12 md:mt-16 border-b border-neutral-200 pb-px scrollbar-hide">
           {['consultation', 'partnership', 'career'].map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab as any)}
-              className={`text-lg md:text-xl font-semibold pb-4 transition-colors relative capitalize ${activeTab === tab ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
+              className={`text-base md:text-xl font-semibold pb-4 transition-colors relative capitalize whitespace-nowrap ${activeTab === tab ? 'text-black' : 'text-neutral-400 hover:text-neutral-700'}`}
             >
               {tab}
               {activeTab === tab && (

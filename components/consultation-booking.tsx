@@ -55,77 +55,32 @@ export function ConsultationBooking() {
 
     setLoading(true)
     try {
-      const response = await fetch('/api/create-order', {
+      const response = await fetch('/api/submit-inquiry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          type: 'consultation_booking',
+          ...formData
+        }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        toast.error(data.error || 'Failed to create order')
+        toast.error(data.error || 'Failed to submit booking request')
         return
       }
 
-      // Load Razorpay
-      const script = document.createElement('script')
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-      script.onload = () => {
-        const options = {
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-          order_id: data.orderId,
-          amount: data.amount,
-          currency: data.currency,
-          name: 'Dr. Melwin Vincent',
-          description: '30-Minute Strategy Consultation',
-          handler: async (response: any) => {
-            try {
-              const verifyResponse = await fetch('/api/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  ...formData,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature,
-                }),
-              })
-
-              const verifyData = await verifyResponse.json()
-
-              if (verifyData.success) {
-                toast.success(`Thanks ${formData.name}, booking confirmed! Check your email for details.`)
-                setFormData({
-                  name: '',
-                  email: '',
-                  phone: '',
-                  slot_preference: '',
-                  intake_notes: '',
-                })
-              } else {
-                toast.error('Payment verification failed')
-              }
-            } catch (error) {
-              toast.error('Error verifying payment')
-            }
-          },
-          prefill: {
-            name: formData.name,
-            email: formData.email,
-            contact: formData.phone,
-          },
-          theme: {
-            color: '#000000',
-          },
-        }
-
-        const razorpay = new (window as any).Razorpay(options)
-        razorpay.open()
-      }
-      document.body.appendChild(script)
+      toast.success(`Thanks ${formData.name}, your request is received! We will contact you to collect payment and confirm the slot.`)
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        slot_preference: '',
+        intake_notes: '',
+      })
     } catch (error) {
-      toast.error('Error creating order')
+      toast.error('Error submitting booking request')
     } finally {
       setLoading(false)
     }
@@ -145,12 +100,12 @@ export function ConsultationBooking() {
 
                 <div>
                   <p className="text-sm text-zinc-500 font-sans mb-2 uppercase tracking-wide">Regular Price</p>
-                  <p className="text-4xl font-medium line-through text-zinc-400">₹3,000</p>
+                  <p className="text-4xl max-md:text-3xl font-medium line-through text-zinc-400">₹3,000</p>
                 </div>
 
                 <div className="border-t border-zinc-200 pt-6">
                   <p className="text-sm text-zinc-500 font-sans mb-2 uppercase tracking-wide">Launch Price</p>
-                  <p className="text-5xl font-semibold text-zinc-900">₹1,299</p>
+                  <p className="text-5xl max-md:text-4xl font-semibold text-zinc-900">₹1,299</p>
                 </div>
 
                 <div className="border-t border-zinc-200 pt-6 space-y-4">

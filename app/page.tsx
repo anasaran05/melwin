@@ -4,7 +4,6 @@ import { QuoteSection } from '@/components/quote-section'
 import { ServicesGrid } from '@/components/services-grid'
 import { ProjectsSection } from '@/components/projects-section'
 import { ExpertiseStrip } from '@/components/expertise-strip'
-import { SocialProof } from '@/components/social-proof'
 import { FAQ } from '@/components/faq'
 import { Footer } from '@/components/footer'
 import { Navbar } from '@/components/navbar'
@@ -17,10 +16,9 @@ export default function Home() {
       <Hero />
       <BioSection />
       <QuoteSection />
+      <ExpertiseStrip />
       <ServicesGrid />
       <ProjectsSection />
-      <ExpertiseStrip />
-      <SocialProof />
       <FAQ />
       <Footer />
     </main>

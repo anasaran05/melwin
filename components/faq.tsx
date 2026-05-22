@@ -33,9 +33,9 @@ const faqs = [
 export function FAQ() {
   return (
     <section className="py-20 max-md:py-16 md:py-32 px-4 md:px-8 bg-zinc-50 border-t border-zinc-200">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="max-w-3xl mx-auto">
         <div className="w-full">
-          <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest mb-12">// FAQ</p>
+          <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest mb-12 text-center">// FAQ</p>
 
           <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq) => (
@@ -51,25 +51,6 @@ export function FAQ() {
               </AccordionItem>
             ))}
           </Accordion>
-        </div>
-
-        <div className="w-full max-w-md mx-auto relative lg:ml-auto lg:mr-0 max-md:mt-8">
-          <div className="relative rounded-[2.5rem] max-md:rounded-2xl p-3 bg-white/30 backdrop-blur-2xl border border-white/60 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] overflow-hidden">
-            <div className="relative w-full rounded-[2rem] overflow-hidden flex items-center justify-center bg-white/10">
-              <Image 
-                src="/cash-guru.jpeg" 
-                alt="FAQ related" 
-                width={600}
-                height={600}
-                className="w-full h-auto object-contain"
-                sizes="(max-width: 1024px) 100vw, 400px"
-                priority
-              />
-            </div>
-            
-            <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-zinc-300/30 blur-3xl rounded-full -z-10" />
-            <div className="absolute bottom-0 left-0 -ml-12 -mb-12 w-48 h-48 bg-zinc-200/40 blur-3xl rounded-full -z-10" />
-          </div>
         </div>
       </div>
     </section>

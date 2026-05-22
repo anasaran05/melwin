@@ -7,12 +7,15 @@ export function Footer() {
     <footer className="bg-[#111111] text-white pt-24 pb-12 px-6 md:px-12 relative overflow-hidden flex flex-col items-center">
       <div className="max-w-7xl mx-auto w-full relative z-10 flex flex-col md:flex-row justify-between gap-16 md:gap-8 pb-32">
         {/* Left Column */}
-        <div className="md:w-1/2">
+        <div className="md:w-1/2 flex flex-col justify-between">
           <h2 className="text-5xl md:text-6xl lg:text-7xl font-medium tracking-tight leading-[1.1]">
             Scaling<br />
             Start-ups<br />
             for Growth.
           </h2>
+          <div className="mt-12 text-gray-400 text-sm font-medium">
+            © 2026 Dr. Melwin Vincent
+          </div>
         </div>
 
         {/* Right Columns */}

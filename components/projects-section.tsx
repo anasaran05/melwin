@@ -1,22 +1,15 @@
+'use client'
+
 import { ArrowUpRight } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
+import { motion } from "framer-motion"
 
-const projects = [
-  {
-    title: "Zane ProEd",
-    category: "Education & Careers",
-    color: "from-fuchsia-200 to-purple-300",
-    image: "/zaneproed.png",
-    link: "https://zaneproed.com"
-  },
-  {
-    title: "Alphatic Labs",
-    category: "Patient Management Software Company",
-    color: "from-sky-100 to-blue-200",
-    image: "/alphaticlabs.png",
-    link: "https://alphaticlabs.com"
-  }
+const companies = [
+  { name: "Zane ProEd", logo: "/ventures logos/zaneproed.png" },
+  { name: "Alphatic Labs", logo: "/ventures logos/alphaticlabs.png" },
+  { name: "Wocha", logo: "/ventures logos/wocha.png" },
+  { name: "Academy", logo: "/ventures logos/academy.png" },
 ]
 
 interface ProjectsSectionProps {
@@ -24,63 +17,45 @@ interface ProjectsSectionProps {
   title?: React.ReactNode;
 }
 
-export function ProjectsSection({ hideViewAll = false, title = <>Featured<br />Projects</> }: ProjectsSectionProps) {
+export function ProjectsSection({ hideViewAll = false, title = <>Ventures<br />Built</> }: ProjectsSectionProps) {
+  // Duplicate the items to ensure the marquee is wide enough for a seamless loop
+  const marqueeItems = [...companies, ...companies, ...companies, ...companies];
+
   return (
-    <section id="projects" className="py-24 max-md:py-16 md:py-32 px-6 max-md:px-4 md:px-12 bg-[#f2f2f2]">
-      <div className="max-w-5xl mx-auto">
+    <section id="projects" className="py-24 max-md:py-16 md:py-32 bg-[#f2f2f2] overflow-hidden">
+      <div className="max-w-5xl mx-auto px-6 max-md:px-4 md:px-12">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6 relative">
+        <div className="flex flex-col items-center justify-center mb-16 gap-6 relative text-center">
           <h2 className="text-5xl max-md:text-4xl md:text-7xl font-medium tracking-tight text-[#111111] leading-[1.1] whitespace-pre-line">
             {title}
           </h2>
-          {!hideViewAll && (
-            <Link href="/projects" className="flex items-center gap-2 text-sm font-medium text-[#111111] hover:opacity-70 transition-opacity pb-2 md:pb-4">
-              View All Work 
-              <div className="border border-neutral-300 rounded p-0.5">
-                <ArrowUpRight className="w-4 h-4" />
-              </div>
-            </Link>
-          )}
         </div>
+      </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-12 max-md:gap-y-8 md:gap-x-10 md:gap-y-16">
-          {projects.map((project, index) => (
-            <div key={index} className="group cursor-pointer flex flex-col gap-4">
-              <div className={`w-full aspect-[4/3] max-md:aspect-[1/1] rounded-[32px] bg-gradient-to-br ${project.color} overflow-hidden relative transition-transform duration-500 group-hover:scale-[1.02] shadow-sm flex items-end justify-center pt-8 px-8 max-md:pt-6 max-md:px-6 md:pt-12 md:px-12`}>
-                {project.image ? (
-                  <div className="relative w-full h-full rounded-t-2xl overflow-hidden shadow-2xl border border-black/5">
-                    <Image 
-                      src={project.image} 
-                      alt={project.title} 
-                      fill 
-                      className="object-cover object-top"
-                    />
-                  </div>
-                ) : (
-                  <div className="relative w-full h-full rounded-t-2xl overflow-hidden bg-white/20 shadow-2xl backdrop-blur-sm border border-white/30" />
-                )}
-                {/* Overlay for hover effect */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-black pointer-events-none" />
-              </div>
-              <div className="px-2 flex items-start justify-between">
-                <div>
-                  <h3 className="text-2xl max-md:text-xl font-medium text-[#111111]">{project.title}</h3>
-                  <p className="text-gray-500 mt-1">{project.category}</p>
-                </div>
-                {project.link && (
-                  <Link 
-                    href={project.link}
-                    target="_blank"
-                    className="flex items-center gap-1 text-sm font-medium bg-[#111111] text-white px-4 py-2 rounded-full hover:bg-black/80 transition-colors"
-                  >
-                    View <ArrowUpRight className="w-4 h-4" />
-                  </Link>
-                )}
+      {/* Marquee */}
+      <div className="relative w-full flex overflow-hidden pt-8 pb-12">
+        {/* Gradients for fade effect at edges */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#f2f2f2] to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#f2f2f2] to-transparent z-10 pointer-events-none" />
+
+        <motion.div
+          className="flex whitespace-nowrap items-center w-max"
+          animate={{ x: ["0%", "-50%"] }}
+          transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+        >
+          {marqueeItems.map((company, index) => (
+            <div key={index} className="flex-shrink-0 px-8 md:px-16 flex items-center justify-center">
+              <div className="relative h-16 md:h-24 w-40 md:w-56 flex items-center justify-center transition-all duration-300">
+                <Image 
+                  src={company.logo}
+                  alt={company.name}
+                  fill
+                  className="object-contain"
+                />
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   )

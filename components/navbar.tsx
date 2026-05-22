@@ -25,11 +25,10 @@ export function Navbar() {
       <motion.div
         layout
         animate={{
-          borderRadius: isOpen ? 24 : 32,
-          width: isOpen ? 220 : 180,
+          borderRadius: 16,
         }}
         transition={{ type: "spring", bounce: 0, duration: 0.5 }}
-        className="bg-[#111111] text-white overflow-hidden shadow-2xl border border-white/10 flex flex-col"
+        className="bg-[#111111] text-white overflow-hidden shadow-2xl border border-white/10 flex flex-col min-w-[180px]"
       >
         <motion.div layout className="flex justify-between items-center px-4 h-[44px] gap-8 min-w-[160px]">
           <span className="font-semibold tracking-tight text-sm pl-1 whitespace-nowrap">
@@ -43,10 +42,9 @@ export function Navbar() {
           </button>
         </motion.div>
 
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           {isOpen && (
             <motion.div
-              layout
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}

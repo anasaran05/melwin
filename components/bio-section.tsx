@@ -8,8 +8,8 @@ export function BioSection() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 items-center max-md:gap-12">
         {/* Left Column: Heading & Short Intro */}
         <div className="flex flex-col gap-8 md:gap-32 justify-between h-full md:pr-8 max-md:gap-6">
-          <h2 className="text-7xl max-md:text-6xl md:text-8xl font-bold tracking-tighter text-[#111111]">Hey!</h2>
-          <p className="text-xl max-md:text-lg md:text-2xl font-medium text-[#111111] leading-snug">
+          <h2 className="text-7xl max-md:text-5xl md:text-8xl font-bold tracking-tighter text-[#111111]">Hey!</h2>
+          <p className="text-xl max-md:text-base md:text-2xl font-medium text-[#111111] leading-snug">
             This is <ShinyText text="Dr. Melwin" speed={3} color="#111111" shineColor="#8a8a8a" />, a mentor dedicated to guiding students toward a successful career and a brighter future.
           </p>
         </div>
@@ -21,15 +21,15 @@ export function BioSection() {
 
         {/* Right Column: Detailed Bio */}
         <div className="flex flex-col gap-6 md:pl-12 justify-end h-full pt-8 md:pt-0">
-          <p className="text-lg md:text-xl text-[#111111]/80 leading-relaxed font-medium">
+          <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed font-medium">
             I'm a professional educator and mentor with a strong focus on building modern, scalable, and conversion-driven educational experiences.
           </p>
-          <p className="text-lg md:text-xl text-[#111111]/80 leading-relaxed">
+          <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed">
             Over the years, I've created and shipped multiple programs and templates used by global students, helping them achieve success faster.
           </p>
           <div className="flex flex-col gap-3 mt-4">
             <button className="bg-[#111111] text-white rounded-xl py-4 px-8 font-medium hover:bg-neutral-800 transition-colors">
-              Book for $99
+              Book for ₹1299
             </button>
             <Link href="/services" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
               More Services
