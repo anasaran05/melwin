@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/image'
+import { SquigglyText } from '@/components/ui/squiggly-text'
 
 export function Hero() {
   const scrollToSection = (id: string) => {
@@ -14,6 +15,7 @@ export function Hero() {
   const imgRotateY = useTransform(scrollY, [0, 800], [0, 360])
   const imgGrayscale = useTransform(scrollY, [0, 600], [1, 0])
   const imgFilter = useTransform(imgGrayscale, g => `grayscale(${g * 100}%)`)
+  const imgScale = useTransform(scrollY, [0, 800], [0.75, 1])
 
   return (
     <section className="relative min-h-screen w-full flex flex-col justify-center items-center text-[#111111] pt-24 pb-12">
@@ -23,7 +25,7 @@ export function Hero() {
         initial={{ opacity: 0, scale: 0, rotate: -45 }}
         animate={{ opacity: 1, scale: 1, rotate: 0 }}
         transition={{ delay: 1.4, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute top-[20%] left-[15%] w-16 h-16 md:w-24 md:h-24 hidden md:block"
+        className="absolute top-[15%] left-[8%] w-16 h-16 md:w-24 md:h-24 hidden md:block"
       >
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M50 0C50 27.6142 27.6142 50 0 50C27.6142 50 50 72.3858 50 100C50 72.3858 72.3858 50 100 50C72.3858 50 50 27.6142 50 0Z" fill="#111" />
@@ -36,17 +38,16 @@ export function Hero() {
           initial={{ scale: 0.5, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 1.5, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[12vw] leading-[0.9] font-black tracking-tighter uppercase"
+          className="text-[8vw] leading-[0.9] font-black tracking-tighter uppercase flex flex-row items-center justify-center"
         >
-          DR. MELWIN
-        </motion.h1>
-        <motion.h1 
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 1.0, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[12vw] leading-[0.9] font-black tracking-tighter uppercase"
-        >
-          VINCENT
+          <span>buildwith</span>
+          <SquigglyText
+            stepDuration={70}
+            scale={[6, 9]}
+            className="text-[#E55A12]"
+          >
+            MELWIN
+          </SquigglyText>
         </motion.h1>
       </div>
 
@@ -64,22 +65,24 @@ export function Hero() {
 
       {/* Desktop Central Profile Image */}
       <div style={{ perspective: "1200px" }} className="relative z-40 mt-8 md:mt-4 mb-12 hidden md:flex flex-col items-center">
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          style={{ y: imgY, rotateY: imgRotateY, filter: imgFilter, transformStyle: "preserve-3d" }}
-          className="relative w-[320px] h-[360px] rounded-[32px] shadow-2xl mx-auto"
-        >
-          <div className="absolute inset-0 rounded-[32px] overflow-hidden">
-            <Image 
-              src="/melwin.jpeg" 
-              alt="Dr. Melwin Vincent"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
+        <motion.div style={{ y: imgY, scale: imgScale }}>
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            style={{ rotateY: imgRotateY, filter: imgFilter, transformStyle: "preserve-3d" }}
+            className="relative w-[320px] h-[360px] rounded-[32px] shadow-2xl mx-auto"
+          >
+            <div className="absolute inset-0 rounded-[32px] overflow-hidden">
+              <Image 
+                src="/melwin.jpeg" 
+                alt="Dr. Melwin Vincent"
+                fill
+                className="object-cover"
+                priority
+              />
+            </div>
+          </motion.div>
         </motion.div>
       </div>
 
