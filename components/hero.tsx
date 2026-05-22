@@ -7,7 +7,7 @@ import { SquigglyText } from '@/components/ui/squiggly-text'
 export function Hero() {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id)
-    element?.scrollIntoView({ behavior: 'smooth' })
+    element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   const { scrollY } = useScroll()
@@ -20,15 +20,16 @@ export function Hero() {
   return (
     <section className="relative min-h-screen w-full flex flex-col justify-center items-center text-[#111111] pt-24 pb-12">
       
-      {/* Decorative Star 1 */}
+      {/* Decorative Shape 1 (Plus) */}
       <motion.div
         initial={{ opacity: 0, scale: 0, rotate: -45 }}
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
+        animate={{ opacity: 1, scale: 1, rotate: 15 }}
         transition={{ delay: 1.4, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute top-[15%] left-[8%] w-16 h-16 md:w-24 md:h-24 hidden md:block"
+        className="absolute z-20 top-[10%] left-[4%] w-12 h-12 md:w-20 md:h-20 hidden md:block"
       >
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M50 0C50 27.6142 27.6142 50 0 50C27.6142 50 50 72.3858 50 100C50 72.3858 72.3858 50 100 50C72.3858 50 50 27.6142 50 0Z" fill="#111" />
+          <rect x="40" y="10" width="20" height="80" rx="10" fill="#111" />
+          <rect x="10" y="40" width="80" height="20" rx="10" fill="#111" />
         </svg>
       </motion.div>
 
@@ -48,18 +49,36 @@ export function Hero() {
           >
             MELWIN
           </SquigglyText>
+          <img 
+            src="https://img.icons8.com/stickers/500/verified-badge.png" 
+            alt="Verified Badge" 
+            className="w-[6vw] h-[6vw] ml-4 object-contain"
+          />
         </motion.h1>
       </div>
 
-      {/* Decorative Star 2 */}
+
+      {/* Decorative Shape 3 (Circle) */}
       <motion.div
-        initial={{ opacity: 0, scale: 0, rotate: 45 }}
-        animate={{ opacity: 1, scale: 1, rotate: 0 }}
-        transition={{ delay: 1.8, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-        className="absolute top-[45%] right-[12%] w-12 h-12 md:w-20 md:h-20 hidden md:block"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 1.6, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute z-20 top-[75%] left-[12%] w-10 h-10 md:w-16 md:h-16 hidden md:block"
       >
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M43.3013 0L56.6987 35.3392L93.3013 25L67.1472 55.454L93.3013 85L56.6987 74.6608L43.3013 110L29.9038 74.6608L-6.69873 85L19.4553 55.454L-6.69873 25L29.9038 35.3392L43.3013 0Z" fill="#111" />
+          <circle cx="50" cy="50" r="40" stroke="#111" strokeWidth="12" />
+        </svg>
+      </motion.div>
+
+      {/* Decorative Shape 4 (Triangle) */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0, rotate: 180 }}
+        animate={{ opacity: 1, scale: 1, rotate: 15 }}
+        transition={{ delay: 2.0, duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute z-20 top-[80%] right-[22%] w-8 h-8 md:w-14 md:h-14 hidden md:block"
+      >
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,15 90,85 10,85" fill="none" stroke="#111" strokeWidth="12" strokeLinejoin="round" />
         </svg>
       </motion.div>
 
@@ -109,9 +128,21 @@ export function Hero() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.5, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="text-[32px] font-bold tracking-tight text-[#111111] mb-6"
+          className="text-[28px] font-black tracking-tighter uppercase text-[#111111] mb-6 flex flex-row items-center justify-center"
         >
-          Dr. Melwin Vincent
+          <span>buildwith</span>
+          <SquigglyText
+            stepDuration={70}
+            scale={[3, 5]}
+            className="text-[#E55A12]"
+          >
+            MELWIN
+          </SquigglyText>
+          <img 
+            src="https://img.icons8.com/stickers/500/verified-badge.png" 
+            alt="Verified Badge" 
+            className="w-7 h-7 ml-2 object-contain"
+          />
         </motion.h1>
 
         {/* Mobile Linktree Style Links */}
@@ -122,17 +153,41 @@ export function Hero() {
           className="flex flex-col items-center gap-3 w-full max-w-md"
         >
           {[
-            { icon: <span className="text-xl">🚀</span>, name: 'Book a 1:1 Strategy Consultation', href: '/services#consultation' },
-            { icon: (
+            { 
+              icon: <span className="text-xl">🚀</span>, 
+              name: 'Book a 1:1 Strategy Consultation', 
+              href: '#consultation',
+              onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent('openConsultation', { detail: 'consult_melwin' }));
+                scrollToSection('consultation');
+              }
+            },
+            { 
+              icon: (
                 <svg viewBox="0 0 24 24" fill="#25D366" className="w-6 h-6">
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/>
                 </svg>
-              ), name: 'Join 7k+ Members on WhatsApp', href: 'https://whatsapp.com/channel/0029Vb7Y5f00wajjbzlEfQ1Z' },
-            { icon: <span className="text-xl">💼</span>, name: "Brand Partnerships & Career Guidance", href: '/services#career' },
+              ), 
+              name: 'Join 7k+ Members on WhatsApp', 
+              href: 'https://whatsapp.com/channel/0029Vb7Y5f00wajjbzlEfQ1Z' 
+            },
+            { 
+              icon: <span className="text-xl">💼</span>, 
+              name: "Brand Partnerships & Career Guidance", 
+              href: '#career',
+              onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
+                e.preventDefault();
+                scrollToSection('career');
+              }
+            },
           ].map((link) => (
             <a 
               key={link.name} 
               href={link.href}
+              onClick={link.onClick}
+              target={link.href.startsWith('http') ? "_blank" : undefined}
+              rel={link.href.startsWith('http') ? "noopener noreferrer" : undefined}
               className="relative w-full bg-white text-[#111111] py-4 px-12 rounded-xl text-center text-[15px] font-semibold shadow-[0_2px_10px_rgba(0,0,0,0.05)] hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center min-h-[64px]"
             >
               <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center">

@@ -7,9 +7,9 @@ import { MoreHorizontal, X } from 'lucide-react'
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'About Me', href: '/#about' },
-  { name: 'Services', href: '/services' },
+  { name: 'Services', href: '/#services' },
   { name: 'Projects', href: '/#projects' },
-  { name: 'Contact', href: '/services#consultation' },
+  { name: 'Contact', href: '/#consultation' },
 ]
 
 export function Navbar() {

@@ -1,3 +1,5 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
 import ShinyText from './ui/shiny-text'
@@ -28,10 +30,17 @@ export function BioSection() {
             Over the years, I've created and shipped multiple programs and templates used by global students, helping them achieve success faster.
           </p>
           <div className="flex flex-col gap-3 mt-4">
-            <button className="bg-[#111111] text-white rounded-xl py-4 px-8 font-medium hover:bg-neutral-800 transition-colors">
-              Book for ₹1299
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                window.dispatchEvent(new CustomEvent('openConsultation', { detail: 'consult_melwin' }));
+                document.getElementById('consultation')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }}
+              className="bg-[#111111] text-white rounded-xl py-4 px-8 font-medium hover:bg-neutral-800 transition-colors text-center"
+            >
+              Book for ₹2,999
             </button>
-            <Link href="/services" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
+            <Link href="#consultation" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
               More Services
             </Link>
           </div>

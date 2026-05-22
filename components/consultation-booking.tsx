@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2 } from 'lucide-react'
+import { Loader2, BadgeCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
+import Image from 'next/image'
 
 export function ConsultationBooking() {
   const [loading, setLoading] = useState(false)
@@ -18,7 +20,16 @@ export function ConsultationBooking() {
     phone: '',
     slot_preference: '',
     intake_notes: '',
+    consultation_type: 'consult_melwin',
   })
+
+  useEffect(() => {
+    const handleOpenConsultation = (e: CustomEvent<string>) => {
+      setFormData(prev => ({...prev, consultation_type: e.detail}))
+    }
+    window.addEventListener('openConsultation', handleOpenConsultation as EventListener)
+    return () => window.removeEventListener('openConsultation', handleOpenConsultation as EventListener)
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | { target: { name: string; value: string } }) => {
     const { name, value } = e.target
@@ -78,6 +89,7 @@ export function ConsultationBooking() {
         phone: '',
         slot_preference: '',
         intake_notes: '',
+        consultation_type: 'consult_melwin',
       })
     } catch (error) {
       toast.error('Error submitting booking request')
@@ -87,45 +99,88 @@ export function ConsultationBooking() {
   }
 
   return (
-    <section id="consultation" className="py-20 max-md:py-16 md:py-32 px-4 md:px-8 bg-white border-t border-zinc-200">
+    <section id="consultation" className="scroll-mt-32 py-20 max-md:py-16 md:py-32 px-4 md:px-8 bg-white border-t border-zinc-200">
       <div className="max-w-6xl mx-auto">
         <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest mb-12">// Booking</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-          {/* Left: Pricing */}
+          {/* Left: Pricing / Type Selection */}
           <div>
-              <Card className="border border-zinc-200 bg-zinc-50 p-8 max-md:p-6 rounded-2xl shadow-sm">
-              <div className="space-y-6">
-                <Badge className="bg-black text-white hover:bg-zinc-800 border-0">LAUNCH OFFER</Badge>
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-zinc-900 mb-2">Select Consultation Type</h3>
+              <p className="text-zinc-500">Choose the level of guidance that best fits your current needs.</p>
+            </div>
+            
+            <Accordion 
+              type="single" 
+              value={formData.consultation_type} 
+              onValueChange={(val) => val && setFormData(prev => ({...prev, consultation_type: val}))} 
+              className="space-y-4"
+            >
+              <AccordionItem value="general" className="border border-zinc-200 bg-white rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all">
+                <AccordionTrigger className="hover:no-underline py-6">
+                   <div className="flex flex-col text-left">
+                     <span className="font-sans text-lg font-bold text-zinc-900">General Consultation</span>
+                     <span className="text-sm text-zinc-500 font-normal mt-1">Foundational session for basic queries</span>
+                   </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
+                   Perfect for individuals looking for quick guidance, basic strategy alignment, and answers to foundational questions to set you on the right track.
+                   <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center justify-between">
+                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                     <span className="text-2xl font-semibold text-zinc-900">₹999</span>
+                   </div>
+                </AccordionContent>
+              </AccordionItem>
 
-                <div>
-                  <p className="text-sm text-zinc-500 font-sans mb-2 uppercase tracking-wide">Regular Price</p>
-                  <p className="text-4xl max-md:text-3xl font-medium line-through text-zinc-400">₹3,000</p>
-                </div>
+              <AccordionItem value="professional" className="border border-zinc-200 bg-white rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all">
+                <AccordionTrigger className="hover:no-underline py-6">
+                   <div className="flex flex-col text-left">
+                     <span className="font-sans text-lg font-bold text-zinc-900">Professional Consultation</span>
+                     <span className="text-sm text-zinc-500 font-normal mt-1">Deep dive with tailored strategies</span>
+                   </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
+                   Strategic deep-dive covering your specific challenge, market positioning, or next steps. Actionable insights and execution plans, not just theory.
+                   <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center justify-between">
+                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                     <span className="text-2xl font-semibold text-zinc-900">₹1,299</span>
+                   </div>
+                </AccordionContent>
+              </AccordionItem>
 
-                <div className="border-t border-zinc-200 pt-6">
-                  <p className="text-sm text-zinc-500 font-sans mb-2 uppercase tracking-wide">Launch Price</p>
-                  <p className="text-5xl max-md:text-4xl font-semibold text-zinc-900">₹1,299</p>
-                </div>
-
-                <div className="border-t border-zinc-200 pt-6 space-y-4">
-                  <h4 className="font-sans text-lg font-bold text-zinc-900">30-Minute Execution Block</h4>
-                  <p className="text-sm text-zinc-500 leading-relaxed">
-                    Strategic deep-dive covering your specific challenge, market positioning, or next steps. Actionable insights, not theory.
-                  </p>
-
-                  <div className="pt-4 space-y-2">
-                    <p className="text-sm font-sans font-medium text-zinc-900 uppercase tracking-wide">What to bring:</p>
-                    <ul className="text-sm text-zinc-600 space-y-2">
-                      <li>• Specific challenge or goal</li>
-                      <li>• Current metrics (if applicable)</li>
-                      <li>• Timeline expectations</li>
-                      <li>• Budget constraints</li>
-                    </ul>
+              <AccordionItem value="consult_melwin" className="border border-zinc-200 bg-zinc-50 rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all overflow-hidden relative">
+                {formData.consultation_type === 'consult_melwin' && (
+                  <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
+                    Recommended
                   </div>
-                </div>
-              </div>
-            </Card>
+                )}
+                <AccordionTrigger className="hover:no-underline py-6">
+                   <div className="flex items-center gap-4 text-left">
+                     <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
+                       <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
+                     </div>
+                     <div className="flex flex-col">
+                       <div className="flex items-center gap-1.5">
+                         <span className="font-sans text-lg font-bold text-zinc-900">Consult with Melwin</span>
+                         <BadgeCheck className="w-5 h-5 text-blue-500" />
+                       </div>
+                       <span className="text-sm text-zinc-500 font-normal mt-0.5">1-on-1 session with Dr. Melwin Vincent</span>
+                     </div>
+                   </div>
+                </AccordionTrigger>
+                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
+                   Direct access to Dr. Melwin for high-level strategic consulting. Includes a personalized roadmap, priority support, and exclusive insights from his ventures.
+                   <div className="mt-6 pt-6 border-t border-zinc-200 flex items-center justify-between">
+                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                     <div className="text-right">
+                       <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
+                       <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
+                     </div>
+                   </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
           </div>
 
           {/* Right: Booking form */}

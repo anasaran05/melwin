@@ -39,9 +39,11 @@ export async function POST(request: NextRequest) {
         mappedEmail = inquiryData.email || ''
         mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'}`
       } else if (type === 'consultation_booking') {
+        const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
+        const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Phone: ${inquiryData.phone || 'N/A'} | Slot: ${inquiryData.slot_preference || 'N/A'} | Notes: ${inquiryData.intake_notes || 'N/A'}`
+        mappedMessage = `Type: ${cType} | Phone: ${inquiryData.phone || 'N/A'} | Slot: ${inquiryData.slot_preference || 'N/A'} | Notes: ${inquiryData.intake_notes || 'N/A'}`
       } else {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -91,6 +93,17 @@ export async function POST(request: NextRequest) {
             { name: 'Background', value: inquiryData.background, inline: true },
             { name: 'Situation', value: inquiryData.message, inline: false },
           ]
+        } else if (type === 'consultation_booking') {
+          const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
+          title = '🗓️ Consultation Booking Request'
+          fields = [
+            { name: 'Name', value: inquiryData.name, inline: true },
+            { name: 'Email', value: inquiryData.email, inline: true },
+            { name: 'Phone', value: inquiryData.phone, inline: true },
+            { name: 'Type', value: typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A', inline: true },
+            { name: 'Preferred Slot', value: inquiryData.slot_preference, inline: true },
+            { name: 'Notes', value: inquiryData.intake_notes || 'N/A', inline: false },
+          ]
         }
 
         await fetch(discordWebhookUrl, {
@@ -139,12 +152,15 @@ export async function POST(request: NextRequest) {
                  `*Email:* ${inquiryData.email || 'N/A'}\n` +
                  `*Message:* ${inquiryData.message || 'N/A'}`
         } else if (type === 'consultation_booking') {
+           const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
+           const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
            text = `🗓️ *Consultation Booking Request*\n\n` +
-                 `*Name:* ${inquiryData.name || 'N/A'}\n` +
-                 `*Email:* ${inquiryData.email || 'N/A'}\n` +
-                 `*Phone:* ${inquiryData.phone || 'N/A'}\n` +
-                 `*Preferred Slot:* ${inquiryData.slot_preference || 'N/A'}\n` +
-                 `*Notes:* ${inquiryData.intake_notes || 'N/A'}`
+                  `*Name:* ${inquiryData.name || 'N/A'}\n` +
+                  `*Email:* ${inquiryData.email || 'N/A'}\n` +
+                  `*Phone:* ${inquiryData.phone || 'N/A'}\n` +
+                  `*Type:* ${cType}\n` +
+                  `*Preferred Slot:* ${inquiryData.slot_preference || 'N/A'}\n` +
+                  `*Notes:* ${inquiryData.intake_notes || 'N/A'}`
         }
 
         if (text) {

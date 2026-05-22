@@ -1,36 +1,63 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ConsultationBooking } from '@/components/consultation-booking'
+import { BrandPartnerships } from '@/components/brand-partnerships'
+import { CareerAdvice } from '@/components/career-advice'
+import { ChevronDown } from 'lucide-react'
 
 const services = [
   {
     id: 'strategy',
     title: 'Strategy Consultation',
     tags: 'Data-driven insights • Startup challenges • Navigation',
-    link: '/services#consultation',
+    component: ConsultationBooking,
   },
   {
     id: 'brand',
     title: 'Brand Collaborations',
     tags: 'Infrastructure • Mutual growth • Partnerships',
-    link: '/services#partnerships',
+    component: BrandPartnerships,
   },
   {
     id: 'career',
     title: 'Career Repositioning',
     tags: 'Calculated moves • Technical professionals',
-    link: '/services#career',
+    component: CareerAdvice,
   },
   {
     id: 'coming-soon',
     title: 'Expanding Infrastructure',
     tags: 'Proprietary services • Launching 2026 Q3',
-    link: '#',
     comingSoon: true,
   },
 ]
 
 export function ServicesGrid() {
+  const [activeService, setActiveService] = useState<string | null>(null)
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      
+      if (hash === 'consultation' || hash === 'strategy') {
+        setActiveService('strategy');
+      } else if (hash === 'partnerships' || hash === 'partnership' || hash === 'brand') {
+        setActiveService('brand');
+      } else if (hash === 'career') {
+        setActiveService('career');
+      }
+    };
+
+    // Check on mount
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   const containerVars = {
     hidden: { opacity: 0 },
     show: {
@@ -45,7 +72,7 @@ export function ServicesGrid() {
   }
 
   return (
-    <section className="py-24 max-md:py-16 md:py-32 px-6 max-md:px-4 md:px-16 w-full text-[#111111]">
+    <section id="services" className="py-24 max-md:py-16 md:py-32 px-6 max-md:px-4 md:px-16 w-full text-[#111111] scroll-mt-24">
       <div className="max-w-[1400px] mx-auto">
         
         <motion.h2 
@@ -65,21 +92,58 @@ export function ServicesGrid() {
           viewport={{ once: true, margin: "-100px" }}
           className="flex flex-col w-full"
         >
-          {services.map((service, idx) => (
-            <motion.a
-              variants={itemVars}
-              key={service.id}
-              href={service.link}
-              className={`group flex flex-col md:flex-row justify-between items-start md:items-center py-8 max-md:py-6 md:py-12 border-b border-[#dddddd] transition-colors ${service.comingSoon ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:border-black'}`}
-            >
-              <h3 className="text-2xl max-md:text-xl md:text-3xl font-medium tracking-tight mb-2 md:mb-0 group-hover:pl-2 transition-all duration-300">
-                {service.title}
-              </h3>
-              <div className="flex items-center gap-4 text-sm text-[#777777]">
-                <span className="group-hover:text-black transition-colors">{service.tags}</span>
-              </div>
-            </motion.a>
-          ))}
+          {services.map((service, idx) => {
+            const isActive = activeService === service.id;
+            const Component = service.component;
+
+            return (
+              <motion.div
+                variants={itemVars}
+                key={service.id}
+                id={service.id === 'strategy' ? 'consultation' : service.id === 'brand' ? 'partnerships' : service.id}
+                className={`flex flex-col border-b border-[#dddddd] transition-colors ${service.comingSoon ? 'opacity-50' : 'hover:border-black'} scroll-mt-32`}
+              >
+                <div
+                  onClick={() => {
+                    if (!service.comingSoon) {
+                      setActiveService(isActive ? null : service.id)
+                    }
+                  }}
+                  className={`group flex flex-row justify-between items-center py-8 max-md:py-6 md:py-12 ${service.comingSoon ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between flex-1 md:pr-8">
+                    <h3 className="text-2xl max-md:text-xl md:text-3xl font-medium tracking-tight mb-2 md:mb-0 group-hover:pl-2 transition-all duration-300">
+                      {service.title}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-[#777777]">
+                      <span className="group-hover:text-black transition-colors">{service.tags}</span>
+                    </div>
+                  </div>
+                  {!service.comingSoon && (
+                    <div className="md:hidden flex-shrink-0 ml-4">
+                      <ChevronDown className={`w-6 h-6 text-[#111111] opacity-50 transition-transform duration-300 ${isActive ? 'rotate-180' : ''}`} />
+                    </div>
+                  )}
+                </div>
+
+                <AnimatePresence>
+                  {isActive && Component && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div className="pb-12">
+                        <Component />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )
+          })}
         </motion.div>
       </div>
     </section>
