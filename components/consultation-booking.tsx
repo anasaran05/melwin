@@ -53,7 +53,7 @@ export function ConsultationBooking() {
       return false
     }
     if (!formData.slot_preference.trim()) {
-      toast.error('Please select a preferred time slot')
+      toast.error('Please select a preferred date')
       return false
     }
     return true
@@ -126,28 +126,19 @@ export function ConsultationBooking() {
                 </AccordionTrigger>
                 <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
                    Perfect for individuals looking for quick guidance, basic strategy alignment, and answers to foundational questions to set you on the right track.
-                   <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center justify-between">
-                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                     <span className="text-2xl font-semibold text-zinc-900">₹999</span>
+                   <div className="mt-6 pt-6 border-t border-zinc-100 flex flex-col gap-3">
+                     <div className="flex items-center justify-between">
+                       <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
+                       <span className="font-semibold text-zinc-900">45-60 mins</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                       <span className="text-2xl font-semibold text-zinc-900">₹1,299</span>
+                     </div>
                    </div>
                 </AccordionContent>
               </AccordionItem>
 
-              <AccordionItem value="professional" className="border border-zinc-200 bg-white rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all">
-                <AccordionTrigger className="hover:no-underline py-6">
-                   <div className="flex flex-col text-left">
-                     <span className="font-sans text-lg font-bold text-zinc-900">Professional Consultation</span>
-                     <span className="text-sm text-zinc-500 font-normal mt-1">Deep dive with tailored strategies</span>
-                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
-                   Strategic deep-dive covering your specific challenge, market positioning, or next steps. Actionable insights and execution plans, not just theory.
-                   <div className="mt-6 pt-6 border-t border-zinc-100 flex items-center justify-between">
-                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                     <span className="text-2xl font-semibold text-zinc-900">₹1,299</span>
-                   </div>
-                </AccordionContent>
-              </AccordionItem>
 
               <AccordionItem value="consult_melwin" className="border border-zinc-200 bg-zinc-50 rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all overflow-hidden relative">
                 {formData.consultation_type === 'consult_melwin' && (
@@ -171,11 +162,17 @@ export function ConsultationBooking() {
                 </AccordionTrigger>
                 <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
                    Direct access to Dr. Melwin for high-level strategic consulting. Includes a personalized roadmap, priority support, and exclusive insights from his ventures.
-                   <div className="mt-6 pt-6 border-t border-zinc-200 flex items-center justify-between">
-                     <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                     <div className="text-right">
-                       <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
-                       <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
+                   <div className="mt-6 pt-6 border-t border-zinc-200 flex flex-col gap-3">
+                     <div className="flex items-center justify-between">
+                       <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
+                       <span className="font-semibold text-zinc-900">45-60 mins</span>
+                     </div>
+                     <div className="flex items-center justify-between">
+                       <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                       <div className="text-right">
+                         <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
+                         <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
+                       </div>
                      </div>
                    </div>
                 </AccordionContent>
@@ -221,7 +218,7 @@ export function ConsultationBooking() {
               </div>
 
               <div>
-                <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">Preferred Time Slot *</label>
+                <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">Preferred Date *</label>
                 <DateTimePicker
                   name="slot_preference"
                   value={formData.slot_preference}

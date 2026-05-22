@@ -9,10 +9,10 @@ export function BioSection() {
     <section id="bio" className="py-24 max-md:py-16 md:py-32 bg-[#f2f2f2] px-6 md:px-12 w-full z-10 relative">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8 items-center max-md:gap-12">
         {/* Left Column: Heading & Short Intro */}
-        <div className="flex flex-col gap-8 md:gap-32 justify-between h-full md:pr-8 max-md:gap-6">
+        <div className="flex flex-col gap-8 md:gap-32 justify-start md:pr-8 max-md:gap-6">
           <h2 className="text-7xl max-md:text-5xl md:text-8xl font-bold tracking-tighter text-[#111111]">Hey!</h2>
           <p className="text-xl max-md:text-base md:text-2xl font-medium text-[#111111] leading-snug">
-            This is <ShinyText text="Dr. Melwin" speed={3} color="#111111" shineColor="#8a8a8a" />, a mentor dedicated to guiding students toward a successful career and a brighter future.
+            I’m <ShinyText text="Dr. Melwin" speed={3} color="#111111" shineColor="#8a8a8a" />, a global entrepreneur & educator.
           </p>
         </div>
 
@@ -24,10 +24,11 @@ export function BioSection() {
         {/* Right Column: Detailed Bio */}
         <div className="flex flex-col gap-6 md:pl-12 justify-end h-full pt-8 md:pt-0">
           <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed font-medium">
-            I'm a professional educator and mentor with a strong focus on building modern, scalable, and conversion-driven educational experiences.
+            Over the past 5 years, I’ve built 6 seven-figure ventures, scaled operations across the USA, Ireland, and Malaysia, and exited 2 companies through strategic acquisitions. I’ve delivered keynote sessions at 17+ events and earned the Gold Medal for Best Presentation at IPV Weekly. 
+
           </p>
           <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed">
-            Over the years, I've created and shipped multiple programs and templates used by global students, helping them achieve success faster.
+            Today, I build high-performance brands, AI-driven education systems, and modern business ecosystems designed for the next generation of founders and professionals.
           </p>
           <div className="flex flex-col gap-3 mt-4">
             <button 

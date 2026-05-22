@@ -46,8 +46,8 @@ export function Footer() {
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-6">
               <span className="text-gray-400 text-lg">/Contact</span>
-              <a href="mailto:melwin@zaneproed.com" className="text-white hover:text-gray-300 transition-colors text-lg">
-                melwin@zaneproed.com
+              <a href="mailto:buildwithmelwin@gmail.com" className="text-white hover:text-gray-300 transition-colors text-lg">
+                buildwithmelwin@gmail.com
               </a>
             </div>
             

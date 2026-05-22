@@ -6,13 +6,11 @@ import { ProjectsSection } from '@/components/projects-section'
 import { ExpertiseStrip } from '@/components/expertise-strip'
 import { FAQ } from '@/components/faq'
 import { Footer } from '@/components/footer'
-import { Navbar } from '@/components/navbar'
 
 export default function Home() {
   return (
     <main className="font-sans min-h-screen relative overflow-x-hidden">
       <div className="grain-overlay" />
-      <Navbar />
       <Hero />
       <BioSection />
       <QuoteSection />

@@ -17,13 +17,18 @@ export function Hero() {
   }
 
   const { scrollY } = useScroll()
-  const imgY = useTransform(scrollY, [0, 800], [0, 600])
+  const imgY = useTransform(scrollY, [0, 800], [0, 750])
   const imgRotateY = useTransform(scrollY, [0, 800], [0, 360])
   const imgScale = useTransform(scrollY, [0, 800], [0.75, 1])
 
   return (
     <section className="relative min-h-screen w-full flex flex-col justify-center items-center text-[#111111] pt-24 pb-12">
       
+      {/* Top Logo */}
+      <div className="absolute top-8 md:top-12 left-1/2 -translate-x-1/2 z-50">
+        <Image src="/logo-2.png" alt="Logo" width={180} height={60} className="object-contain w-auto h-8 md:h-10" priority />
+      </div>
+
       {/* Decorative Star 1 */}
       <motion.div
         initial={{ opacity: 0, scale: 0, rotate: -45 }}
@@ -91,20 +96,43 @@ export function Hero() {
       {/* Mobile Hero Content (Linktree Style) */}
       <div className="relative z-40 md:hidden flex flex-col items-center w-full px-4 mt-8 pb-16">
         {/* Mobile Circular Image */}
-        <motion.div
-          initial={{ scale: 0.5, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="relative w-32 h-32 rounded-full overflow-hidden shadow-lg mb-4"
-        >
-          <Image 
-            src="/melwin.jpeg" 
-            alt="Dr. Melwin Vincent"
-            fill
-            className="object-cover"
-            priority
-          />
-        </motion.div>
+        <div className="relative mb-4 flex items-center justify-center">
+          <motion.svg
+            initial={{ rotate: 0, opacity: 0 }}
+            animate={{ rotate: 360, opacity: 1 }}
+            transition={{ 
+              rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+              opacity: { duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }
+            }}
+            className="absolute -inset-1.5 w-[calc(100%+12px)] h-[calc(100%+12px)]"
+            viewBox="0 0 100 100"
+          >
+            <circle 
+              cx="50" 
+              cy="50" 
+              r="48" 
+              fill="none" 
+              stroke="#111111" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeDasharray="220 80" 
+            />
+          </motion.svg>
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="relative w-32 h-32 rounded-full overflow-hidden shadow-lg z-10"
+          >
+            <Image 
+              src="/melwin.jpeg" 
+              alt="Dr. Melwin Vincent"
+              fill
+              className="object-cover"
+              priority
+            />
+          </motion.div>
+        </div>
         
         {/* Mobile Name */}
         <motion.div

@@ -97,19 +97,31 @@ export function CareerAdvice() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
           {/* Left: Copy */}
           <div className="space-y-6">
-            <h2 className="font-sans text-4xl max-md:text-3xl font-bold text-zinc-900">Career Repositioning for Technical Builders.</h2>
+            <h2 className="font-sans text-4xl max-md:text-3xl font-bold text-zinc-900">Career Guidance</h2>
+            <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">
+              School • College • Careers • Higher Studies
+            </p>
             <p className="text-zinc-600 leading-relaxed">
-              If you&apos;re in healthcare or engineering and feeling stuck—whether it&apos;s a salary plateau, role mismatch, or lack of growth
-              trajectory—let&apos;s talk strategy. I help high-performers find roles and paths that align with their technical depth and ambitions.
+              Helping students and professionals make confident academic and career decisions through practical guidance, strategic planning, and long-term positioning.
             </p>
             <div className="pt-6 space-y-3">
-              <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">Common challenges:</p>
+              <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">Areas of support include:</p>
               <ul className="text-sm text-zinc-600 space-y-2">
-                <li>• Feeling undervalued in current role</li>
-                <li>• Uncertain about next career move</li>
-                <li>• Want to scale impact globally</li>
-                <li>• Exploring startup vs. corporate trade-offs</li>
+                <li>• School to college planning</li>
+                <li>• College admissions and career direction</li>
+                <li>• College to job transition strategy</li>
+                <li>• Master&apos;s planning in India or abroad</li>
+                <li>• Career switching and repositioning</li>
+                <li>• Resume, LinkedIn, and profile building</li>
+                <li>• Skill roadmap and industry alignment</li>
+                <li>• Higher studies, placements, and growth planning</li>
+                <li>• Startup, corporate, and global career pathways</li>
               </ul>
+            </div>
+            <div className="pt-4">
+              <p className="text-zinc-600 leading-relaxed font-medium">
+                Whether you&apos;re choosing your next course, planning your career trajectory, preparing for placements, or exploring higher studies, the goal is simple: help you avoid confusion, make smarter decisions, and move with clarity.
+              </p>
             </div>
           </div>
 

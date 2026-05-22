@@ -103,19 +103,36 @@ export function BrandPartnerships() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-start">
           {/* Left: Copy */}
           <div className="space-y-6">
-            <h2 className="font-sans text-4xl max-md:text-3xl font-bold text-zinc-900">Infrastructure Partnerships Only.</h2>
-            <p className="text-zinc-600 leading-relaxed">
-              I partner with companies that share a commitment to execution speed, global reach, and measurable impact. We&apos;re
-              looking for mutual growth—infrastructure plays that open doors for both sides.
+            <h2 className="font-sans text-4xl max-md:text-3xl font-bold text-zinc-900">Brand Collaborations</h2>
+            <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">
+              Strategic Partnerships • Creator Campaigns • Growth Collaborations
             </p>
+            <div className="space-y-4 text-zinc-600 leading-relaxed">
+              <p>
+                I collaborate with brands, startups, platforms, and organizations across strategic partnerships, creator campaigns, educational media, UGC, digital storytelling, and growth-focused initiatives.
+              </p>
+              <p>
+                From long-term infrastructure partnerships to audience-driven content collaborations, the focus is always on creating meaningful visibility, strong positioning, and measurable impact for both sides.
+              </p>
+            </div>
+            
             <div className="pt-6 space-y-3">
-              <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">Ideal fit criteria:</p>
+              <p className="font-sans font-medium text-sm text-zinc-900 uppercase tracking-wide">Collaboration formats include:</p>
               <ul className="text-sm text-zinc-600 space-y-2">
-                <li>• Expanding into new markets or verticals</li>
-                <li>• Building GTM infrastructure at scale</li>
-                <li>• Seeking strategic advisor relationships</li>
-                <li>• Product-market fit with distribution challenges</li>
+                <li>• Brand partnerships & strategic collaborations</li>
+                <li>• UGC and creator-led campaigns</li>
+                <li>• Sponsored content & social media integrations</li>
+                <li>• Educational and product-focused media</li>
+                <li>• Launch campaigns & digital storytelling</li>
+                <li>• GTM, distribution, and audience growth initiatives</li>
+                <li>• Long-term ambassador and ecosystem partnerships</li>
               </ul>
+            </div>
+            
+            <div className="pt-4">
+              <p className="text-zinc-600 leading-relaxed font-medium">
+                I’m especially interested in working with brands building ambitious products, scalable systems, and modern consumer experiences.
+              </p>
             </div>
           </div>
 
@@ -151,6 +168,7 @@ export function BrandPartnerships() {
                     <SelectValue placeholder="Select budget tier" />
                   </SelectTrigger>
                   <SelectContent className="bg-white border-zinc-300">
+                    <SelectItem value="5k-25k">₹5k–₹25k</SelectItem>
                     <SelectItem value="25k-50k">₹25k–₹50k</SelectItem>
                     <SelectItem value="50k-1lakh">₹50k–₹1L</SelectItem>
                     <SelectItem value="1lakh-plus">₹1L+</SelectItem>
