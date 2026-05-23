@@ -16,7 +16,7 @@ export default function Home() {
       <QuoteSection />
       <ExpertiseStrip />
       <ServicesGrid />
-      <ProjectsSection />
+      {/* <ProjectsSection /> */}
       <FAQ />
       <Footer />
     </main>
