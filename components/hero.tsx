@@ -12,7 +12,7 @@ export function Hero() {
     // Then wait for the accordion to render/expand, and scroll to the inner content centered
     setTimeout(() => {
       const element = document.getElementById(`${id}-content`) || document.getElementById(id)
-      element?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      element?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }, 350)
   }
 
