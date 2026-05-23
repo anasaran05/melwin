@@ -168,11 +168,11 @@ export function ConsultationBooking() {
                        <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
                        <span className="font-semibold text-zinc-900">45-60 mins</span>
                      </div>
-                     <div className="flex items-center justify-between">
+                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
                        <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                       <div className="text-right flex items-center justify-end">
+                       <div className="flex items-center sm:justify-end">
                          <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
-                         <span className="text-lg font-bold">
+                         <span className="text-[15px] sm:text-lg font-bold whitespace-nowrap">
                            <ShinyText text="Launch Offer: Free (15 slots)" speed={3} color="#111111" shineColor="#8a8a8a" />
                          </span>
                        </div>
