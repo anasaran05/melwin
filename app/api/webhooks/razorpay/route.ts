@@ -5,21 +5,28 @@ import nodemailer from "nodemailer";
 import { render } from "@react-email/render";
 import ConsultationConfirmationEmail from "@/emails/ConsultationConfirmation";
 
-// Initialize Supabase admin client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+// Helper function to get Supabase client
+const getSupabase = () => {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+  // Return null if credentials are not configured to avoid crashing
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  return createClient(supabaseUrl, supabaseServiceKey);
+};
 
-// Initialize Nodemailer transporter
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || "465", 10),
-  secure: true,
-  auth: {
-    user: process.env.SMTP_USER_MELWIN,
-    pass: process.env.SMTP_PASS_MELWIN,
-  },
-});
+// Helper function to get Nodemailer transporter
+const getTransporter = () => {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER_MELWIN) return null;
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: parseInt(process.env.SMTP_PORT || "465", 10),
+    secure: true,
+    auth: {
+      user: process.env.SMTP_USER_MELWIN,
+      pass: process.env.SMTP_PASS_MELWIN,
+    },
+  });
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,28 +73,34 @@ export async function POST(req: NextRequest) {
       const time = notes.time || "TBD";
 
       // 1. Insert into Supabase
-      const { data, error } = await supabase
-        .from("consultations")
-        .insert([
-          {
-            name: name,
-            email: email,
-            phone: phone,
-            date: date,
-            time: time,
-            razorpay_order_id: orderId,
-            razorpay_payment_id: paymentId,
-            status: "confirmed",
-          },
-        ]);
+      const supabase = getSupabase();
+      if (supabase) {
+        const { data, error } = await supabase
+          .from("consultations")
+          .insert([
+            {
+              name: name,
+              email: email,
+              phone: phone,
+              date: date,
+              time: time,
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              status: "confirmed",
+            },
+          ]);
 
-      if (error) {
-        console.error("Error inserting into Supabase:", error);
-        // Continue processing to try sending emails/notifications even if DB fails, or fail early.
+        if (error) {
+          console.error("Error inserting into Supabase:", error);
+          // Continue processing to try sending emails/notifications even if DB fails, or fail early.
+        }
+      } else {
+        console.error("Supabase client not initialized.");
       }
 
       // 2. Send Email via Nodemailer
-      if (process.env.SMTP_USER_MELWIN && process.env.SMTP_PASS_MELWIN) {
+      const transporter = getTransporter();
+      if (transporter) {
         try {
           const emailHtml = await render(ConsultationConfirmationEmail({ name, date, time }));
           await transporter.sendMail({
