@@ -31,7 +31,7 @@ export default function RootLayout({
           <SplashCursor />
           {children}
           <Toaster />
-          {process.env.NODE_ENV === 'production' && <Analytics />}
+          <Analytics />
         </AppBackground>
       </body>
     </html>
