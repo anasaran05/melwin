@@ -22,7 +22,7 @@ export function Footer() {
         <div className="md:w-1/2 flex flex-col sm:flex-row justify-between gap-12 sm:gap-8 pt-2">
           {/* Quick Links */}
           <div className="flex flex-col gap-6">
-            <span className="text-gray-400 text-lg">/Quick links</span>
+            <span className="text-gray-400 text-lg">Quick links</span>
             <div className="flex flex-wrap gap-3 max-w-[280px]">
               {[
                 { name: 'Home', href: '/' },
@@ -45,14 +45,14 @@ export function Footer() {
           {/* Contact & Socials */}
           <div className="flex flex-col gap-8">
             <div className="flex flex-col gap-6">
-              <span className="text-gray-400 text-lg">/Contact</span>
+              <span className="text-gray-400 text-lg">Contact</span>
               <a href="mailto:buildwithmelwin@gmail.com" className="text-white hover:text-gray-300 transition-colors text-lg">
                 buildwithmelwin@gmail.com
               </a>
             </div>
             
             <div className="flex flex-col gap-4">
-              <span className="text-gray-400 text-lg">/Socials</span>
+              <span className="text-gray-400 text-lg">Socials</span>
               <div className="flex gap-4">
                 <a href="https://whatsapp.com/channel/0029Vb7Y5f00wajjbzlEfQ1Z" target="_blank" rel="noopener noreferrer" className="text-white hover:text-gray-300 transition-colors" aria-label="WhatsApp">
                   <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
