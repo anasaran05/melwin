@@ -39,7 +39,7 @@ export function BioSection() {
               }}
               className="bg-[#111111] text-white rounded-xl py-4 px-8 font-medium hover:bg-neutral-800 transition-colors text-center"
             >
-              Consult for Free
+              Consult at ₹2,999
             </button>
             <Link href="#consultation" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
               More Services
