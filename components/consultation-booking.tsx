@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import Image from 'next/image'
+import ShinyText from './ui/shiny-text'
 
 export function ConsultationBooking() {
   const [loading, setLoading] = useState(false)
@@ -169,9 +170,11 @@ export function ConsultationBooking() {
                      </div>
                      <div className="flex items-center justify-between">
                        <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                       <div className="text-right">
+                       <div className="text-right flex items-center justify-end">
                          <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
-                         <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
+                         <span className="text-lg font-bold">
+                           <ShinyText text="Launch Offer: Free (15 slots)" speed={3} color="#111111" shineColor="#8a8a8a" />
+                         </span>
                        </div>
                      </div>
                    </div>
