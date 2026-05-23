@@ -96,34 +96,16 @@ export function Hero() {
       {/* Mobile Hero Content (Linktree Style) */}
       <div className="relative z-40 md:hidden flex flex-col items-center w-full px-4 mt-8 pb-16">
         {/* Mobile Circular Image */}
-        <div className="relative mb-4 flex items-center justify-center">
-          <motion.svg
-            initial={{ rotate: 0, opacity: 0 }}
-            animate={{ rotate: 360, opacity: 1 }}
-            transition={{ 
-              rotate: { duration: 8, repeat: Infinity, ease: "linear" },
-              opacity: { duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }
-            }}
-            className="absolute -inset-1.5 w-[calc(100%+12px)] h-[calc(100%+12px)]"
-            viewBox="0 0 100 100"
-          >
-            <circle 
-              cx="50" 
-              cy="50" 
-              r="48" 
-              fill="none" 
-              stroke="#111111" 
-              strokeWidth="2" 
-              strokeLinecap="round" 
-              strokeDasharray="220 80" 
-            />
-          </motion.svg>
-          <motion.div
-            initial={{ scale: 0.5, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-32 h-32 rounded-full overflow-hidden shadow-lg z-10"
-          >
+        <motion.div 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-4 flex items-center justify-center p-[3px] rounded-full overflow-hidden shadow-lg"
+        >
+          {/* Shiny rotating background */}
+          <span className="absolute inset-[-1000%] animate-[spin_3s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ffffff_0%,#25D366_50%,#ffffff_100%)]" />
+          
+          <div className="relative w-32 h-32 rounded-full overflow-hidden z-10 bg-white">
             <Image 
               src="/melwin.jpeg" 
               alt="Dr. Melwin Vincent"
@@ -131,8 +113,8 @@ export function Hero() {
               className="object-cover"
               priority
             />
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
         
         {/* Mobile Name */}
         <motion.div
