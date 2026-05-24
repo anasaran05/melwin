@@ -13,6 +13,7 @@ export function CareerAdvice() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    mobile_number: '',
     background: '',
     message: '',
     city: '',
@@ -41,6 +42,10 @@ export function CareerAdvice() {
     }
     if (!formData.email.trim() || !formData.email.includes('@')) {
       toast.error('Please enter a valid email')
+      return false
+    }
+    if (!formData.mobile_number.trim()) {
+      toast.error('Please enter your mobile number')
       return false
     }
     if (!formData.background) {
@@ -89,6 +94,7 @@ export function CareerAdvice() {
       setFormData({
         name: '',
         email: '',
+        mobile_number: '',
         background: '',
         message: '',
         city: '',
@@ -159,6 +165,18 @@ export function CareerAdvice() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="your@email.com"
+                  className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">Mobile Number *</label>
+                <Input
+                  name="mobile_number"
+                  type="tel"
+                  value={formData.mobile_number}
+                  onChange={handleChange}
+                  placeholder="Your mobile number"
                   className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
                 />
               </div>

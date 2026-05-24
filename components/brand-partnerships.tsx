@@ -16,6 +16,7 @@ export function BrandPartnerships() {
     budget_tier: '',
     objective: '',
     contact_email: '',
+    mobile_number: '',
     city: '',
     state: '',
   })
@@ -54,6 +55,10 @@ export function BrandPartnerships() {
     }
     if (!formData.contact_email.trim() || !formData.contact_email.includes('@')) {
       toast.error('Please enter a valid email')
+      return false
+    }
+    if (!formData.mobile_number.trim()) {
+      toast.error('Please enter your mobile number')
       return false
     }
     if (!formData.city.trim()) {
@@ -97,6 +102,7 @@ export function BrandPartnerships() {
         budget_tier: '',
         objective: '',
         contact_email: '',
+        mobile_number: '',
         city: '',
         state: '',
       })
@@ -207,6 +213,18 @@ export function BrandPartnerships() {
                   value={formData.contact_email}
                   onChange={handleChange}
                   placeholder="your@company.com"
+                  className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">Mobile Number *</label>
+                <Input
+                  name="mobile_number"
+                  type="tel"
+                  value={formData.mobile_number}
+                  onChange={handleChange}
+                  placeholder="Your mobile number"
                   className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
                 />
               </div>
