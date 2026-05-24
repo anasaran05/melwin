@@ -96,6 +96,7 @@ export function DateTimePicker({ name, value, onChange, placeholder, className }
               today: "bg-blue-50 text-blue-600 font-bold border border-blue-200"
             }}
             initialFocus
+            disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
           />
           <div className="flex justify-between items-center mt-4 px-2">
              <Button variant="ghost" size="sm" className="text-blue-600 font-medium text-xs hover:bg-blue-50" onClick={() => { onChange({ target: { name, value: '' } }); setIsOpen(false) }}>Clear</Button>
