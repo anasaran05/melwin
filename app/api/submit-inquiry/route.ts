@@ -33,17 +33,17 @@ export async function POST(request: NextRequest) {
       if (type === 'brand_collab') {
         mappedName = inquiryData.company_name || 'Unknown Company'
         mappedEmail = inquiryData.contact_email || ''
-        mappedMessage = `Objective: ${inquiryData.objective || 'N/A'} | Budget: ${inquiryData.budget_tier || 'N/A'} | URL: ${inquiryData.platform_url || 'N/A'}`
+        mappedMessage = `Objective: ${inquiryData.objective || 'N/A'} | Budget: ${inquiryData.budget_tier || 'N/A'} | URL: ${inquiryData.platform_url || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'career_advice') {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'}`
+        mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'consultation_booking') {
         const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
         const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Type: ${cType} | Phone: ${inquiryData.phone || 'N/A'} | Slot: ${inquiryData.slot_preference || 'N/A'} | Notes: ${inquiryData.intake_notes || 'N/A'}`
+        mappedMessage = `Type: ${cType} | Phone: ${inquiryData.phone || 'N/A'} | Slot: ${inquiryData.slot_preference || 'N/A'} | Notes: ${inquiryData.intake_notes || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -84,6 +84,8 @@ export async function POST(request: NextRequest) {
             { name: 'Platform URL', value: inquiryData.platform_url, inline: false },
             { name: 'Budget Tier', value: inquiryData.budget_tier, inline: true },
             { name: 'Objective', value: inquiryData.objective, inline: false },
+            { name: 'City', value: inquiryData.city || 'N/A', inline: true },
+            { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
         } else if (type === 'career_advice') {
           title = '💼 Career Repositioning Request'
@@ -92,6 +94,8 @@ export async function POST(request: NextRequest) {
             { name: 'Email', value: inquiryData.email, inline: true },
             { name: 'Background', value: inquiryData.background, inline: true },
             { name: 'Situation', value: inquiryData.message, inline: false },
+            { name: 'City', value: inquiryData.city || 'N/A', inline: true },
+            { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
         } else if (type === 'consultation_booking') {
           const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
@@ -103,6 +107,8 @@ export async function POST(request: NextRequest) {
             { name: 'Type', value: typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A', inline: true },
             { name: 'Preferred Slot', value: inquiryData.slot_preference, inline: true },
             { name: 'Notes', value: inquiryData.intake_notes || 'N/A', inline: false },
+            { name: 'City', value: inquiryData.city || 'N/A', inline: true },
+            { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
         }
 
@@ -139,13 +145,17 @@ export async function POST(request: NextRequest) {
                  `<b>Contact Email:</b> ${inquiryData.contact_email}\n` +
                  `<b>Platform URL:</b> ${inquiryData.platform_url || 'N/A'}\n` +
                  `<b>Budget Tier:</b> ${inquiryData.budget_tier || 'N/A'}\n` +
-                 `<b>Objective:</b> ${inquiryData.objective || 'N/A'}`
+                 `<b>Objective:</b> ${inquiryData.objective || 'N/A'}\n` +
+                 `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
+                 `<b>State:</b> ${inquiryData.state || 'N/A'}`
         } else if (type === 'career_advice') {
           text = `💼 <b>Career Repositioning Request</b>\n\n` +
                  `<b>Name:</b> ${inquiryData.name}\n` +
                  `<b>Email:</b> ${inquiryData.email}\n` +
                  `<b>Background:</b> ${inquiryData.background || 'N/A'}\n` +
-                 `<b>Situation:</b> ${inquiryData.message || 'N/A'}`
+                 `<b>Situation:</b> ${inquiryData.message || 'N/A'}\n` +
+                 `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
+                 `<b>State:</b> ${inquiryData.state || 'N/A'}`
         } else if (type === 'consultation') {
            text = `🗓️ <b>Consultation Inquiry</b>\n\n` +
                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
@@ -160,7 +170,9 @@ export async function POST(request: NextRequest) {
                   `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
                   `<b>Type:</b> ${cType}\n` +
                   `<b>Preferred Slot:</b> ${inquiryData.slot_preference || 'N/A'}\n` +
-                  `<b>Notes:</b> ${inquiryData.intake_notes || 'N/A'}`
+                  `<b>Notes:</b> ${inquiryData.intake_notes || 'N/A'}\n` +
+                  `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
+                  `<b>State:</b> ${inquiryData.state || 'N/A'}`
         }
 
         if (text) {

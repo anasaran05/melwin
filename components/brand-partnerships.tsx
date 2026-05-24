@@ -16,6 +16,8 @@ export function BrandPartnerships() {
     budget_tier: '',
     objective: '',
     contact_email: '',
+    city: '',
+    state: '',
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -54,6 +56,14 @@ export function BrandPartnerships() {
       toast.error('Please enter a valid email')
       return false
     }
+    if (!formData.city.trim()) {
+      toast.error('Please enter your city')
+      return false
+    }
+    if (!formData.state.trim()) {
+      toast.error('Please enter your state')
+      return false
+    }
     return true
   }
 
@@ -87,6 +97,8 @@ export function BrandPartnerships() {
         budget_tier: '',
         objective: '',
         contact_email: '',
+        city: '',
+        state: '',
       })
     } catch (error) {
       toast.error('Error submitting inquiry')
@@ -197,6 +209,29 @@ export function BrandPartnerships() {
                   placeholder="your@company.com"
                   className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
                 />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">City *</label>
+                  <Input
+                    name="city"
+                    value={formData.city}
+                    onChange={handleChange}
+                    placeholder="City"
+                    className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-sans font-medium text-zinc-700 mb-2">State *</label>
+                  <Input
+                    name="state"
+                    value={formData.state}
+                    onChange={handleChange}
+                    placeholder="State"
+                    className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl focus:ring-black focus:border-black"
+                  />
+                </div>
               </div>
 
               <Button
