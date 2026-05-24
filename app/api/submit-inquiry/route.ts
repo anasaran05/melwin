@@ -134,45 +134,49 @@ export async function POST(request: NextRequest) {
         let text = ''
         
         if (type === 'brand_collab') {
-          text = `🤝 *Brand Partnership Inquiry*\n\n` +
-                 `*Company:* ${inquiryData.company_name}\n` +
-                 `*Contact Email:* ${inquiryData.contact_email}\n` +
-                 `*Platform URL:* ${inquiryData.platform_url || 'N/A'}\n` +
-                 `*Budget Tier:* ${inquiryData.budget_tier || 'N/A'}\n` +
-                 `*Objective:* ${inquiryData.objective || 'N/A'}`
+          text = `🤝 <b>Brand Partnership Inquiry</b>\n\n` +
+                 `<b>Company:</b> ${inquiryData.company_name}\n` +
+                 `<b>Contact Email:</b> ${inquiryData.contact_email}\n` +
+                 `<b>Platform URL:</b> ${inquiryData.platform_url || 'N/A'}\n` +
+                 `<b>Budget Tier:</b> ${inquiryData.budget_tier || 'N/A'}\n` +
+                 `<b>Objective:</b> ${inquiryData.objective || 'N/A'}`
         } else if (type === 'career_advice') {
-          text = `💼 *Career Repositioning Request*\n\n` +
-                 `*Name:* ${inquiryData.name}\n` +
-                 `*Email:* ${inquiryData.email}\n` +
-                 `*Background:* ${inquiryData.background || 'N/A'}\n` +
-                 `*Situation:* ${inquiryData.message || 'N/A'}`
+          text = `💼 <b>Career Repositioning Request</b>\n\n` +
+                 `<b>Name:</b> ${inquiryData.name}\n` +
+                 `<b>Email:</b> ${inquiryData.email}\n` +
+                 `<b>Background:</b> ${inquiryData.background || 'N/A'}\n` +
+                 `<b>Situation:</b> ${inquiryData.message || 'N/A'}`
         } else if (type === 'consultation') {
-           text = `🗓️ *Consultation Inquiry*\n\n` +
-                 `*Name:* ${inquiryData.name || 'N/A'}\n` +
-                 `*Email:* ${inquiryData.email || 'N/A'}\n` +
-                 `*Message:* ${inquiryData.message || 'N/A'}`
+           text = `🗓️ <b>Consultation Inquiry</b>\n\n` +
+                 `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+                 `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
+                 `<b>Message:</b> ${inquiryData.message || 'N/A'}`
         } else if (type === 'consultation_booking') {
            const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
            const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
-           text = `🗓️ *Consultation Booking Request*\n\n` +
-                  `*Name:* ${inquiryData.name || 'N/A'}\n` +
-                  `*Email:* ${inquiryData.email || 'N/A'}\n` +
-                  `*Phone:* ${inquiryData.phone || 'N/A'}\n` +
-                  `*Type:* ${cType}\n` +
-                  `*Preferred Slot:* ${inquiryData.slot_preference || 'N/A'}\n` +
-                  `*Notes:* ${inquiryData.intake_notes || 'N/A'}`
+           text = `🗓️ <b>Consultation Booking Request</b>\n\n` +
+                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+                  `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
+                  `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
+                  `<b>Type:</b> ${cType}\n` +
+                  `<b>Preferred Slot:</b> ${inquiryData.slot_preference || 'N/A'}\n` +
+                  `<b>Notes:</b> ${inquiryData.intake_notes || 'N/A'}`
         }
 
         if (text) {
-          await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+          const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               chat_id: telegramChatId,
               text: text,
-              parse_mode: 'Markdown'
+              parse_mode: 'HTML'
             }),
           })
+          
+          if (!res.ok) {
+             console.error('[API] Telegram error:', await res.text())
+          }
         }
       } catch (telegramError) {
         console.error('[API] Telegram notification failed:', telegramError)
