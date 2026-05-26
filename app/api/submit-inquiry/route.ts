@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
       if (type === 'brand_collab') {
         mappedName = inquiryData.company_name || 'Unknown Company'
         mappedEmail = inquiryData.contact_email || ''
-        mappedMessage = `Objective: ${inquiryData.objective || 'N/A'} | Budget: ${inquiryData.budget_tier || 'N/A'} | URL: ${inquiryData.platform_url || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
+        mappedMessage = `Objective: ${inquiryData.objective || 'N/A'} | Budget: ${inquiryData.budget_tier || 'N/A'} | URL: ${inquiryData.platform_url || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'career_advice') {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
+        mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'consultation_booking') {
         const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
         const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
@@ -81,6 +81,7 @@ export async function POST(request: NextRequest) {
           fields = [
             { name: 'Company', value: inquiryData.company_name, inline: true },
             { name: 'Contact Email', value: inquiryData.contact_email, inline: true },
+            { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
             { name: 'Platform URL', value: inquiryData.platform_url, inline: false },
             { name: 'Budget Tier', value: inquiryData.budget_tier, inline: true },
             { name: 'Objective', value: inquiryData.objective, inline: false },
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
           fields = [
             { name: 'Name', value: inquiryData.name, inline: true },
             { name: 'Email', value: inquiryData.email, inline: true },
+            { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
             { name: 'Background', value: inquiryData.background, inline: true },
             { name: 'Situation', value: inquiryData.message, inline: false },
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
@@ -143,6 +145,7 @@ export async function POST(request: NextRequest) {
           text = `🤝 <b>Brand Partnership Inquiry</b>\n\n` +
                  `<b>Company:</b> ${inquiryData.company_name}\n` +
                  `<b>Contact Email:</b> ${inquiryData.contact_email}\n` +
+                 `<b>Mobile Number:</b> ${inquiryData.mobile_number || 'N/A'}\n` +
                  `<b>Platform URL:</b> ${inquiryData.platform_url || 'N/A'}\n` +
                  `<b>Budget Tier:</b> ${inquiryData.budget_tier || 'N/A'}\n` +
                  `<b>Objective:</b> ${inquiryData.objective || 'N/A'}\n` +
@@ -152,6 +155,7 @@ export async function POST(request: NextRequest) {
           text = `💼 <b>Career Repositioning Request</b>\n\n` +
                  `<b>Name:</b> ${inquiryData.name}\n` +
                  `<b>Email:</b> ${inquiryData.email}\n` +
+                 `<b>Mobile Number:</b> ${inquiryData.mobile_number || 'N/A'}\n` +
                  `<b>Background:</b> ${inquiryData.background || 'N/A'}\n` +
                  `<b>Situation:</b> ${inquiryData.message || 'N/A'}\n` +
                  `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
