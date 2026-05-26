@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { format, isValid } from 'date-fns'
+import { format, isValid, parse } from 'date-fns'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -29,7 +29,7 @@ export function DateTimePicker({ name, value, onChange, placeholder, className }
   useEffect(() => {
     setInputValue(value || '')
     if (value) {
-      const parsedDate = new Date(value)
+      const parsedDate = parse(value, 'dd/MM/yyyy', new Date())
       if (isValid(parsedDate)) {
         setMonth(parsedDate)
       }
@@ -37,24 +37,28 @@ export function DateTimePicker({ name, value, onChange, placeholder, className }
   }, [value])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newVal = e.target.value
+    let newVal = e.target.value
+    // Allow only digits and slashes
+    newVal = newVal.replace(/[^\d/]/g, '')
+    if (newVal.length > 10) newVal = newVal.slice(0, 10)
+
     setInputValue(newVal)
     onChange({ target: { name, value: newVal } })
     
     // Attempt to parse to update calendar if valid
-    const parsedDate = new Date(newVal)
-    if (isValid(parsedDate)) {
+    const parsedDate = parse(newVal, 'dd/MM/yyyy', new Date())
+    if (isValid(parsedDate) && newVal.length === 10) {
       setMonth(parsedDate)
     }
   }
 
   const getParsedDate = () => {
-    const d = new Date(value)
+    const d = parse(value, 'dd/MM/yyyy', new Date())
     return isValid(d) ? d : undefined
   }
 
   const updateValueFromDate = (datePart: Date) => {
-    const formatted = format(datePart, 'MMM dd, yyyy')
+    const formatted = format(datePart, 'dd/MM/yyyy')
     onChange({ target: { name, value: formatted } })
   }
 

@@ -58,6 +58,25 @@ export function ConsultationBooking() {
       toast.error('Please select a preferred date')
       return false
     }
+
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/
+    const match = formData.slot_preference.match(dateRegex)
+    if (!match) {
+      toast.error('Please enter the date in dd/mm/yyyy format')
+      return false
+    }
+    
+    const [_, day, month, year] = match
+    const selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    selectedDate.setHours(0, 0, 0, 0)
+    
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    
+    if (selectedDate <= today) {
+       toast.error('Please select a future date')
+       return false
+    }
     if (!formData.city.trim()) {
       toast.error('Please enter your city')
       return false
