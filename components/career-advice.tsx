@@ -196,8 +196,10 @@ export function CareerAdvice() {
                   <SelectContent className="bg-white border-zinc-300">
                     <SelectItem value="healthcare">Healthcare</SelectItem>
                     <SelectItem value="engineering">Engineering</SelectItem>
-                    <SelectItem value="sciences">Sciences</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="arts_science">Arts and science </SelectItem>
+                   <SelectItem value="commerce">Commerce</SelectItem>
+                    <SelectItem value="school_to_college">school to college</SelectItem>
+                   
                   </SelectContent>
                 </Select>
               </div>
@@ -259,7 +261,7 @@ export function CareerAdvice() {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder="What&apos;s your current situation? Where do you want to go?"
+                  placeholder="What&apos;s your current situation? What are you trying to accomplish?"
                   className="bg-white border-zinc-300 text-zinc-900 placeholder:text-zinc-400 rounded-xl min-h-[120px] focus:ring-black focus:border-black"
                 />
               </div>
