@@ -10,7 +10,7 @@ import { ChevronDown } from 'lucide-react'
 const services = [
   {
     id: 'strategy',
-    title: 'Strategy Consultation',
+    title: 'Business Consultation',
     tags: 'Data-driven insights • Startup challenges • Navigation',
     component: ConsultationBooking,
   },
@@ -22,7 +22,7 @@ const services = [
   },
   {
     id: 'career',
-    title: 'Career Repositioning',
+    title: 'Career Guidance',
     tags: 'Calculated moves • Technical professionals',
     component: CareerAdvice,
   },

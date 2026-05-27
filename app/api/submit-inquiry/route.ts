@@ -35,9 +35,11 @@ export async function POST(request: NextRequest) {
         mappedEmail = inquiryData.contact_email || ''
         mappedMessage = `Objective: ${inquiryData.objective || 'N/A'} | Budget: ${inquiryData.budget_tier || 'N/A'} | URL: ${inquiryData.platform_url || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'career_advice') {
+        const sessionTierMap: Record<string, string> = { consult_melwin: 'Consult with Melwin', regular: 'Regular Consultation' }
+        const sTier = sessionTierMap[inquiryData.session_tier] || inquiryData.session_tier || 'N/A'
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
+        mappedMessage = `Session Tier: ${sTier} | Background: ${inquiryData.background || 'N/A'} | Situation: ${inquiryData.message || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
       } else if (type === 'consultation_booking') {
         const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
         const cType = typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A'
@@ -89,12 +91,14 @@ export async function POST(request: NextRequest) {
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
         } else if (type === 'career_advice') {
-          title = '💼 Career Repositioning Request'
+          const sessionTierMap: Record<string, string> = { consult_melwin: 'Consult with Melwin (₹2,999)', regular: 'Regular Consultation (₹1,499)' }
+          title = '💼 Career Guidance Request'
           fields = [
             { name: 'Name', value: inquiryData.name, inline: true },
             { name: 'Email', value: inquiryData.email, inline: true },
             { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
             { name: 'Background', value: inquiryData.background, inline: true },
+            { name: 'Session Tier', value: sessionTierMap[inquiryData.session_tier] || inquiryData.session_tier || 'N/A', inline: true },
             { name: 'Situation', value: inquiryData.message, inline: false },
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
@@ -152,11 +156,13 @@ export async function POST(request: NextRequest) {
                  `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
                  `<b>State:</b> ${inquiryData.state || 'N/A'}`
         } else if (type === 'career_advice') {
-          text = `💼 <b>Career Repositioning Request</b>\n\n` +
+          const sessionTierMap: Record<string, string> = { consult_melwin: 'Consult with Melwin (₹2,999)', regular: 'Regular Consultation (₹1,499)' }
+          text = `💼 <b>Career Guidance Request</b>\n\n` +
                  `<b>Name:</b> ${inquiryData.name}\n` +
                  `<b>Email:</b> ${inquiryData.email}\n` +
                  `<b>Mobile Number:</b> ${inquiryData.mobile_number || 'N/A'}\n` +
                  `<b>Background:</b> ${inquiryData.background || 'N/A'}\n` +
+                 `<b>Session Tier:</b> ${sessionTierMap[inquiryData.session_tier] || inquiryData.session_tier || 'N/A'}\n` +
                  `<b>Situation:</b> ${inquiryData.message || 'N/A'}\n` +
                  `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
                  `<b>State:</b> ${inquiryData.state || 'N/A'}`

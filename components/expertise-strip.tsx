@@ -5,7 +5,7 @@ const EXPERTISE_ITEMS = [
   'Venture Zero-to-One',
   'Pitch Deck Architecture',
   'International Pipelines',
-  'Career Repositioning',
+  'Career Guidance',
   'Global Distribution',
 ]
 

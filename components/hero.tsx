@@ -143,7 +143,7 @@ export function Hero() {
           {[
             { 
               icon: <span className="text-xl">🚀</span>, 
-              name: 'Book a 1:1 Strategy Consultation', 
+              name: 'Book a 1:1 Business Consultation', 
               href: '#consultation',
               onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault();

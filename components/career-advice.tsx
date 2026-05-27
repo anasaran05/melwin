@@ -15,6 +15,7 @@ export function CareerAdvice() {
     email: '',
     mobile_number: '',
     background: '',
+    session_tier: 'consult_melwin',
     message: '',
     city: '',
     state: '',
@@ -50,6 +51,10 @@ export function CareerAdvice() {
     }
     if (!formData.background) {
       toast.error('Please select your background')
+      return false
+    }
+    if (!formData.session_tier) {
+      toast.error('Please select a session tier')
       return false
     }
     if (!formData.message.trim()) {
@@ -96,6 +101,7 @@ export function CareerAdvice() {
         email: '',
         mobile_number: '',
         background: '',
+        session_tier: 'consult_melwin',
         message: '',
         city: '',
         state: '',
@@ -194,6 +200,51 @@ export function CareerAdvice() {
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-sans font-medium text-zinc-700 mb-3">Consultation Tier *</label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, session_tier: 'consult_melwin' }))}
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                      formData.session_tier === 'consult_melwin'
+                        ? 'border-black bg-zinc-50 shadow-sm'
+                        : 'border-zinc-200 bg-white hover:border-zinc-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-zinc-900 text-sm">Consult with Melwin</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        formData.session_tier === 'consult_melwin' ? 'border-black bg-black' : 'border-zinc-300'
+                      }`}>
+                        {formData.session_tier === 'consult_melwin' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                    <span className="text-xs text-zinc-500 mb-3">1-on-1 strategic session</span>
+                    <span className="font-bold text-zinc-900 text-base">₹2,999</span>
+                  </div>
+
+                  <div
+                    onClick={() => setFormData(prev => ({ ...prev, session_tier: 'regular' }))}
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                      formData.session_tier === 'regular'
+                        ? 'border-black bg-zinc-50 shadow-sm'
+                        : 'border-zinc-200 bg-white hover:border-zinc-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-bold text-zinc-900 text-sm">Regular Consultation</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                        formData.session_tier === 'regular' ? 'border-black bg-black' : 'border-zinc-300'
+                      }`}>
+                        {formData.session_tier === 'regular' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                    <span className="text-xs text-zinc-500 mb-3">Standard strategy session</span>
+                    <span className="font-bold text-zinc-900 text-base">₹1,499</span>
+                  </div>
+                </div>
               </div>
 
               <div>
