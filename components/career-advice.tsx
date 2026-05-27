@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+import { Loader2, BadgeCheck } from 'lucide-react'
 import { toast } from 'sonner'
 
 export function CareerAdvice() {
@@ -207,15 +207,21 @@ export function CareerAdvice() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div
                     onClick={() => setFormData(prev => ({ ...prev, session_tier: 'consult_melwin' }))}
-                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-between ${
+                    className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex flex-col justify-between relative overflow-hidden ${
                       formData.session_tier === 'consult_melwin'
                         ? 'border-black bg-zinc-50 shadow-sm'
                         : 'border-zinc-200 bg-white hover:border-zinc-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-bold text-zinc-900 text-sm">Consult with Melwin</span>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${
+                    <div className="absolute top-0 right-0 bg-black text-white text-[8px] font-bold px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
+                      Recommended
+                    </div>
+                    <div className="flex items-center justify-between mb-2 pr-12">
+                      <div className="flex items-center gap-1.5 text-left">
+                        <span className="font-bold text-zinc-900 text-sm">Consult with Melwin</span>
+                        <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
+                      </div>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                         formData.session_tier === 'consult_melwin' ? 'border-black bg-black' : 'border-zinc-300'
                       }`}>
                         {formData.session_tier === 'consult_melwin' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
