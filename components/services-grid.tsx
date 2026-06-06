@@ -5,9 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ConsultationBooking } from '@/components/consultation-booking'
 import { BrandPartnerships } from '@/components/brand-partnerships'
 import { CareerAdvice } from '@/components/career-advice'
+import { InviteMelwin } from '@/components/invite-melwin'
 import { ChevronDown } from 'lucide-react'
 
-const services = [
+const services: {
+  id: string
+  title: string
+  tags: string
+  component?: React.ElementType
+  comingSoon?: boolean
+}[] = [
   {
     id: 'strategy',
     title: 'Business Consultation',
@@ -27,10 +34,10 @@ const services = [
     component: CareerAdvice,
   },
   {
-    id: 'coming-soon',
-    title: 'Expanding Infrastructure',
-    tags: 'Proprietary services • Launching 2026 Q3',
-    comingSoon: true,
+    id: 'invite',
+    title: 'Invite Melwin',
+    tags: 'Keynotes • Guest Lectures • Panel Discussions',
+    component: InviteMelwin,
   },
 ]
 

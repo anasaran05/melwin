@@ -41,8 +41,8 @@ export function BioSection() {
             >
               Consult at ₹2,999
             </button>
-            <Link href="#consultation" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
-              More Services
+            <Link href="#partnerships" className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-50 transition-colors border border-gray-200 text-center">
+              Partnerships & Deals
             </Link>
           </div>
         </div>

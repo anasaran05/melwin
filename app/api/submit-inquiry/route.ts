@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { type, ...inquiryData } = body
 
     // Validate type
-    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking'].includes(type)) {
+    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking', 'invite_melwin'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid inquiry type' },
         { status: 400 }
@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
         mappedMessage = `Type: ${cType} | Phone: ${inquiryData.phone || 'N/A'} | Slot: ${inquiryData.slot_preference || 'N/A'} | Notes: ${inquiryData.intake_notes || 'N/A'} | City: ${inquiryData.city || 'N/A'} | State: ${inquiryData.state || 'N/A'}`
+      } else if (type === 'invite_melwin') {
+        mappedName = inquiryData.name || 'Unknown'
+        mappedEmail = inquiryData.email || ''
+        mappedMessage = `Institution/Event: ${inquiryData.institution_event || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | Details: ${inquiryData.message || 'N/A'}`
       } else {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -116,6 +120,15 @@ export async function POST(request: NextRequest) {
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
+        } else if (type === 'invite_melwin') {
+          title = '🎤 Invite Melwin Request'
+          fields = [
+            { name: 'Name', value: inquiryData.name || 'N/A', inline: true },
+            { name: 'Email', value: inquiryData.email || 'N/A', inline: true },
+            { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
+            { name: 'Organization/institution', value: inquiryData.institution_event || 'N/A', inline: true },
+            { name: 'Tell us about the event', value: inquiryData.message || 'N/A', inline: false },
+          ]
         }
 
         await fetch(discordWebhookUrl, {
@@ -183,6 +196,13 @@ export async function POST(request: NextRequest) {
                   `<b>Notes:</b> ${inquiryData.intake_notes || 'N/A'}\n` +
                   `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
                   `<b>State:</b> ${inquiryData.state || 'N/A'}`
+        } else if (type === 'invite_melwin') {
+           text = `🎤 <b>Invite Melwin Request</b>\n\n` +
+                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+                  `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
+                  `<b>Mobile:</b> ${inquiryData.mobile_number || 'N/A'}\n` +
+                  `<b>Organization/institution:</b> ${inquiryData.institution_event || 'N/A'}\n` +
+                  `<b>Details:</b> ${inquiryData.message || 'N/A'}`
         }
 
         if (text) {
