@@ -1,5 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Footer } from '@/components/footer'
 import { 
   Award, 
@@ -25,9 +26,9 @@ export const metadata = {
 export default function AboutPage() {
   const stats = [
     { label: 'Content Reach', value: '1.7M+', subtext: 'Business & strategy impressions' },
-    { label: 'Founders Network', value: '23,000+', subtext: 'WhatsApp community members' },
+    { label: 'Startup Network', value: '23,000+', subtext: 'WhatsApp community members' },
     { label: 'Personal Brand', value: '50,000+', subtext: 'Followers across platforms' },
-    { label: 'Global Hubs', value: '4+', subtext: 'Bangalore, Malaysia, Bangkok, Dubai' },
+    { label: 'Global Hubs', value: '4+', subtext: 'India, USA, Europe, Australia' },
   ]
 
   const ventures = [
@@ -37,6 +38,7 @@ export default function AboutPage() {
       website: 'ZaneProEd.com',
       url: 'https://zaneproed.com',
       badge: 'EdTech & Bioscience',
+      logo: '/zaneproed-logo.png',
       highlights: [
         'Built a leading bioscience learning platform combining real-world job simulations with an AI-driven career portfolio system.',
         'Developed a strong B2B and B2C engine with collaborations across biotech & pharma companies in India, U.S.A., and Europe.',
@@ -51,6 +53,7 @@ export default function AboutPage() {
       website: 'AlphaticLabs.com',
       url: 'https://alphaticlabs.com',
       badge: 'Healthcare AI & Hardware',
+      logo: '/alphaticlabs-logo.png',
       highlights: [
         'Pioneering a proprietary, one-click hardware device that turns doctor-patient conversations into structured clinical documentation in real time.',
         'Designed for zero-friction adoption, featuring seamless integration into existing Electronic Health Record (EHR) systems.',
@@ -75,7 +78,7 @@ export default function AboutPage() {
       category: 'Product & Brand',
       items: [
         'Healthcare AI & Hardware Innovation',
-        'Community Architecture & Growth',
+        'Community & Growth',
         'Strategic Partnerships',
         'Keynote Speaking'
       ],
@@ -86,11 +89,11 @@ export default function AboutPage() {
   const leadershipPoints = [
     {
       title: 'Global Ecosystem Presence',
-      description: 'Active in startup innovation, investor relations, and strategic growth across major global hubs including Bangalore, Malaysia, Bangkok, and Dubai.',
+      description: 'Active in startup innovation, investor relations, and strategic growth across major global hubs including India, USA, Europe, and Australia.',
       icon: Globe2
     },
     {
-      title: 'Community Architecture',
+      title: 'Community',
       description: 'Built a personal brand to 50,000+ followers and 1.7M+ content impressions. Launched a private founders club scaling to 23,000+ WhatsApp members in 2 months.',
       icon: Users
     },
@@ -205,8 +208,14 @@ export default function AboutPage() {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-6 sm:mb-8">
-                    <div className="p-3.5 sm:p-4 rounded-2xl bg-[#f8f8f8] text-[#111111] border border-neutral-200 group-hover:scale-105 transition-transform duration-300">
-                      <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    <div className="h-12 w-auto min-w-[48px] max-w-[160px] p-2 rounded-2xl bg-[#f8f8f8] border border-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 relative overflow-hidden">
+                      <Image 
+                        src={venture.logo} 
+                        alt={`${venture.company} logo`} 
+                        width={140} 
+                        height={40} 
+                        className="object-contain h-full w-auto"
+                      />
                     </div>
                     <span className="text-[11px] sm:text-xs font-mono font-semibold px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-[#f8f8f8] text-[#111111] border border-neutral-200 truncate">
                       {venture.badge}

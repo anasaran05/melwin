@@ -24,13 +24,18 @@ export function BioSection() {
         {/* Right Column: Detailed Bio */}
         <div className="flex flex-col gap-6 md:pl-12 justify-end h-full pt-8 md:pt-0">
           <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed font-medium">
-            Over the past 5 years, I’ve built 6 seven-figure ventures, scaled operations across the USA, Ireland, and Malaysia, and exited 2 companies through strategic acquisitions. I’ve delivered keynote sessions at 17+ events and earned the Gold Medal for Best Presentation at IPV Weekly. 
-
+            As the Founder & CEO of Zane ProEd and Alphatic Labs, I build tech-driven companies solving real-world problems across biosciences education, healthcare innovation, and AI.
           </p>
-          <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed">
-            Today, I build high-performance brands, AI-driven education systems, and modern business ecosystems designed for the next generation of founders and professionals.
+          <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed font-normal">
+            Beyond building companies, my mission is creating a founder-first startup ecosystem where entrepreneurs learn, collaborate, and scale together to make lasting impact.
           </p>
           <div className="flex flex-col gap-3 mt-4">
+            <Link 
+              href="/about" 
+              className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-100 transition-colors border border-gray-300 text-center hidden md:block"
+            >
+              About Me
+            </Link>
             <button 
               onClick={(e) => {
                 e.preventDefault();

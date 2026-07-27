@@ -54,6 +54,8 @@ export function ServicesGrid() {
         setActiveService('brand');
       } else if (hash === 'career') {
         setActiveService('career');
+      } else if (hash === 'invite' || hash === 'invitemelwin') {
+        setActiveService('invite');
       }
     };
 
@@ -65,6 +67,8 @@ export function ServicesGrid() {
         setActiveService('brand');
       } else if (id === 'career') {
         setActiveService('career');
+      } else if (id === 'invite' || id === 'invitemelwin') {
+        setActiveService('invite');
       }
     };
 
