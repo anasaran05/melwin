@@ -171,7 +171,7 @@ export function Hero() {
             },
             { 
               icon: <span className="text-xl">🎙️</span>, 
-              name: "Invite Me", 
+              name: "Invite as speaker", 
               href: '#invite',
               onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
                 e.preventDefault();
@@ -181,7 +181,7 @@ export function Hero() {
             },
             { 
               icon: <span className="text-xl">👨‍⚕️</span>, 
-              name: "About Me", 
+              name: "About Dr Melwin", 
               href: '/about'
             },
           ].map((link) => (
