@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MoreHorizontal, X } from 'lucide-react'
 
 const navLinks = [
-  { name: 'Home', href: '#', id: 'home' },
-  { name: 'About Me', href: '#bio', id: 'bio' },
-  { name: 'Services', href: '#services', id: 'services' },
-  { name: 'Contact', href: '#consultation', id: 'consultation' },
+  { name: 'Home', href: '/', id: 'home' },
+  { name: 'About Me', href: '/about', id: 'about' },
+  { name: 'Services', href: '/#services', id: 'services' },
+  { name: 'Contact', href: '/#consultation', id: 'consultation' },
 ]
 
 export function Navbar() {
