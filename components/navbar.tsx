@@ -7,6 +7,7 @@ import { MoreHorizontal, X } from 'lucide-react'
 const navLinks = [
   { name: 'Home', href: '/', id: 'home' },
   { name: 'About Me', href: '/about', id: 'about' },
+  { name: 'Agency Plans', href: '/agency', id: 'agency' },
   { name: 'Services', href: '/#services', id: 'services' },
   { name: 'Contact', href: '/#consultation', id: 'consultation' },
 ]
@@ -30,12 +31,13 @@ export function Navbar() {
         className="bg-[#111111] text-white overflow-hidden shadow-2xl border border-white/10 flex flex-col min-w-[180px]"
       >
         <motion.div layout className="flex justify-between items-center px-4 h-[44px] gap-8 min-w-[160px]">
-          <span className="font-semibold tracking-tight text-sm pl-1 whitespace-nowrap">
+          <a href="/" className="font-semibold tracking-tight text-sm pl-1 whitespace-nowrap hover:opacity-80 transition-opacity">
             Dr. Melwin
-          </span>
+          </a>
           <button 
             onClick={() => setIsOpen(!isOpen)}
-            className="bg-white text-black p-1 rounded-full hover:scale-105 transition-transform flex items-center justify-center shrink-0"
+            className="bg-white text-black p-1 rounded-full hover:scale-105 transition-transform flex items-center justify-center shrink-0 cursor-pointer"
+            aria-label="Toggle Navigation Menu"
           >
             {isOpen ? <X className="w-4 h-4" /> : <MoreHorizontal className="w-4 h-4" />}
           </button>
@@ -55,18 +57,19 @@ export function Navbar() {
                   key={link.name} 
                   href={link.href}
                   onClick={(e) => {
-                    e.preventDefault();
                     setIsOpen(false);
-                    setTimeout(() => {
-                      if (link.id === 'home') {
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    if (link.href.startsWith('/#')) {
+                      e.preventDefault();
+                      if (window.location.pathname !== '/') {
+                        window.location.href = link.href;
                       } else {
-                        const element = document.getElementById(link.id);
+                        const targetId = link.href.replace('/#', '');
+                        const element = document.getElementById(targetId);
                         if (element) {
                           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }
                       }
-                    }, 50);
+                    }
                   }}
                   className="bg-white text-black px-4 py-1.5 rounded-lg text-[13px] font-medium hover:bg-neutral-200 transition-colors inline-block w-full text-center"
                 >

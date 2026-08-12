@@ -6,14 +6,14 @@ export async function POST(request: NextRequest) {
     const { type, ...inquiryData } = body
 
     // Validate type
-    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking', 'invite_melwin'].includes(type)) {
+    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking', 'invite_melwin', 'agency_lead'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid inquiry type' },
         { status: 400 }
       )
     }
 
-    // Log inquiry (since no Supabase integration)
+    // Log inquiry
     console.log(`[API] ${type} inquiry received:`, {
       ...inquiryData,
       timestamp: new Date().toISOString(),
@@ -50,6 +50,10 @@ export async function POST(request: NextRequest) {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
         mappedMessage = `Institution/Event: ${inquiryData.institution_event || 'N/A'} | Mobile: ${inquiryData.mobile_number || 'N/A'} | Details: ${inquiryData.message || 'N/A'}`
+      } else if (type === 'agency_lead') {
+        mappedName = inquiryData.name || 'Unknown'
+        mappedEmail = inquiryData.email || ''
+        mappedMessage = `Plan: ${inquiryData.plan || 'N/A'} | Phone: ${inquiryData.phone || 'N/A'} | Company: ${inquiryData.company || 'N/A'} | Notes: ${inquiryData.message || 'N/A'}`
       } else {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send Discord webhook notification (if configured)
+    // Send Discord webhook notification
     const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL
     if (discordWebhookUrl) {
       try {
@@ -85,12 +89,12 @@ export async function POST(request: NextRequest) {
         if (type === 'brand_collab') {
           title = '🤝 Brand Partnership Inquiry'
           fields = [
-            { name: 'Company', value: inquiryData.company_name, inline: true },
-            { name: 'Contact Email', value: inquiryData.contact_email, inline: true },
+            { name: 'Company', value: inquiryData.company_name || 'N/A', inline: true },
+            { name: 'Contact Email', value: inquiryData.contact_email || 'N/A', inline: true },
             { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
-            { name: 'Platform URL', value: inquiryData.platform_url, inline: false },
-            { name: 'Budget Tier', value: inquiryData.budget_tier, inline: true },
-            { name: 'Objective', value: inquiryData.objective, inline: false },
+            { name: 'Platform URL', value: inquiryData.platform_url || 'N/A', inline: false },
+            { name: 'Budget Tier', value: inquiryData.budget_tier || 'N/A', inline: true },
+            { name: 'Objective', value: inquiryData.objective || 'N/A', inline: false },
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
@@ -98,12 +102,12 @@ export async function POST(request: NextRequest) {
           const sessionTierMap: Record<string, string> = { consult_melwin: 'Consult with Melwin (₹2,999)', regular: 'Regular Consultation (₹1,499)' }
           title = '💼 Career Guidance Request'
           fields = [
-            { name: 'Name', value: inquiryData.name, inline: true },
-            { name: 'Email', value: inquiryData.email, inline: true },
+            { name: 'Name', value: inquiryData.name || 'N/A', inline: true },
+            { name: 'Email', value: inquiryData.email || 'N/A', inline: true },
             { name: 'Mobile Number', value: inquiryData.mobile_number || 'N/A', inline: true },
-            { name: 'Background', value: inquiryData.background, inline: true },
+            { name: 'Background', value: inquiryData.background || 'N/A', inline: true },
             { name: 'Session Tier', value: sessionTierMap[inquiryData.session_tier] || inquiryData.session_tier || 'N/A', inline: true },
-            { name: 'Situation', value: inquiryData.message, inline: false },
+            { name: 'Situation', value: inquiryData.message || 'N/A', inline: false },
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
           ]
@@ -111,11 +115,11 @@ export async function POST(request: NextRequest) {
           const typeMap: Record<string, string> = { general: 'General', professional: 'Professional', consult_melwin: 'Consult with Melwin' }
           title = '🗓️ Consultation Booking Request'
           fields = [
-            { name: 'Name', value: inquiryData.name, inline: true },
-            { name: 'Email', value: inquiryData.email, inline: true },
-            { name: 'Phone', value: inquiryData.phone, inline: true },
+            { name: 'Name', value: inquiryData.name || 'N/A', inline: true },
+            { name: 'Email', value: inquiryData.email || 'N/A', inline: true },
+            { name: 'Phone', value: inquiryData.phone || 'N/A', inline: true },
             { name: 'Type', value: typeMap[inquiryData.consultation_type] || inquiryData.consultation_type || 'N/A', inline: true },
-            { name: 'Preferred Slot', value: inquiryData.slot_preference, inline: true },
+            { name: 'Preferred Slot', value: inquiryData.slot_preference || 'N/A', inline: true },
             { name: 'Notes', value: inquiryData.intake_notes || 'N/A', inline: false },
             { name: 'City', value: inquiryData.city || 'N/A', inline: true },
             { name: 'State', value: inquiryData.state || 'N/A', inline: true },
@@ -129,6 +133,16 @@ export async function POST(request: NextRequest) {
             { name: 'Organization/institution', value: inquiryData.institution_event || 'N/A', inline: true },
             { name: 'Tell us about the event', value: inquiryData.message || 'N/A', inline: false },
           ]
+        } else if (type === 'agency_lead') {
+          title = '🚀 Agency Retainer Inquiry'
+          fields = [
+            { name: 'Full Name', value: inquiryData.name || 'N/A', inline: true },
+            { name: 'Work Email', value: inquiryData.email || 'N/A', inline: true },
+            { name: 'Phone / WhatsApp', value: inquiryData.phone || 'N/A', inline: true },
+            { name: 'Company', value: inquiryData.company || 'N/A', inline: true },
+            { name: 'Retainer Plan', value: inquiryData.plan || 'N/A', inline: false },
+            { name: 'Notes / Goals', value: inquiryData.message || 'N/A', inline: false },
+          ]
         }
 
         await fetch(discordWebhookUrl, {
@@ -138,7 +152,7 @@ export async function POST(request: NextRequest) {
             embeds: [
               {
                 title,
-                color: 13223852, // Gold color
+                color: 16340792, // Vibrant coral orange
                 fields,
                 timestamp: new Date().toISOString(),
               },
@@ -203,6 +217,14 @@ export async function POST(request: NextRequest) {
                   `<b>Mobile:</b> ${inquiryData.mobile_number || 'N/A'}\n` +
                   `<b>Organization/institution:</b> ${inquiryData.institution_event || 'N/A'}\n` +
                   `<b>Details:</b> ${inquiryData.message || 'N/A'}`
+        } else if (type === 'agency_lead') {
+           text = `🚀 <b>Agency Retainer Inquiry</b>\n\n` +
+                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+                  `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
+                  `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
+                  `<b>Company:</b> ${inquiryData.company || 'N/A'}\n` +
+                  `<b>Plan:</b> ${inquiryData.plan || 'N/A'}\n` +
+                  `<b>Notes:</b> ${inquiryData.message || 'N/A'}`
         }
 
         if (text) {
