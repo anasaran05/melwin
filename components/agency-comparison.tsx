@@ -117,7 +117,7 @@ export function AgencyComparison() {
           feature: 'On-Site Physical Shoot Days',
           planA: false,
           planB: 'Up to 3 Days / mo (6h on set)',
-          planC: 'Up to 2 Days / mo (4h on set)',
+          planC: 'Up to 6 Days / mo (6h on set)',
         },
         {
           feature: 'On-Site Camera, Lighting & Audio Setup',
