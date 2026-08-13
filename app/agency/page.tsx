@@ -5,6 +5,7 @@ import { AgencyFeaturesGrid } from '@/components/agency-features-grid'
 import { AgencyGuidelines } from '@/components/agency-guidelines'
 import { AgencyPlans } from '@/components/agency-plans'
 import { AgencyComparison } from '@/components/agency-comparison'
+import { AgencyProcess } from '@/components/agency-process'
 import { AgencyContact } from '@/components/agency-contact'
 import { FAQ } from '@/components/faq'
 import { Footer } from '@/components/footer'
@@ -37,6 +38,9 @@ export default function AgencyPage() {
 
       {/* Feature Matrix Comparison */}
       <AgencyComparison />
+
+      {/* Step-by-Step Trial Onboarding Process */}
+      <AgencyProcess />
 
       {/* Agency Lead Contact Form */}
       <AgencyContact />

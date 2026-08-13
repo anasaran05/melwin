@@ -1,13 +1,14 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Sparkles, Video, Linkedin, Youtube, Camera, FileText, Target, Mic, Compass } from 'lucide-react'
+import { Video, Linkedin, Youtube, Camera, FileText, Target, Mic, Compass, Sparkles, TrendingUp, Play, CheckCircle2 } from 'lucide-react'
 
 type FeatureCard = {
   title: string
+  subtitle: string
   description: string
-  bgColor: string
-  accentColor: string
+  gradient: string
+  accentText: string
   icon: React.ElementType
   badgeText: string
   previewContent: React.ReactNode
@@ -17,175 +18,221 @@ export function AgencyFeaturesGrid() {
   const features: FeatureCard[] = [
     {
       title: 'Brand Positioning Strategy',
-      description: 'Define your unique authority angle, voice, and audience positioning framework.',
-      bgColor: 'bg-[#a855f7]',
-      accentColor: 'text-[#a855f7]',
+      subtitle: 'Category Leadership & Story',
+      description: 'Define your unique authority angle, tone of voice, and audience positioning framework.',
+      gradient: 'from-[#8b5cf6] via-[#a855f7] to-[#ec4899]',
+      accentText: 'text-[#8b5cf6]',
       icon: Compass,
       badgeText: 'STRATEGY',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-purple-600">
-            <span>POSITIONING MAP</span>
-            <span>100% ACCELERATION</span>
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-purple-700">
+            <span className="flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-purple-600" />
+              AUTHORITY MAP
+            </span>
+            <span className="bg-purple-100 px-2 py-0.5 rounded-full text-purple-800">100% ACCELERATED</span>
           </div>
-          <div className="w-full bg-purple-50 h-2 rounded-full overflow-hidden">
-            <div className="bg-purple-600 h-full w-[85%]" />
+          <div className="w-full bg-purple-100/80 h-2.5 rounded-full overflow-hidden p-0.5">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-500 h-full w-[90%] rounded-full animate-pulse" />
           </div>
-          <span className="block text-[11px] font-bold">Category Leadership</span>
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="font-bold text-slate-900">Category Dominance</span>
+            <span className="font-mono text-purple-600 font-bold">TOP 1%</span>
+          </div>
         </div>
       ),
     },
     {
       title: 'Reels & Short-Form Content',
-      description: '10 to 15 high-retention Reels & Shorts designed for viral reach and brand awareness.',
-      bgColor: 'bg-[#22c55e]',
-      accentColor: 'text-[#22c55e]',
+      subtitle: 'Viral Reach & High Retention',
+      description: '10 to 15 high-retention Reels & Shorts designed for organic reach and brand awareness.',
+      gradient: 'from-[#10b981] via-[#059669] to-[#047857]',
+      accentText: 'text-[#10b981]',
       icon: Video,
       badgeText: 'SHORT-FORM',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-emerald-600">
-            <span>RETENTION HOOK</span>
-            <span>+85k VIEWS</span>
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-emerald-700">
+            <span className="flex items-center gap-1">
+              <TrendingUp className="w-3 h-3 text-emerald-600" />
+              RETENTION HOOK
+            </span>
+            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">+125k VIEWS</span>
           </div>
-          <div className="flex items-center gap-2 pt-1">
-            <div className="w-6 h-6 rounded-lg bg-emerald-500 text-white flex items-center justify-center font-bold text-[10px]">
-              ▶
+          <div className="bg-emerald-50 p-2 rounded-xl border border-emerald-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                <Play className="w-3 h-3 fill-white" />
+              </div>
+              <span className="text-[11px] font-bold text-slate-900">Dynamic Captions & FX</span>
             </div>
-            <span className="text-[11px] font-bold text-slate-800">Dynamic Captions & FX</span>
+            <span className="text-[10px] font-mono text-emerald-700 font-bold">4K 60FPS</span>
           </div>
         </div>
       ),
     },
     {
       title: 'Long-Form YouTube Videos',
-      description: '2 to 6 deep-dive authority videos per month with custom thumbnails and chapters.',
-      bgColor: 'bg-[#f95738]',
-      accentColor: 'text-[#f95738]',
+      subtitle: 'Deep Authority & Subscribers',
+      description: '2 to 6 deep-dive authority videos per month with custom thumbnails and timestamps.',
+      gradient: 'from-[#ff5e43] via-[#ff7c3f] to-[#e056fd]',
+      accentText: 'text-[#f95738]',
       icon: Youtube,
       badgeText: 'YOUTUBE',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-600">
-            <span>FULL PRODUCTION</span>
-            <span>4K EDITING</span>
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-700">
+            <span>CINEMA PRODUCTION</span>
+            <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">4K EDIT</span>
           </div>
-          <div className="bg-slate-900 text-white p-2 rounded-lg text-[10px] font-mono flex items-center justify-between">
-            <span>Episode Script #04</span>
-            <span className="text-orange-400 font-bold">READY</span>
+          <div className="bg-slate-900 text-white p-2.5 rounded-xl text-[10px] font-mono flex items-center justify-between shadow-inner">
+            <span className="truncate max-w-[140px]">Episode Script #04</span>
+            <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/30">
+              READY
+            </span>
           </div>
         </div>
       ),
     },
     {
       title: 'LinkedIn Thought Leadership',
+      subtitle: 'B2B Authority & Inbound Leads',
       description: '3 to 5 targeted executive posts per week to establish B2B authority and drive inbound.',
-      bgColor: 'bg-[#0a66c2]',
-      accentColor: 'text-[#0a66c2]',
+      gradient: 'from-[#0284c7] via-[#0369a1] to-[#1e3a8a]',
+      accentText: 'text-[#0284c7]',
       icon: Linkedin,
       badgeText: 'LINKEDIN',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-blue-600">
-            <span>B2B ENGAGEMENT</span>
-            <span>HIGH INTENT</span>
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-sky-700">
+            <span>EXECUTIVE CADENCE</span>
+            <span className="bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">HIGH INTENT</span>
           </div>
-          <span className="block text-[11px] font-semibold text-slate-800">
-            "How we scaled without paid ads..."
-          </span>
+          <div className="bg-sky-50/80 p-2 rounded-xl border border-sky-100">
+            <span className="block text-[11px] font-semibold text-slate-800 line-clamp-1">
+              "How we scaled without paid ads..."
+            </span>
+          </div>
         </div>
       ),
     },
     {
       title: 'End-to-End Physical Shoots',
-      description: 'Up to 3 dedicated shoot days per month with on-site camera, lighting, and direct coaching.',
-      bgColor: 'bg-[#f95738]',
-      accentColor: 'text-[#f95738]',
+      subtitle: 'On-Set DFY & Live Coaching',
+      description: 'Up to 3 dedicated shoot days per month with on-site multi-cam, studio lighting, and direct coaching.',
+      gradient: 'from-[#f95738] via-[#ea580c] to-[#b45309]',
+      accentText: 'text-[#f95738]',
       icon: Camera,
       badgeText: 'ON-SET DFY',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-600">
-            <span>SHOOT DAY</span>
-            <span>6 HOURS ON SET</span>
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-700">
+            <span>PHYSICAL SHOOT DAY</span>
+            <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">6H ON SET</span>
           </div>
-          <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Multi-Cam & Lighting Setup</span>
+          <div className="flex items-center justify-between bg-neutral-900 text-white p-2 rounded-xl text-[10px]">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Multi-Cam & Lighting</span>
+            </div>
+            <span className="font-mono text-amber-400 font-bold">LIVE</span>
           </div>
         </div>
       ),
     },
     {
       title: 'SEO & Blog Articles',
+      subtitle: 'AEO & Search Engine Traffic',
       description: '2 long-form optimized articles every 10 days for keyword rank and generative AI search.',
-      bgColor: 'bg-[#a855f7]',
-      accentColor: 'text-[#a855f7]',
+      gradient: 'from-[#a855f7] via-[#9333ea] to-[#4c1d95]',
+      accentText: 'text-[#a855f7]',
       icon: FileText,
       badgeText: 'SEO & AEO',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-purple-600">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-purple-700">
             <span>GOOGLE RANKING</span>
-            <span>#1 PAGE</span>
+            <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full font-bold">#1 PAGE</span>
           </div>
-          <span className="block text-[11px] font-bold text-slate-800">2,500 Word Strategic Article</span>
+          <div className="bg-purple-50 p-2 rounded-xl border border-purple-100 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-900">2,500-Word Article</span>
+            <CheckCircle2 className="w-3.5 h-3.5 text-purple-600" />
+          </div>
         </div>
       ),
     },
     {
       title: 'Founder Sales Enablement',
-      description: 'Turn buyer objections into video assets that your sales team uses directly to close deals.',
-      bgColor: 'bg-[#f95738]',
-      accentColor: 'text-[#f95738]',
+      subtitle: 'Objection Handling & ROI',
+      description: 'Turn buyer objections into video assets that your sales team uses directly to close high-ticket deals.',
+      gradient: 'from-[#ff5e43] via-[#e11d48] to-[#9f1239]',
+      accentText: 'text-[#ff5e43]',
       icon: Target,
       badgeText: 'REVENUE ENGINE',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-600">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-rose-700">
             <span>SALES FUNNEL</span>
-            <span>LEAD MAGNET</span>
+            <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">LEAD MAGNET</span>
           </div>
-          <div className="bg-emerald-50 text-emerald-800 p-1.5 rounded-md text-[10px] font-bold">
-            Objection Asset Sent → Deal Closed
+          <div className="bg-emerald-50 text-emerald-800 p-2 rounded-xl text-[10px] font-bold border border-emerald-200 flex items-center justify-between">
+            <span>Objection Asset Sent</span>
+            <span className="font-mono text-emerald-700 font-extrabold">DEAL CLOSED</span>
           </div>
         </div>
       ),
     },
     {
       title: 'Executive PR & Podcasts',
+      subtitle: 'Industry Authority & Features',
       description: 'Active monthly pitching for creator collaborations, podcast guest spots, and media features.',
-      bgColor: 'bg-[#22c55e]',
-      accentColor: 'text-[#22c55e]',
+      gradient: 'from-[#14b8a6] via-[#0d9488] to-[#0f766e]',
+      accentText: 'text-[#14b8a6]',
       icon: Mic,
       badgeText: 'MEDIA & PR',
       previewContent: (
-        <div className="bg-white/95 rounded-xl p-3 shadow-md border border-black/5 text-[#111111] space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-emerald-600">
+        <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-teal-700">
             <span>PODCAST OUTREACH</span>
-            <span>MONTHLY PITCH</span>
+            <span className="bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-bold">PITCH ACTIVE</span>
           </div>
-          <span className="block text-[11px] font-bold text-slate-800">Top 1% Industry Guest Spot</span>
+          <div className="bg-teal-50 p-2 rounded-xl border border-teal-100 flex items-center justify-between">
+            <span className="text-[11px] font-bold text-slate-900">Top 1% Podcast Guest</span>
+            <div className="flex items-center gap-0.5">
+              <span className="w-1 h-3 bg-teal-500 rounded-full animate-bounce" />
+              <span className="w-1 h-4 bg-teal-600 rounded-full animate-bounce delay-100" />
+              <span className="w-1 h-2 bg-teal-400 rounded-full animate-bounce delay-200" />
+            </div>
+          </div>
         </div>
       ),
     },
   ]
 
   return (
-    <section className="py-20 md:py-28 px-6 md:px-16 w-full text-[#111111] bg-white scroll-mt-24">
-      <div className="max-w-[1300px] mx-auto">
+    <section className="py-12 md:py-32 px-4 sm:px-6 md:px-16 w-full text-[#111111] bg-[#fafafa] relative overflow-hidden scroll-mt-24 border-b border-black/5">
+      
+      {/* Background ambient mesh */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-orange-500/5 via-purple-500/5 to-emerald-500/5 blur-3xl pointer-events-none rounded-full" />
+
+      <div className="max-w-[1350px] mx-auto relative z-10">
         
-        {/* Section Header matching reference */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <h2 className="text-3xl max-md:text-2xl md:text-5xl font-black tracking-tight text-[#111111]">
+        {/* Section Header */}
+        <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[#f95738] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>EXECUTIVE DELIVERABLES MATRIX</span>
+          </div>
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
             Scale Your <span className="text-[#f95738]">Founder Authority</span>
           </h2>
-          <p className="text-[#666666] text-base md:text-lg">
-            Unlock your content's full potential with our end-to-end retainer architecture.
+          <p className="text-[#666666] text-xs sm:text-base md:text-lg max-w-xl mx-auto">
+            Eight specialized media & sales engines integrated into a seamless monthly retainer.
           </p>
         </div>
 
-        {/* 4 Columns x 2 Rows Grid matching reference image */}
+        {/* 4 Columns x 2 Rows Premium Bento Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {features.map((feature, i) => {
             const IconComp = feature.icon
@@ -195,37 +242,46 @@ export function AgencyFeaturesGrid() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.05 }}
-                className="bg-neutral-100/80 rounded-3xl p-4 flex flex-col justify-between border border-black/5 hover:shadow-xl transition-all duration-300 group"
+                transition={{ duration: 0.5, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-white rounded-3xl p-4 flex flex-col justify-between border border-black/10 shadow-lg hover:shadow-2xl hover:-translate-y-1.5 transition-all duration-300 group relative overflow-hidden"
               >
+                {/* Accent glow line on top border */}
+                <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${feature.gradient} opacity-80 group-hover:opacity-100 transition-opacity`} />
+
                 <div>
                   {/* Top Graphic Banner */}
-                  <div className={`${feature.bgColor} rounded-2xl p-5 mb-5 h-44 flex flex-col justify-between relative overflow-hidden shadow-inner`}>
+                  <div className={`bg-gradient-to-br ${feature.gradient} rounded-2xl p-5 mb-5 h-48 flex flex-col justify-between relative overflow-hidden shadow-md group-hover:shadow-lg transition-shadow`}>
                     
-                    {/* Pattern Overlay Lines */}
-                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+                    {/* Subtle grid pattern overlay */}
+                    <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#fff_1.2px,transparent_1.2px)] [background-size:14px_14px] pointer-events-none" />
 
+                    {/* Top Row: Badge & Floating Icon */}
                     <div className="flex items-center justify-between relative z-10">
-                      <span className="text-[10px] font-mono font-extrabold tracking-widest text-white/90 bg-black/20 backdrop-blur-xs px-2.5 py-1 rounded-full">
+                      <span className="text-[10px] font-mono font-extrabold tracking-widest text-white bg-black/25 backdrop-blur-md px-3 py-1 rounded-full border border-white/20 shadow-xs">
                         {feature.badgeText}
                       </span>
-                      <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center">
+                      <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center border border-white/30 shadow-xs group-hover:scale-110 transition-transform">
                         <IconComp className="w-4 h-4" />
                       </div>
                     </div>
 
-                    {/* Preview Interactive Box */}
-                    <div className="relative z-10 transform group-hover:scale-[1.02] transition-transform">
+                    {/* Interactive Preview Box */}
+                    <div className="relative z-10 transform group-hover:scale-[1.03] transition-transform duration-300">
                       {feature.previewContent}
                     </div>
                   </div>
 
                   {/* Title & Description */}
                   <div className="px-2 pb-2">
-                    <h3 className="text-lg font-bold text-[#111111] mb-1.5 group-hover:text-[#f95738] transition-colors">
-                      {feature.title}
-                    </h3>
-                    <p className="text-xs text-[#666666] leading-relaxed">
+                    <div className="mb-1">
+                      <span className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
+                        {feature.subtitle}
+                      </span>
+                      <h3 className="text-lg font-extrabold text-[#111111] group-hover:text-[#f95738] transition-colors leading-snug">
+                        {feature.title}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-[#666666] leading-relaxed pt-1">
                       {feature.description}
                     </p>
                   </div>

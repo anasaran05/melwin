@@ -15,18 +15,18 @@ export function AgencyPlans() {
   }
 
   return (
-    <section id="plans" className="py-16 md:py-24 px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
+    <section id="plans" className="py-12 md:py-24 px-4 sm:px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
       <div className="max-w-[1400px] mx-auto">
         
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-          <span className="text-blue-600 text-xs font-mono tracking-widest uppercase font-bold block">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-16 space-y-3">
+          <span className="text-blue-600 text-[11px] sm:text-xs font-mono tracking-widest uppercase font-bold block">
             TAILORED RETAINER PLANS
           </span>
-          <h2 className="text-4xl max-md:text-3xl md:text-6xl font-black tracking-tight text-[#111111]">
+          <h2 className="text-3xl sm:text-4xl md:text-6xl font-black tracking-tight text-[#111111]">
             Retainer Plans
           </h2>
-          <p className="text-[#666666] text-sm md:text-base max-w-xl mx-auto">
+          <p className="text-[#666666] text-xs sm:text-sm md:text-base max-w-xl mx-auto">
             Three distinct engagement models structured for founder branding, remote post-production, full-service physical shoots, and revenue alignment.
           </p>
         </div>
@@ -376,7 +376,7 @@ export function AgencyPlans() {
                     </li>
                     <li className="flex items-start gap-2.5 text-left">
                       <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
-                      <span>2x 60-Minute bi-weekly strategic syncs</span>
+                      <span><strong>Unlimited Strategic Sync Calls</strong> & direct access</span>
                     </li>
                     <li className="flex items-start gap-2.5 text-left">
                       <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />

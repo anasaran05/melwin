@@ -11,7 +11,7 @@ export function AgencyContact() {
     email: '',
     phone: '',
     company: '',
-    plan: 'Gold: Complete Production (₹90,000 / mo)',
+    plan: '1-Month Trial Pass (₹29,990 / one-time)',
     message: '',
   })
 
@@ -34,7 +34,7 @@ export function AgencyContact() {
 
       if (response.ok) {
         setSubmitted(true)
-        toast.success('Agency inquiry submitted! Our team will reach out within 24 hours.')
+        toast.success('Trial inquiry submitted! Our team will reach out within 24 hours.')
       } else {
         toast.error('Failed to submit inquiry. Please try again.')
       }
@@ -46,25 +46,34 @@ export function AgencyContact() {
   }
 
   return (
-    <section id="agency-contact" className="py-16 md:py-24 px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
+    <section id="agency-contact" className="py-12 md:py-24 px-4 sm:px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
       <div className="max-w-[1000px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-white rounded-3xl p-8 md:p-14 border border-black/10 shadow-2xl relative overflow-hidden"
+          className="bg-white rounded-3xl p-5 sm:p-8 md:p-14 border border-black/10 shadow-2xl relative overflow-hidden"
         >
+          {/* Top Right Offer Badge */}
+          <div className="absolute top-3 right-3 sm:top-5 sm:right-5 md:top-8 md:right-8 z-20 pointer-events-none">
+            <img
+              src="https://img.icons8.com/external-sbts2018-flat-sbts2018/468/external-offer-diwali-sbts2018-flat-sbts2018.png"
+              alt="Special Offer"
+              className="w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 drop-shadow-md hover:scale-105 transition-transform"
+            />
+          </div>
+
           {/* Header */}
-          <div className="mb-10 text-center max-w-2xl mx-auto">
-            <span className="text-[#f95738] text-xs font-mono font-bold uppercase tracking-wider block mb-2">
-              // AGENCY LEADS & INQUIRIES
-            </span>
-            <h2 className="text-3xl max-md:text-2xl md:text-5xl font-black tracking-tight text-[#111111] mb-3">
-              Start Your Agency Retainer
+          <div className="mb-8 sm:mb-10 text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[#f95738] text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+              <span>1-MONTH TRIAL OFFER · ₹29,990</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
+              Start Your Trial at <span className="text-[#f95738]">₹29,990</span>
             </h2>
-            <p className="text-[#666666] text-sm md:text-base">
-              Ready to build your personal brand or discuss a custom production scope? Send your details below for direct response from our strategy team.
+            <p className="text-[#666666] text-xs sm:text-sm md:text-base">
+              Test our full-service founder production with an initial 1-month trial before committing to a long-term monthly retainer.
             </p>
           </div>
 
@@ -136,13 +145,16 @@ export function AgencyContact() {
               {/* Plan Choice Dropdown */}
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">
-                  Interested Retainer Tier *
+                  Interested Package / Tier *
                 </label>
                 <select
                   value={formData.plan}
                   onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
                   className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
                 >
+                  <option value="1-Month Trial Pass (₹29,990 / one-time)">
+                    🔥 1-Month Trial Pass (₹29,990 / one-time) [SPECIAL TRIAL OFFER]
+                  </option>
                   <option value="Silver: The Content Engine (₹60,000 / mo)">
                     Silver: The Content Engine (₹60,000 / mo)
                   </option>
@@ -177,14 +189,14 @@ export function AgencyContact() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#111111] hover:bg-black text-white font-semibold py-4 px-8 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg disabled:opacity-50 text-sm tracking-wide"
+                  className="w-full bg-[#f95738] hover:bg-[#e0482b] text-white font-bold py-4 px-8 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-500/20 disabled:opacity-50 text-sm tracking-wide"
                 >
                   {isSubmitting ? (
-                    <span>Submitting Inquiry...</span>
+                    <span>Submitting Trial Request...</span>
                   ) : (
                     <>
-                      <Send className="w-4 h-4 text-[#f95738]" />
-                      <span>Submit Agency Lead Inquiry</span>
+                      <Send className="w-4 h-4 text-white" />
+                      <span>Start Your Trial at ₹29,990</span>
                     </>
                   )}
                 </button>
@@ -195,9 +207,9 @@ export function AgencyContact() {
               <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
                 <CheckCircle className="w-8 h-8" />
               </div>
-              <h3 className="text-2xl font-bold text-[#111111] mb-2">Agency Lead Submitted!</h3>
+              <h3 className="text-2xl font-bold text-[#111111] mb-2">Trial Request Received!</h3>
               <p className="text-[#666666] text-sm max-w-md mb-6">
-                Thank you for reaching out regarding <strong className="text-[#111111]">{formData.plan}</strong>. Our team has received your submission and sent notifications to Discord and Telegram. We will contact you within 24 business hours.
+                Thank you for choosing <strong className="text-[#111111]">{formData.plan}</strong>. Our strategy team has received your submission and sent notifications to Discord & Telegram. We will reach out within 24 business hours with your onboarding survey.
               </p>
               <button
                 onClick={() => setSubmitted(false)}

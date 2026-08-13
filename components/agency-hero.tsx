@@ -5,42 +5,36 @@ import { ArrowRight, ArrowDown, Sparkles, MousePointer2 } from 'lucide-react'
 
 export function AgencyHero() {
   return (
-    <section className="pt-32 pb-20 md:pt-40 md:pb-24 px-6 md:px-12 w-full text-[#111111] bg-white relative overflow-hidden">
+    <section className="pt-24 pb-12 md:pt-40 md:pb-24 px-4 sm:px-6 md:px-12 w-full text-[#111111] bg-white relative overflow-hidden">
       <div className="max-w-[1300px] mx-auto">
         
         {/* Split Grid: Left Text + Right Showcase Card */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-8 items-center">
           
           {/* Left Column (Content) */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 flex flex-col gap-6"
+            className="lg:col-span-6 flex flex-col gap-5 md:gap-6"
           >
-            {/* Label */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-orange-600 text-xs font-mono font-bold tracking-wider w-fit uppercase">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>FOUNDER RETAINER & PRODUCTION</span>
-            </div>
 
             {/* Headline with vibrant highlighted word */}
-            <h1 className="text-[3.25rem] leading-[1.04] max-md:text-[2.5rem] md:text-[4.5rem] font-black tracking-tight text-[#111111]">
-              We Build Your Name <br />
-              <span>As A </span>
-              <span className="text-[#f95738]">Personal Brand.</span>
+            <h1 className="text-[2.25rem] sm:text-[3.25rem] leading-[1.04] md:text-[4.5rem] font-black tracking-tight text-[#111111]">
+              We Make You <br />
+              <span className="text-[#f95738]">Famous.</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-base md:text-lg text-[#555555] font-normal leading-relaxed max-w-xl">
+            <p className="text-sm sm:text-base md:text-lg text-[#555555] font-normal leading-relaxed max-w-xl">
               Strategic personal brand positioning, done-for-you physical shoots, remote production frameworks, and revenue-generating sales enablement built for founders.
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-4 pt-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
               <a
                 href="#plans"
-                className="inline-flex items-center justify-center gap-2.5 bg-[#f95738] hover:bg-[#e0482b] text-white px-7 py-4 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-orange-500/20"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#f95738] hover:bg-[#e0482b] text-white px-7 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-orange-500/20"
               >
                 <span>View Retainer Plans</span>
                 <ArrowRight className="w-4 h-4" />
@@ -48,14 +42,14 @@ export function AgencyHero() {
 
               <a
                 href="#guidelines"
-                className="inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-[#111111] px-6 py-4 rounded-full font-semibold text-sm transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-[#111111] px-6 py-3.5 sm:py-4 rounded-full font-semibold text-sm transition-colors"
               >
                 <span>Operating Guidelines</span>
               </a>
 
               <a
                 href="#comparison"
-                className="inline-flex items-center justify-center gap-2 text-[#666666] hover:text-[#111111] px-4 py-4 font-medium text-sm transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 text-[#666666] hover:text-[#111111] px-4 py-3 sm:py-4 font-medium text-sm transition-colors"
               >
                 <span>Compare Plans</span>
               </a>

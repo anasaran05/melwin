@@ -5,27 +5,27 @@ import { AlertCircle, CheckCircle2, Clock, FileCheck } from 'lucide-react'
 
 export function AgencyGuidelines() {
   return (
-    <section id="guidelines" className="py-20 px-6 md:px-16 w-full text-[#111111] bg-[#fafafa] scroll-mt-24">
+    <section id="guidelines" className="py-12 md:py-20 px-4 sm:px-6 md:px-16 w-full text-[#111111] bg-[#fafafa] scroll-mt-24">
       <div className="max-w-[1300px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="bg-white text-[#111111] rounded-3xl p-8 md:p-14 relative overflow-hidden shadow-xl border border-black/10"
+          className="bg-white text-[#111111] rounded-3xl p-5 sm:p-8 md:p-14 relative overflow-hidden shadow-xl border border-black/10"
         >
           {/* Subtle background gradient glow */}
           <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-orange-500/10 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
           {/* Section Header */}
-          <div className="flex flex-col gap-2 mb-10 relative z-10">
-            <span className="text-[#f95738] text-xs font-mono font-bold uppercase tracking-wider">
+          <div className="flex flex-col gap-2 mb-8 md:mb-10 relative z-10">
+            <span className="text-[#f95738] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
               ENGAGEMENT BOUNDARIES & TERMS
             </span>
-            <h2 className="text-3xl max-md:text-2xl md:text-5xl font-black tracking-tight text-[#111111]">
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
               Standard Operating Guidelines
             </h2>
-            <p className="text-[#666666] text-sm md:text-base max-w-3xl pt-1">
+            <p className="text-[#666666] text-xs sm:text-sm md:text-base max-w-3xl pt-1">
               (Applies to All Plans) — To ensure high-quality output and seamless execution, all engagements operate under the following boundaries:
             </p>
           </div>

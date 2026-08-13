@@ -212,8 +212,8 @@ export function AgencyComparison() {
         {
           feature: 'Strategic Sync Calls',
           planA: '1x 60-Min Monthly Call',
-          planB: '1x 60-Min Monthly Call',
-          planC: '2x 60-Min Bi-Weekly Syncs',
+          planB: 'Unlimited Strategic Syncs',
+          planC: 'Unlimited Strategic Syncs',
         },
         {
           feature: 'Monthly Growth Report & Strategy Recalibration',
@@ -257,18 +257,18 @@ export function AgencyComparison() {
   }
 
   return (
-    <section id="comparison" className="py-20 px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
+    <section id="comparison" className="py-12 md:py-20 px-4 sm:px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
       <div className="max-w-[1400px] mx-auto">
         
         {/* Header */}
-        <div className="flex flex-col gap-3 mb-12">
-          <span className="text-blue-600 text-xs font-mono tracking-wider uppercase font-bold">
+        <div className="flex flex-col gap-3 mb-8 md:mb-12">
+          <span className="text-blue-600 text-[11px] sm:text-xs font-mono tracking-wider uppercase font-bold">
             COMPLETE FEATURE BREAKDOWN
           </span>
-          <h2 className="text-3xl max-md:text-2xl md:text-5xl font-black tracking-tight text-[#111111]">
+          <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
             Detailed Comparison Table
           </h2>
-          <p className="text-[#666666] text-sm md:text-base max-w-2xl">
+          <p className="text-[#666666] text-xs sm:text-sm md:text-base max-w-2xl">
             Review the exact scope, shoot allowances, content publishing volume, and strategic deliverables included in each retainer plan.
           </p>
         </div>
@@ -281,7 +281,7 @@ export function AgencyComparison() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="bg-white rounded-3xl border border-black/10 shadow-2xl overflow-hidden"
         >
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full text-left border-collapse min-w-[760px]">
               
               {/* Sticky Table Header matching Retainer Card Themes */}
