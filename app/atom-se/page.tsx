@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
 import { 
-  Sparkles, 
   ArrowRight, 
   Globe, 
   Search, 
@@ -16,11 +15,25 @@ import {
   Headphones, 
   CheckCircle2, 
   Layers,
-  Laptop
+  Laptop,
+  Send,
+  Loader2
 } from 'lucide-react'
 
 export default function AtomSePage() {
   const [introState, setIntroState] = useState<'animating' | 'done'>('animating')
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    service: 'Modern Website',
+    message: '',
+  })
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
     // 0.0s - 1.0s: Smooth zoom-in / settle logo into center
@@ -125,6 +138,39 @@ export default function AtomSePage() {
     },
   ]
 
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setFormStatus('submitting')
+    setErrorMessage('')
+
+    try {
+      const res = await fetch('/api/submit-inquiry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'atom_se',
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          company: formData.company,
+          service: formData.service,
+          message: formData.message,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setFormStatus('success')
+      } else {
+        setFormStatus('error')
+        setErrorMessage(data.error || 'Failed to submit. Please try again.')
+      }
+    } catch {
+      setFormStatus('error')
+      setErrorMessage('Something went wrong. Please check your connection and try again.')
+    }
+  }
+
   return (
     <main className="font-sans min-h-screen relative overflow-x-hidden bg-[#f2f2f2] text-[#111111]">
       <div className="grain-overlay" />
@@ -211,13 +257,8 @@ export default function AtomSePage() {
           className="max-w-5xl mx-auto text-center space-y-6"
         >
           
-          {/* Hierarchy Level 1: Brand Badge & Logo */}
-          <motion.div variants={heroItemVariants} className="flex flex-col items-center justify-center gap-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-black/10 text-[#666666] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>FULL-SERVICE DIGITAL & TECH VENTURE</span>
-            </div>
-
+          {/* Hierarchy Level 1: Atom SE Logo */}
+          <motion.div variants={heroItemVariants} className="flex flex-col items-center justify-center pb-2">
             <div className="py-2">
               <Image 
                 src="/ventures logos/atomse.png" 
@@ -252,13 +293,13 @@ export default function AtomSePage() {
             variants={heroItemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-4"
           >
-            <Link
-              href="/#consultation"
+            <a
+              href="#project-form"
               className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Start a Project</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
+            </a>
 
             <a
               href="#services"
@@ -380,35 +421,196 @@ export default function AtomSePage() {
         </div>
       </section>
 
-      {/* Call to Action Banner */}
-      <section className="py-12 md:py-20 px-4 sm:px-6 md:px-12 w-full">
-        <div className="max-w-4xl mx-auto bg-[#111111] text-white rounded-3xl p-8 sm:p-12 md:p-16 text-center space-y-6 shadow-2xl relative overflow-hidden">
-          <div className="space-y-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400">
-              READY TO BUILD?
-            </span>
-            <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
-              Let's build something remarkable for your business.
-            </h2>
-            <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto leading-relaxed pt-1">
-              Have an idea or need an existing website upgraded? Contact Dr. Melwin and the Atom SE engineering team today for a free project consultation.
-            </p>
-          </div>
+      {/* Direct Project Inquiry Form Section */}
+      <section id="project-form" className="py-12 md:py-24 px-4 sm:px-6 md:px-12 w-full scroll-mt-20">
+        <div className="max-w-4xl mx-auto bg-[#111111] text-white rounded-3xl p-6 sm:p-10 md:p-14 shadow-2xl relative overflow-hidden">
+          
+          {formStatus === 'success' ? (
+            <div className="text-center py-12 space-y-5">
+              <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                <CheckCircle2 className="w-9 h-9" />
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">
+                Project Inquiry Received!
+              </h2>
+              <p className="text-neutral-300 max-w-md mx-auto text-sm sm:text-base leading-relaxed">
+                Thank you for reaching out. Dr. Melwin and the Atom SE engineering team will review your requirements and get in touch with you within 24 hours.
+              </p>
+              <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormStatus('idle')
+                    setFormData({
+                      name: '',
+                      email: '',
+                      phone: '',
+                      company: '',
+                      service: 'Modern Website',
+                      message: '',
+                    })
+                  }}
+                  className="bg-white text-black px-6 py-3 rounded-full font-bold text-sm hover:bg-neutral-200 transition-colors"
+                >
+                  Send Another Inquiry
+                </button>
+                <Link
+                  href="/"
+                  className="bg-neutral-900 text-white border border-white/20 px-6 py-3 rounded-full font-medium text-sm hover:bg-neutral-800 transition-colors"
+                >
+                  Back to Home
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* Form Heading */}
+              <div className="text-center space-y-2">
+                <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400">
+                  LET'S WORK TOGETHER
+                </span>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-white">
+                  Start Your Project with Atom SE
+                </h2>
+                <p className="text-sm sm:text-base text-neutral-300 max-w-xl mx-auto leading-relaxed pt-1">
+                  Tell us what you need in simple words. We will get back to you with clear steps, timeline, and a direct quote.
+                </p>
+              </div>
 
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link
-              href="/#consultation"
-              className="w-full sm:w-auto bg-white hover:bg-neutral-200 text-black px-8 py-3.5 rounded-full font-bold text-sm transition-all"
-            >
-              Request a Free Quote
-            </Link>
-            <Link
-              href="/"
-              className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white border border-white/20 px-6 py-3.5 rounded-full font-medium text-sm transition-colors"
-            >
-              Back to Home
-            </Link>
-          </div>
+              {/* Inquiry Form */}
+              <form onSubmit={handleFormSubmit} className="space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Full Name */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-xs font-medium text-neutral-300">
+                      Your Full Name <span className="text-emerald-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. John Doe"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                    />
+                  </div>
+
+                  {/* Email Address */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-xs font-medium text-neutral-300">
+                      Email Address <span className="text-emerald-400">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. john@example.com"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                    />
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-xs font-medium text-neutral-300">
+                      Phone / WhatsApp (Optional)
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="e.g. +91 98765 43210"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                    />
+                  </div>
+
+                  {/* Business / Company Name */}
+                  <div className="space-y-1.5 text-left">
+                    <label className="text-xs font-medium text-neutral-300">
+                      Company / Brand Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Acme Studio"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Service Selection */}
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-medium text-neutral-300">
+                    What service do you need?
+                  </label>
+                  <select
+                    value={formData.service}
+                    onChange={(e) => setFormData({ ...formData, service: e.target.value })}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-white transition-colors"
+                  >
+                    <option value="Modern Website">Modern Website Building</option>
+                    <option value="Google Search (SEO) Growth">Google Search (SEO) Growth</option>
+                    <option value="Custom Web App / Software">Custom Web App & Software</option>
+                    <option value="Website Redesign">Website Redesign & Modernization</option>
+                    <option value="Speed & Maintenance">Speed, Security & Maintenance</option>
+                    <option value="Complete Digital Package">Complete Digital & Tech Package</option>
+                  </select>
+                </div>
+
+                {/* Message / Project Notes */}
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-medium text-neutral-300">
+                    Briefly describe your project or goal <span className="text-emerald-400">*</span>
+                  </label>
+                  <textarea
+                    required
+                    rows={4}
+                    placeholder="Tell us what you want to build, any websites you like, or what problems you are facing..."
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors resize-none"
+                  />
+                </div>
+
+                {/* Error Message Display */}
+                {formStatus === 'error' && (
+                  <p className="text-xs text-rose-400 text-left">
+                    {errorMessage}
+                  </p>
+                )}
+
+                {/* Submit Buttons */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <button
+                    type="submit"
+                    disabled={formStatus === 'submitting'}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-200 text-black px-8 py-3.5 rounded-full font-bold text-sm transition-all disabled:opacity-50"
+                  >
+                    {formStatus === 'submitting' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Submit Project Inquiry</span>
+                        <Send className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <Link
+                    href="/"
+                    className="text-xs text-neutral-400 hover:text-white transition-colors"
+                  >
+                    &larr; Back to Dr. Melwin's Home
+                  </Link>
+                </div>
+              </form>
+            </div>
+          )}
+
         </div>
       </section>
 

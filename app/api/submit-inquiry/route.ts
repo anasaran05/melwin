@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { type, ...inquiryData } = body
 
     // Validate type
-    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking', 'invite_melwin', 'agency_lead'].includes(type)) {
+    if (!type || !['brand_collab', 'career_advice', 'consultation', 'consultation_booking', 'invite_melwin', 'agency_lead', 'atom_se'].includes(type)) {
       return NextResponse.json(
         { error: 'Invalid inquiry type' },
         { status: 400 }
@@ -54,6 +54,10 @@ export async function POST(request: NextRequest) {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
         mappedMessage = `Plan: ${inquiryData.plan || 'N/A'} | Phone: ${inquiryData.phone || 'N/A'} | Company: ${inquiryData.company || 'N/A'} | Notes: ${inquiryData.message || 'N/A'}`
+      } else if (type === 'atom_se') {
+        mappedName = inquiryData.name || 'Unknown'
+        mappedEmail = inquiryData.email || ''
+        mappedMessage = `Service: ${inquiryData.service || 'N/A'} | Phone: ${inquiryData.phone || 'N/A'} | Company: ${inquiryData.company || 'N/A'} | Notes: ${inquiryData.message || 'N/A'}`
       } else {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -143,6 +147,16 @@ export async function POST(request: NextRequest) {
             { name: 'Retainer Plan', value: inquiryData.plan || 'N/A', inline: false },
             { name: 'Notes / Goals', value: inquiryData.message || 'N/A', inline: false },
           ]
+        } else if (type === 'atom_se') {
+          title = '⚡ Atom SE Project Inquiry'
+          fields = [
+            { name: 'Full Name', value: inquiryData.name || 'N/A', inline: true },
+            { name: 'Email Address', value: inquiryData.email || 'N/A', inline: true },
+            { name: 'Phone / WhatsApp', value: inquiryData.phone || 'N/A', inline: true },
+            { name: 'Business / Company', value: inquiryData.company || 'N/A', inline: true },
+            { name: 'Service Needed', value: inquiryData.service || 'N/A', inline: false },
+            { name: 'Project Notes', value: inquiryData.message || 'N/A', inline: false },
+          ]
         }
 
         await fetch(discordWebhookUrl, {
@@ -224,6 +238,14 @@ export async function POST(request: NextRequest) {
                   `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
                   `<b>Company:</b> ${inquiryData.company || 'N/A'}\n` +
                   `<b>Plan:</b> ${inquiryData.plan || 'N/A'}\n` +
+                  `<b>Notes:</b> ${inquiryData.message || 'N/A'}`
+        } else if (type === 'atom_se') {
+           text = `⚡ <b>Atom SE Project Inquiry</b>\n\n` +
+                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+                  `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
+                  `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
+                  `<b>Company:</b> ${inquiryData.company || 'N/A'}\n` +
+                  `<b>Service:</b> ${inquiryData.service || 'N/A'}\n` +
                   `<b>Notes:</b> ${inquiryData.message || 'N/A'}`
         }
 

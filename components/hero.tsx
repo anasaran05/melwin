@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/image'
+import Link from 'next/link'
 import { SquigglyText } from '@/components/ui/squiggly-text'
 
 export function Hero() {
@@ -180,8 +181,8 @@ export function Hero() {
               }
             },
             { 
-              icon: <span className="text-xl">🏢</span>, 
-              name: "Agency", 
+              icon: <span className="text-xl">✨</span>, 
+              name: "Personal Branding", 
               href: '/agency'
             },
           ].map((link) => (
@@ -222,12 +223,15 @@ export function Hero() {
           <span className="text-2xl font-black hidden md:inline">©2026</span>
           <span className="text-[#666] mt-1 block max-w-[200px]">building since 2022</span>
           
-          <div className="bg-white text-black px-4 py-2 rounded-md shadow-sm border border-neutral-200 mt-3 md:hidden inline-flex items-center gap-2 w-max">
+          <Link 
+            href="/atom-se" 
+            className="bg-white hover:bg-neutral-100 active:scale-95 text-black px-4 py-2 rounded-md shadow-sm border border-neutral-200 mt-3 md:hidden inline-flex items-center gap-2 w-max transition-all cursor-pointer"
+          >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                <path d="M12 2L2 22h20L12 2z"/>
             </svg>
             Built by Atom SE
-          </div>
+          </Link>
         </motion.div>
 
         <motion.div 
@@ -276,12 +280,15 @@ export function Hero() {
             </a>
           </div>
 
-          <div className="bg-white text-black px-4 py-2 rounded-md shadow-sm border border-neutral-200 mt-1 hidden md:flex items-center gap-2">
+          <Link 
+            href="/atom-se" 
+            className="bg-white hover:bg-neutral-100 hover:scale-105 active:scale-95 text-black px-4 py-2 rounded-md shadow-sm border border-neutral-200 mt-1 hidden md:flex items-center gap-2 transition-all cursor-pointer"
+          >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
                <path d="M12 2L2 22h20L12 2z"/>
             </svg>
             Built by Atom SE
-          </div>
+          </Link>
         </motion.div>
       </div>
 

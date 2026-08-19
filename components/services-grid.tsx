@@ -6,6 +6,7 @@ import { ConsultationBooking } from '@/components/consultation-booking'
 import { BrandPartnerships } from '@/components/brand-partnerships'
 import { CareerAdvice } from '@/components/career-advice'
 import { InviteMelwin } from '@/components/invite-melwin'
+import { PersonalBrandingDropdown } from '@/components/personal-branding-dropdown'
 import { ChevronDown } from 'lucide-react'
 
 const services: {
@@ -20,6 +21,12 @@ const services: {
     title: 'Business Consultation',
     tags: 'Data-driven insights • Startup challenges • Navigation',
     component: ConsultationBooking,
+  },
+  {
+    id: 'personal-branding',
+    title: 'Personal Branding',
+    tags: 'Content strategy • Video production • Executive presence',
+    component: PersonalBrandingDropdown,
   },
   {
     id: 'brand',
@@ -50,6 +57,8 @@ export function ServicesGrid() {
       
       if (hash === 'consultation' || hash === 'strategy') {
         setActiveService('strategy');
+      } else if (hash === 'personal-branding' || hash === 'personalbranding' || hash === 'branding') {
+        setActiveService('personal-branding');
       } else if (hash === 'partnerships' || hash === 'partnership' || hash === 'brand') {
         setActiveService('brand');
       } else if (hash === 'career') {
@@ -63,6 +72,8 @@ export function ServicesGrid() {
       const id = e.detail;
       if (id === 'consultation' || id === 'strategy') {
         setActiveService('strategy');
+      } else if (id === 'personal-branding' || id === 'personalbranding' || id === 'branding') {
+        setActiveService('personal-branding');
       } else if (id === 'partnerships' || id === 'partnership' || id === 'brand') {
         setActiveService('brand');
       } else if (id === 'career') {
