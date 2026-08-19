@@ -5,7 +5,7 @@ import { ArrowRight, ArrowDown, Sparkles, MousePointer2 } from 'lucide-react'
 
 export function AgencyHero() {
   return (
-    <section className="pt-24 pb-12 md:pt-40 md:pb-24 px-4 sm:px-6 md:px-12 w-full text-[#111111] relative overflow-hidden">
+    <section className="pt-16 pb-12 md:pt-24 md:pb-20 px-4 sm:px-6 md:px-12 w-full text-[#111111] relative overflow-hidden">
       <div className="max-w-[1300px] mx-auto">
         
         {/* Split Grid: Left Text + Right Showcase Card */}

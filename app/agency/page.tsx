@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Navbar } from '@/components/navbar'
 import { AgencyHero } from '@/components/agency-hero'
 import { AgencyFeaturesGrid } from '@/components/agency-features-grid'
 import { AgencyGuidelines } from '@/components/agency-guidelines'
@@ -19,9 +18,6 @@ export default function AgencyPage() {
     <main className="font-sans min-h-screen relative overflow-x-hidden bg-[#f2f2f2] text-[#111111]">
       {/* Texture grain overlay */}
       <div className="grain-overlay" />
-
-      {/* Floating Navbar */}
-      <Navbar />
 
       {/* Hero Banner */}
       <AgencyHero />
