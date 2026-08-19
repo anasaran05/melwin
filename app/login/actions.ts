@@ -30,31 +30,8 @@ export async function login(formData: FormData) {
     rateLimitMap.set(ip, { count: 1, timestamp: now })
   }
 
-  // Turnstile Verification
-  const turnstileToken = formData.get('cf-turnstile-response')
-  const turnstileSecret = process.env.TURNSTILE_SECRET_KEY
-
-  if (turnstileSecret && turnstileSecret !== 'your_secret_key_here') {
-    if (!turnstileToken) {
-      redirect('/login?message=Please complete the anti-bot verification')
-    }
-    
-    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `secret=${turnstileSecret}&response=${turnstileToken}&remoteip=${ip}`,
-    })
-    
-    const verifyData = await verifyRes.json()
-    if (!verifyData.success) {
-      redirect('/login?message=Anti-bot verification failed')
-    }
-  }
-
   const supabase = await createClient()
 
-  // type-casting here for convenience
-  // in practice, you should validate your inputs
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
@@ -70,5 +47,5 @@ export async function login(formData: FormData) {
   rateLimitMap.delete(ip)
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect('/dashboard/manager')
 }

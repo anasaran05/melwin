@@ -72,7 +72,7 @@ export function AgencyStack() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-20 space-y-3">
           <h2 className="text-3xl max-md:text-2xl md:text-5xl font-black tracking-tight text-[#111111]">
-            The <span className="text-[#f95738]">Complete Production Stack</span>
+            The <span className="text-[#888888]">Complete Production Stack</span>
           </h2>
           <p className="text-[#666666] text-base md:text-lg max-w-xl mx-auto">
             Five integrated layers engineered to elevate founder authority from positioning to revenue attribution.
@@ -150,7 +150,7 @@ export function AgencyStack() {
                   onMouseLeave={() => setActiveLayer(null)}
                   className={`p-4 md:p-5 rounded-2xl border transition-all duration-300 cursor-pointer flex items-center gap-4 ${
                     isActive
-                      ? 'bg-white border-[#f95738] shadow-xl translate-x-2'
+                      ? 'bg-white border-black shadow-xl translate-x-2'
                       : 'bg-white/80 border-black/10 hover:bg-white hover:border-black/20'
                   }`}
                 >
@@ -158,7 +158,7 @@ export function AgencyStack() {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-mono font-bold text-xs transition-all ${
                       isActive
-                        ? 'bg-[#f95738] text-white shadow-md scale-105'
+                        ? 'bg-[#111111] text-white shadow-md scale-105'
                         : 'bg-neutral-100 text-neutral-700'
                     }`}
                   >
@@ -168,12 +168,12 @@ export function AgencyStack() {
                   {/* Text Content */}
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
-                      <h3 className={`text-sm font-bold transition-colors ${isActive ? 'text-[#f95738]' : 'text-[#111111]'}`}>
+                      <h3 className={`text-sm font-bold transition-colors ${isActive ? 'text-black' : 'text-[#111111]'}`}>
                         {layer.title}
                       </h3>
                       <IconComp
                         className={`w-4 h-4 transition-colors ${
-                          isActive ? 'text-[#f95738]' : 'text-neutral-400'
+                          isActive ? 'text-black' : 'text-neutral-400'
                         }`}
                       />
                     </div>

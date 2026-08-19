@@ -23,13 +23,14 @@ export function Footer() {
           {/* Quick Links */}
           <div className="flex flex-col gap-6">
             <span className="text-gray-400 text-lg">Quick links</span>
-            <div className="flex flex-wrap gap-3 max-w-[280px]">
+            <div className="flex flex-wrap gap-3 max-w-[340px]">
               {[
                 { name: 'Home', href: '/' },
-                { name: 'About Me', href: '/#bio' },
-                { name: 'Services', href: '/services' },
-                { name: 'Works', href: '/#projects' },
-                { name: 'Contact', href: '/services#consultation' }
+                { name: 'About Me', href: '/about' },
+                { name: 'Agency', href: '/agency' },
+                { name: 'Services', href: '/#services' },
+                { name: 'Works', href: '/#ventures' },
+                { name: 'Contact', href: '/#consultation' }
               ].map((link) => (
                 <Link
                   key={link.name}

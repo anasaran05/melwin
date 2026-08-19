@@ -13,10 +13,10 @@ export default function Home() {
       <div className="grain-overlay" />
       <Hero />
       <BioSection />
+      <ProjectsSection />
       <QuoteSection />
       <ExpertiseStrip />
       <ServicesGrid />
-      {/* <ProjectsSection /> */}
       <FAQ />
       <Footer />
     </main>

@@ -3,12 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { TurnstileWidget } from '@/components/turnstile-widget'
 
 export default async function LoginPage(props: { searchParams: Promise<{ message: string }> }) {
   const searchParams = await props.searchParams
   return (
-    <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4 select-none">
       <Card className="w-full max-w-md bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
@@ -46,8 +45,7 @@ export default async function LoginPage(props: { searchParams: Promise<{ message
                 {searchParams.message}
               </div>
             )}
-            <TurnstileWidget />
-            <Button formAction={login} className="w-full bg-white text-black hover:bg-neutral-200">
+            <Button formAction={login} className="w-full bg-white text-black hover:bg-neutral-200 font-semibold">
               Sign In
             </Button>
           </form>

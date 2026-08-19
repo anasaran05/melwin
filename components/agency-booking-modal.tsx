@@ -76,7 +76,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
 
           {!submitted ? (
             <div>
-              <span className="text-[#f95738] text-xs font-mono font-bold uppercase tracking-wider block mb-2">
+              <span className="text-neutral-400 text-xs font-mono font-bold uppercase tracking-wider block mb-2">
                 SELECTED RETAINER
               </span>
               <h3 className="text-2xl font-bold text-white mb-1">
@@ -97,7 +97,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Alex Rivera"
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#f95738] transition-colors"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                   />
                 </div>
 
@@ -112,7 +112,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       placeholder="alex@company.com"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#f95738] transition-colors"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                     />
                   </div>
                   <div>
@@ -125,7 +125,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       placeholder="+91 98765 43210"
-                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#f95738] transition-colors"
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                     />
                   </div>
                 </div>
@@ -139,7 +139,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="Acme Inc."
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#f95738] transition-colors"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
                   />
                 </div>
 
@@ -152,7 +152,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder="Current channel status, timelines, or specific objectives..."
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#f95738] transition-colors resize-none"
+                    className="w-full bg-neutral-900 border border-neutral-800 rounded-xl px-4 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors resize-none"
                   />
                 </div>
 
@@ -166,7 +166,7 @@ export function AgencyBookingModal({ isOpen, onClose, selectedPlan }: AgencyBook
                       <span>Sending Inquiry...</span>
                     ) : (
                       <>
-                        <Send className="w-4 h-4 text-[#f95738]" />
+                        <Send className="w-4 h-4 text-black" />
                         <span>Submit Retainer Inquiry</span>
                       </>
                     )}

@@ -39,7 +39,7 @@ export function AgencyProcess() {
       <div className="max-w-[1100px] mx-auto">
         {/* Section Header */}
         <div className="text-center max-w-2xl mx-auto mb-12 md:mb-20 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200/80 text-[#f95738] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-black/10 text-[#666666] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
             <span>HOW YOUR TRIAL ONBOARDING WORKS</span>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
@@ -52,8 +52,8 @@ export function AgencyProcess() {
 
         {/* Central Vertical Timeline Section */}
         <div className="relative">
-          {/* Central Orange Line for Desktop */}
-          <div className="hidden md:block absolute left-1/2 top-6 bottom-6 w-[3px] bg-[#f95738] -translate-x-1/2 z-0 rounded-full" />
+          {/* Central Neutral Line for Desktop */}
+          <div className="hidden md:block absolute left-1/2 top-6 bottom-6 w-[3px] bg-[#111111] -translate-x-1/2 z-0 rounded-full" />
 
           {/* Timeline Items */}
           <div className="space-y-12 md:space-y-24 relative z-10">
@@ -63,7 +63,7 @@ export function AgencyProcess() {
               return (
                 <div key={item.step} className="relative">
                   {/* Central Node Circle Dot on the Timeline Line */}
-                  <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#f95738] border-4 border-white shadow-md z-20" />
+                  <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-[#111111] border-4 border-white shadow-md z-20" />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-16 items-center">
                     {/* Left Column */}
@@ -87,7 +87,7 @@ export function AgencyProcess() {
                       ) : (
                         /* Step 2 & 4: Card on Left (Order 1 on mobile -> above image) */
                         <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 shadow-xl border border-black/5 flex flex-col justify-center relative group hover:shadow-2xl transition-all max-w-[440px] mx-auto w-full">
-                          <span className="text-4xl sm:text-5xl md:text-6xl font-black text-[#f95738] mb-2 sm:mb-3 tracking-tight block">
+                          <span className="text-4xl sm:text-5xl md:text-6xl font-black text-[#111111] mb-2 sm:mb-3 tracking-tight block">
                             {item.step}
                           </span>
                           <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#111111] mb-2 sm:mb-3">
@@ -111,7 +111,7 @@ export function AgencyProcess() {
                       {!isEven ? (
                         /* Step 1 & 3: Card on Right (Order 1 on mobile -> above image) */
                         <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-10 shadow-xl border border-black/5 flex flex-col justify-center relative group hover:shadow-2xl transition-all max-w-[440px] mx-auto w-full">
-                          <span className="text-4xl sm:text-5xl md:text-6xl font-black text-[#f95738] mb-2 sm:mb-3 tracking-tight block">
+                          <span className="text-4xl sm:text-5xl md:text-6xl font-black text-[#111111] mb-2 sm:mb-3 tracking-tight block">
                             {item.step}
                           </span>
                           <h3 className="text-lg sm:text-xl md:text-2xl font-extrabold text-[#111111] mb-2 sm:mb-3">

@@ -32,7 +32,7 @@ export function BioSection() {
           <div className="flex flex-col gap-3 mt-4">
             <Link 
               href="/about" 
-              className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-100 transition-colors border border-gray-300 text-center hidden md:block"
+              className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-100 transition-colors border border-gray-300 text-center block"
             >
               About Me
             </Link>

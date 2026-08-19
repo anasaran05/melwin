@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Clock, FileCheck } from 'lucide-react'
 
 export function AgencyGuidelines() {
   return (
-    <section id="guidelines" className="py-12 md:py-20 px-4 sm:px-6 md:px-16 w-full text-[#111111] bg-[#fafafa] scroll-mt-24">
+    <section id="guidelines" className="py-12 md:py-20 px-4 sm:px-6 md:px-16 w-full text-[#111111] scroll-mt-24">
       <div className="max-w-[1300px] mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -15,11 +15,11 @@ export function AgencyGuidelines() {
           className="bg-white text-[#111111] rounded-3xl p-5 sm:p-8 md:p-14 relative overflow-hidden shadow-xl border border-black/10"
         >
           {/* Subtle background gradient glow */}
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-orange-500/10 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-gradient-to-br from-neutral-500/5 via-blue-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
           {/* Section Header */}
           <div className="flex flex-col gap-2 mb-8 md:mb-10 relative z-10">
-            <span className="text-[#f95738] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+            <span className="text-[#666666] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
               ENGAGEMENT BOUNDARIES & TERMS
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
@@ -37,10 +37,10 @@ export function AgencyGuidelines() {
             <motion.div
               whileHover={{ y: -4 }}
               transition={{ duration: 0.2 }}
-              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-[#f95738]/50 hover:shadow-lg transition-all"
+              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-black/30 hover:shadow-lg transition-all"
             >
               <div>
-                <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center text-[#f95738] mb-5 font-bold">
+                <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center text-[#111111] mb-5 font-bold">
                   <FileCheck className="w-5 h-5" />
                 </div>
                 <h3 className="text-lg font-bold text-[#111111] mb-2">Revision Limits</h3>
@@ -50,7 +50,7 @@ export function AgencyGuidelines() {
               </div>
               <div className="mt-6 pt-4 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-mono">
                 <span>Rule #1</span>
-                <span className="text-[#f95738] font-bold">Asset Approval</span>
+                <span className="text-[#111111] font-bold">Asset Approval</span>
               </div>
             </motion.div>
 
@@ -58,7 +58,7 @@ export function AgencyGuidelines() {
             <motion.div
               whileHover={{ y: -4 }}
               transition={{ duration: 0.2 }}
-              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-[#f95738]/50 hover:shadow-lg transition-all"
+              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-black/30 hover:shadow-lg transition-all"
             >
               <div>
                 <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 mb-5 font-bold">
@@ -79,7 +79,7 @@ export function AgencyGuidelines() {
             <motion.div
               whileHover={{ y: -4 }}
               transition={{ duration: 0.2 }}
-              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-[#f95738]/50 hover:shadow-lg transition-all"
+              className="bg-slate-50/90 rounded-2xl p-6 border border-slate-200/80 flex flex-col justify-between hover:bg-white hover:border-black/30 hover:shadow-lg transition-all"
             >
               <div>
                 <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600 mb-5 font-bold">
@@ -105,10 +105,10 @@ export function AgencyGuidelines() {
               <span>All terms engineered for fast execution, predictable posting schedules, and maximum content output.</span>
             </div>
             <a
-              href="#plans"
-              className="text-[#f95738] hover:text-[#e0482b] font-bold underline underline-offset-4 transition-colors shrink-0"
+              href="#contact"
+              className="text-[#111111] hover:text-black font-bold underline underline-offset-4 transition-colors shrink-0"
             >
-              Select your retainer plan below &rarr;
+              Get started with our agency &rarr;
             </a>
           </div>
         </motion.div>

@@ -76,15 +76,15 @@ export function AgencyFeaturesGrid() {
       title: 'Long-Form YouTube Videos',
       subtitle: 'Deep Authority & Subscribers',
       description: '2 to 6 deep-dive authority videos per month with custom thumbnails and timestamps.',
-      gradient: 'from-[#ff5e43] via-[#ff7c3f] to-[#e056fd]',
-      accentText: 'text-[#f95738]',
+      gradient: 'from-[#1e293b] via-[#334155] to-[#0f172a]',
+      accentText: 'text-neutral-800',
       icon: Youtube,
       badgeText: 'YOUTUBE',
       previewContent: (
         <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-700">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-neutral-700">
             <span>CINEMA PRODUCTION</span>
-            <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">4K EDIT</span>
+            <span className="bg-neutral-100 text-neutral-800 px-2 py-0.5 rounded-full font-bold">4K EDIT</span>
           </div>
           <div className="bg-slate-900 text-white p-2.5 rounded-xl text-[10px] font-mono flex items-center justify-between shadow-inner">
             <span className="truncate max-w-[140px]">Episode Script #04</span>
@@ -121,22 +121,22 @@ export function AgencyFeaturesGrid() {
       title: 'End-to-End Physical Shoots',
       subtitle: 'On-Set DFY & Live Coaching',
       description: 'Up to 3 dedicated shoot days per month with on-site multi-cam, studio lighting, and direct coaching.',
-      gradient: 'from-[#f95738] via-[#ea580c] to-[#b45309]',
-      accentText: 'text-[#f95738]',
+      gradient: 'from-[#18181b] via-[#27272a] to-[#09090b]',
+      accentText: 'text-neutral-900',
       icon: Camera,
       badgeText: 'ON-SET DFY',
       previewContent: (
         <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-orange-700">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-neutral-700">
             <span>PHYSICAL SHOOT DAY</span>
-            <span className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full font-bold">6H ON SET</span>
+            <span className="bg-neutral-100 text-neutral-800 px-2 py-0.5 rounded-full font-bold">6H ON SET</span>
           </div>
           <div className="flex items-center justify-between bg-neutral-900 text-white p-2 rounded-xl text-[10px]">
             <div className="flex items-center gap-1.5 font-semibold">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Multi-Cam & Lighting</span>
             </div>
-            <span className="font-mono text-amber-400 font-bold">LIVE</span>
+            <span className="font-mono text-emerald-400 font-bold">LIVE</span>
           </div>
         </div>
       ),
@@ -166,15 +166,15 @@ export function AgencyFeaturesGrid() {
       title: 'Founder Sales Enablement',
       subtitle: 'Objection Handling & ROI',
       description: 'Turn buyer objections into video assets that your sales team uses directly to close high-ticket deals.',
-      gradient: 'from-[#ff5e43] via-[#e11d48] to-[#9f1239]',
-      accentText: 'text-[#ff5e43]',
+      gradient: 'from-[#0f172a] via-[#1e293b] to-[#334155]',
+      accentText: 'text-neutral-900',
       icon: Target,
       badgeText: 'REVENUE ENGINE',
       previewContent: (
         <div className="bg-white/90 backdrop-blur-md rounded-2xl p-3.5 shadow-lg border border-white/60 text-[#111111] space-y-2">
-          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-rose-700">
+          <div className="flex items-center justify-between text-[10px] font-mono font-bold text-neutral-700">
             <span>SALES FUNNEL</span>
-            <span className="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold">LEAD MAGNET</span>
+            <span className="bg-neutral-100 text-neutral-800 px-2 py-0.5 rounded-full font-bold">LEAD MAGNET</span>
           </div>
           <div className="bg-emerald-50 text-emerald-800 p-2 rounded-xl text-[10px] font-bold border border-emerald-200 flex items-center justify-between">
             <span>Objection Asset Sent</span>
@@ -211,21 +211,21 @@ export function AgencyFeaturesGrid() {
   ]
 
   return (
-    <section className="py-12 md:py-32 px-4 sm:px-6 md:px-16 w-full text-[#111111] bg-[#fafafa] relative overflow-hidden scroll-mt-24 border-b border-black/5">
+    <section className="py-12 md:py-32 px-4 sm:px-6 md:px-16 w-full text-[#111111] relative overflow-hidden scroll-mt-24 border-b border-black/5">
       
       {/* Background ambient mesh */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-orange-500/5 via-purple-500/5 to-emerald-500/5 blur-3xl pointer-events-none rounded-full" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-r from-neutral-500/5 via-blue-500/5 to-purple-500/5 blur-3xl pointer-events-none rounded-full" />
 
       <div className="max-w-[1350px] mx-auto relative z-10">
         
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[#f95738] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-black/10 text-[#666666] text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
             <Sparkles className="w-3.5 h-3.5" />
             <span>EXECUTIVE DELIVERABLES MATRIX</span>
           </div>
           <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
-            Scale Your <span className="text-[#f95738]">Founder Authority</span>
+            Scale Your <span className="text-[#888888]">Founder Authority</span>
           </h2>
           <p className="text-[#666666] text-xs sm:text-base md:text-lg max-w-xl mx-auto">
             Eight specialized media & sales engines integrated into a seamless monthly retainer.
@@ -277,7 +277,7 @@ export function AgencyFeaturesGrid() {
                       <span className="text-[11px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
                         {feature.subtitle}
                       </span>
-                      <h3 className="text-lg font-extrabold text-[#111111] group-hover:text-[#f95738] transition-colors leading-snug">
+                      <h3 className="text-lg font-extrabold text-[#111111] group-hover:text-black transition-colors leading-snug">
                         {feature.title}
                       </h3>
                     </div>

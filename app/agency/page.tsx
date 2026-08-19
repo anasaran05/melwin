@@ -3,7 +3,6 @@ import { Navbar } from '@/components/navbar'
 import { AgencyHero } from '@/components/agency-hero'
 import { AgencyFeaturesGrid } from '@/components/agency-features-grid'
 import { AgencyGuidelines } from '@/components/agency-guidelines'
-import { AgencyPlans } from '@/components/agency-plans'
 import { AgencyComparison } from '@/components/agency-comparison'
 import { AgencyProcess } from '@/components/agency-process'
 import { AgencyContact } from '@/components/agency-contact'
@@ -32,9 +31,6 @@ export default function AgencyPage() {
 
       {/* Standard Operating Guidelines */}
       <AgencyGuidelines />
-
-      {/* Retainer Plans Grid */}
-      <AgencyPlans />
 
       {/* Feature Matrix Comparison */}
       <AgencyComparison />

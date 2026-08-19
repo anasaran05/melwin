@@ -308,7 +308,6 @@ export function AgencyComparison() {
                     </div>
                     <div className="relative z-10 pt-2">
                       <span className="block text-white text-base font-bold font-sans">Silver Plan</span>
-                      <span className="text-xs text-blue-300 font-mono font-normal">₹60,000 / mo</span>
                     </div>
                   </th>
 
@@ -334,7 +333,6 @@ export function AgencyComparison() {
                     </div>
                     <div className="relative z-10 pt-2">
                       <span className="block text-fuchsia-200 text-base font-bold font-sans">Gold Plan</span>
-                      <span className="text-xs text-fuchsia-300/80 font-mono font-normal">₹90,000 / mo</span>
                     </div>
                   </th>
 
@@ -354,7 +352,6 @@ export function AgencyComparison() {
                     </div>
                     <div className="relative z-10 pt-2">
                       <span className="block text-emerald-200 text-base font-bold font-sans">Diamond Plan</span>
-                      <span className="text-xs text-emerald-300/80 font-mono font-normal">₹1,59,000 / mo</span>
                     </div>
                   </th>
                 </tr>

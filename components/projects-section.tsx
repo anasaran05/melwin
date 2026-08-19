@@ -1,62 +1,101 @@
 'use client'
 
-import { ArrowUpRight } from "lucide-react"
-import Link from "next/link"
 import Image from "next/image"
 import { motion } from "framer-motion"
 
 const companies = [
-  { name: "Zane ProEd", logo: "/ventures logos/zaneproed.png" },
-  { name: "Alphatic Labs", logo: "/ventures logos/alphaticlabs.png" },
-  { name: "Wocha", logo: "/ventures logos/wocha.png" },
-  { name: "Academy", logo: "/ventures logos/academy.png" },
+  { 
+    name: "Wocha", 
+    logo: "/ventures logos/wocha.png",
+    alt: "Wocha Logo",
+    heightClass: "h-10 md:h-14",
+    href: "/wocha",
+  },
+  { 
+    name: "Zane ProEd", 
+    logo: "/ventures logos/zaneproed.png",
+    alt: "Zane ProEd Logo",
+    heightClass: "h-14 md:h-20",
+    href: "https://zaneproed.com",
+  },
+  { 
+    name: "Alphatic Labs", 
+    logo: "/ventures logos/alphaticlabs.png",
+    alt: "Alphatic Labs Logo",
+    heightClass: "h-10 md:h-14",
+    href: "https://alphaticlabs.com",
+  },
+  { 
+    name: "Atom SE", 
+    logo: "/ventures logos/atomse.png",
+    alt: "Atom SE Logo",
+    heightClass: "h-9 md:h-12",
+    href: "/atom-se",
+  },
 ]
 
 interface ProjectsSectionProps {
-  hideViewAll?: boolean;
-  title?: React.ReactNode;
+  title?: React.ReactNode
+  subtitle?: string
+  hideViewAll?: boolean
 }
 
-export function ProjectsSection({ hideViewAll = false, title = <>Ventures<br />Built</> }: ProjectsSectionProps) {
-  // Duplicate the items to ensure the marquee is wide enough for a seamless loop
-  const marqueeItems = [...companies, ...companies, ...companies, ...companies];
-
+export function ProjectsSection({ 
+  title = <>Ventures<br />Built</>,
+  subtitle = "High-impact companies and products founded and scaled across education, AI, and software.",
+  hideViewAll = false
+}: ProjectsSectionProps) {
   return (
-    <section id="projects" className="py-24 max-md:py-16 md:py-32 bg-[#f2f2f2] overflow-hidden">
-      <div className="max-w-5xl mx-auto px-6 max-md:px-4 md:px-12">
-        {/* Header */}
-        <div className="flex flex-col items-center justify-center mb-16 gap-6 relative text-center">
-          <h2 className="text-5xl max-md:text-4xl md:text-7xl font-medium tracking-tight text-[#111111] leading-[1.1] whitespace-pre-line">
+    <section id="ventures" className="py-20 md:py-28 bg-[#f2f2f2] relative z-10 border-t border-b border-black/[0.04]">
+      <div className="max-w-6xl mx-auto px-6 md:px-12">
+        {/* Section Header */}
+        <div className="flex flex-col items-center justify-center mb-12 md:mb-16 gap-4 text-center">
+          <span className="text-[11px] md:text-xs font-mono font-bold tracking-widest text-[#666666] uppercase">
+            PORTFOLIO & VENTURES
+          </span>
+          <h2 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-[#111111] leading-[1.08]">
             {title}
           </h2>
+          {subtitle && (
+            <p className="text-sm md:text-base text-[#666666] max-w-lg mx-auto font-normal mt-1">
+              {subtitle}
+            </p>
+          )}
         </div>
-      </div>
 
-      {/* Marquee */}
-      <div className="relative w-full flex overflow-hidden pt-8 pb-12">
-        {/* Gradients for fade effect at edges */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#f2f2f2] to-transparent z-10 pointer-events-none" />
-        <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#f2f2f2] to-transparent z-10 pointer-events-none" />
-
-        <motion.div
-          className="flex whitespace-nowrap items-center w-max"
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
-        >
-          {marqueeItems.map((company, index) => (
-            <div key={index} className="flex-shrink-0 px-8 md:px-16 flex items-center justify-center">
-              <div className="relative h-16 md:h-24 w-40 md:w-56 flex items-center justify-center transition-all duration-300">
+        {/* Static Centered Logos */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 items-center justify-items-center max-w-5xl mx-auto pt-4">
+          {companies.map((company, index) => (
+            <motion.div
+              key={company.name}
+              initial={{ opacity: 0, y: 15 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full flex items-center justify-center py-2 px-2"
+            >
+              <a
+                href={company.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={`Visit ${company.name} (Opens in new tab)`}
+                className={`relative w-full ${company.heightClass} flex items-center justify-center cursor-pointer group`}
+              >
                 <Image 
                   src={company.logo}
-                  alt={company.name}
-                  fill
-                  className="object-contain"
+                  alt={company.alt}
+                  width={220}
+                  height={80}
+                  className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300 drop-shadow-xs"
+                  unoptimized={company.logo.endsWith('.svg')}
                 />
-              </div>
-            </div>
+              </a>
+            </motion.div>
           ))}
-        </motion.div>
+        </div>
       </div>
     </section>
   )
 }
+
+

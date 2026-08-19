@@ -66,11 +66,11 @@ export function AgencyContact() {
 
           {/* Header */}
           <div className="mb-8 sm:mb-10 text-center max-w-2xl mx-auto space-y-2.5 sm:space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-orange-50 border border-orange-200 text-[#f95738] text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full bg-white border border-black/10 text-[#666666] text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
               <span>1-MONTH TRIAL OFFER · ₹29,990</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-5xl font-black tracking-tight text-[#111111]">
-              Start Your Trial at <span className="text-[#f95738]">₹29,990</span>
+              Start Your Trial at <span className="text-[#888888]">₹29,990</span>
             </h2>
             <p className="text-[#666666] text-xs sm:text-sm md:text-base">
               Test our full-service founder production with an initial 1-month trial before committing to a long-term monthly retainer.
@@ -91,7 +91,7 @@ export function AgencyContact() {
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     placeholder="e.g. Alex Rivera"
-                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#111111] focus:bg-white transition-all"
                   />
                 </div>
 
@@ -106,7 +106,7 @@ export function AgencyContact() {
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="alex@company.com"
-                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#111111] focus:bg-white transition-all"
                   />
                 </div>
               </div>
@@ -123,7 +123,7 @@ export function AgencyContact() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     placeholder="+91 98765 43210"
-                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#111111] focus:bg-white transition-all"
                   />
                 </div>
 
@@ -137,38 +137,12 @@ export function AgencyContact() {
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                     placeholder="e.g. Acme Ventures"
-                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
+                    className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#111111] focus:bg-white transition-all"
                   />
                 </div>
               </div>
 
-              {/* Plan Choice Dropdown */}
-              <div>
-                <label className="block text-xs font-semibold text-neutral-700 uppercase tracking-wider mb-2">
-                  Interested Package / Tier *
-                </label>
-                <select
-                  value={formData.plan}
-                  onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-                  className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-[#f95738] focus:bg-white transition-all"
-                >
-                  <option value="1-Month Trial Pass (₹29,990 / one-time)">
-                    🔥 1-Month Trial Pass (₹29,990 / one-time) [SPECIAL TRIAL OFFER]
-                  </option>
-                  <option value="Silver: The Content Engine (₹60,000 / mo)">
-                    Silver: The Content Engine (₹60,000 / mo)
-                  </option>
-                  <option value="Gold: Complete Production (₹90,000 / mo)">
-                    Gold: Complete Production (₹90,000 / mo) [Most Popular]
-                  </option>
-                  <option value="Diamond: Executive Revenue (₹1,59,000 / mo)">
-                    Diamond: Executive Revenue (₹1,59,000 / mo)
-                  </option>
-                  <option value="Custom Enterprise Retainer Scope">
-                    Custom Enterprise Retainer Scope
-                  </option>
-                </select>
-              </div>
+
 
               {/* Message */}
               <div>
@@ -180,7 +154,7 @@ export function AgencyContact() {
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Share details about your current video footprint, goals, or shoot location..."
-                  className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#f95738] focus:bg-white transition-all resize-none"
+                  className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-[#111111] focus:bg-white transition-all resize-none"
                 />
               </div>
 
@@ -189,7 +163,7 @@ export function AgencyContact() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#f95738] hover:bg-[#e0482b] text-white font-bold py-4 px-8 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-orange-500/20 disabled:opacity-50 text-sm tracking-wide"
+                  className="w-full bg-[#111111] hover:bg-black text-white font-bold py-4 px-8 rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-black/10 disabled:opacity-50 text-sm tracking-wide"
                 >
                   {isSubmitting ? (
                     <span>Submitting Trial Request...</span>

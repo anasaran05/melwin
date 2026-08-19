@@ -5,7 +5,7 @@ import { ArrowRight, ArrowDown, Sparkles, MousePointer2 } from 'lucide-react'
 
 export function AgencyHero() {
   return (
-    <section className="pt-24 pb-12 md:pt-40 md:pb-24 px-4 sm:px-6 md:px-12 w-full text-[#111111] bg-white relative overflow-hidden">
+    <section className="pt-24 pb-12 md:pt-40 md:pb-24 px-4 sm:px-6 md:px-12 w-full text-[#111111] relative overflow-hidden">
       <div className="max-w-[1300px] mx-auto">
         
         {/* Split Grid: Left Text + Right Showcase Card */}
@@ -19,10 +19,10 @@ export function AgencyHero() {
             className="lg:col-span-6 flex flex-col gap-5 md:gap-6"
           >
 
-            {/* Headline with vibrant highlighted word */}
+            {/* Headline */}
             <h1 className="text-[2.25rem] sm:text-[3.25rem] leading-[1.04] md:text-[4.5rem] font-black tracking-tight text-[#111111]">
               We Make You <br />
-              <span className="text-[#f95738]">Famous.</span>
+              <span className="text-[#888888]">Famous.</span>
             </h1>
 
             {/* Subtitle */}
@@ -33,16 +33,16 @@ export function AgencyHero() {
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
               <a
-                href="#plans"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#f95738] hover:bg-[#e0482b] text-white px-7 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-orange-500/20"
+                href="#contact"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 bg-[#111111] hover:bg-black text-white px-7 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-black/10"
               >
-                <span>View Retainer Plans</span>
+                <span>Get in Touch</span>
                 <ArrowRight className="w-4 h-4" />
               </a>
 
               <a
                 href="#guidelines"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-[#111111] px-6 py-3.5 sm:py-4 rounded-full font-semibold text-sm transition-colors"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-6 py-3.5 sm:py-4 rounded-full font-semibold text-sm transition-colors shadow-xs"
               >
                 <span>Operating Guidelines</span>
               </a>
@@ -57,29 +57,29 @@ export function AgencyHero() {
           </motion.div>
 
 
-          {/* Right Column (Showcase Card inspired by reference) */}
+          {/* Right Column (Showcase Card) */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="lg:col-span-6"
           >
-            <div className="bg-white rounded-3xl p-3 border border-black/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.12)] relative group overflow-hidden">
+            <div className="bg-white rounded-3xl p-3 border border-black/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.08)] relative group overflow-hidden">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch min-h-[320px]">
                 
-                {/* Gradient Left Side of Showcase Card */}
-                <div className="md:col-span-5 bg-gradient-to-br from-[#ff5e43] via-[#ff7c3f] to-[#e040fb] rounded-2xl p-6 text-white flex flex-col justify-between relative overflow-hidden">
-                  <div className="space-y-1 text-xs font-mono font-medium opacity-90">
+                {/* Dark Editorial Left Side of Showcase Card */}
+                <div className="md:col-span-5 bg-gradient-to-br from-[#111111] via-[#1a1a1a] to-[#262626] rounded-2xl p-6 text-white flex flex-col justify-between relative overflow-hidden">
+                  <div className="space-y-1 text-xs font-mono font-medium text-neutral-400">
                     <span className="block">Strategy</span>
                     <span className="block">Production</span>
                     <span className="block">Revenue</span>
                   </div>
 
                   <div className="relative z-10 pt-12">
-                    <h3 className="text-2xl font-black uppercase tracking-tight leading-tight mb-2">
+                    <h3 className="text-2xl font-black uppercase tracking-tight leading-tight mb-2 text-white">
                       MONETIZE YOUR AUTHORITY.
                     </h3>
-                    <p className="text-[11px] opacity-80 font-sans">
+                    <p className="text-[11px] text-neutral-300 font-sans">
                       Turn organic view velocity into founder revenue.
                     </p>
                   </div>
@@ -98,7 +98,7 @@ export function AgencyHero() {
                 <div className="md:col-span-7 bg-[#f8fafc] rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                     <span className="text-xs font-bold text-slate-800">Founder Growth Studio</span>
-                    <span className="text-[10px] font-mono bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] font-mono bg-neutral-900 text-white px-2 py-0.5 rounded-full font-bold">
                       ACTIVE RETAINER
                     </span>
                   </div>
@@ -107,7 +107,7 @@ export function AgencyHero() {
                   <div className="space-y-3 py-3">
                     <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-neutral-100 text-neutral-900 flex items-center justify-center font-bold text-xs">
                           YT
                         </div>
                         <div>
@@ -120,7 +120,7 @@ export function AgencyHero() {
 
                     <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-xs flex items-center justify-between">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center font-bold text-xs">
                           IN
                         </div>
                         <div>
@@ -134,7 +134,7 @@ export function AgencyHero() {
 
                   <div className="pt-2 flex items-center justify-between text-[11px] text-slate-500 font-mono">
                     <span>Target: 100k Reach</span>
-                    <span className="text-[#f95738] font-bold">100% On Schedule</span>
+                    <span className="text-[#111111] font-bold">100% On Schedule</span>
                   </div>
                 </div>
 

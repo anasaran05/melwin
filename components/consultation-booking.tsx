@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Loader2, BadgeCheck } from 'lucide-react'
 import { toast } from 'sonner'
 import { DateTimePicker } from '@/components/ui/date-time-picker'
-import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion'
 import Image from 'next/image'
 
 export function ConsultationBooking() {
@@ -135,80 +134,46 @@ export function ConsultationBooking() {
         <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest mb-12">// Booking</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
-          {/* Left: Pricing / Type Selection */}
+          {/* Left: Consultation Details */}
           <div>
             <div className="mb-6">
-              <h3 className="text-2xl font-bold text-zinc-900 mb-2">Select Consultation Type</h3>
-              <p className="text-zinc-500">Choose the level of guidance that best fits your current needs.</p>
+              <h3 className="text-2xl font-bold text-zinc-900 mb-2">1-on-1 Strategy Consultation</h3>
+              <p className="text-zinc-500">Direct access to Dr. Melwin for personalized strategic guidance.</p>
             </div>
             
-            <Accordion 
-              type="single" 
-              value={formData.consultation_type} 
-              onValueChange={(val) => val && setFormData(prev => ({...prev, consultation_type: val}))} 
-              className="space-y-4"
-            >
-              <AccordionItem value="general" className="border border-zinc-200 bg-white rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all">
-                <AccordionTrigger className="hover:no-underline py-6">
-                   <div className="flex flex-col text-left">
-                     <span className="font-sans text-lg font-bold text-zinc-900">General Consultation</span>
-                     <span className="text-sm text-zinc-500 font-normal mt-1">Foundational session for basic queries</span>
-                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
-                   Perfect for individuals looking for quick guidance, basic strategy alignment, and answers to foundational questions to set you on the right track.
-                   <div className="mt-6 pt-6 border-t border-zinc-100 flex flex-col gap-3">
-                     <div className="flex items-center justify-between">
-                       <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
-                       <span className="font-semibold text-zinc-900">45-60 mins</span>
-                     </div>
-                     <div className="flex items-center justify-between">
-                       <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                       <span className="text-2xl font-semibold text-zinc-900">₹1,299</span>
-                     </div>
-                   </div>
-                </AccordionContent>
-              </AccordionItem>
-
-
-              <AccordionItem value="consult_melwin" className="border border-zinc-200 bg-zinc-50 rounded-2xl px-6 shadow-sm data-[state=open]:border-black data-[state=open]:ring-1 data-[state=open]:ring-black transition-all overflow-hidden relative">
-                {formData.consultation_type === 'consult_melwin' && (
-                  <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
-                    Recommended
+            <div className="border border-zinc-200 bg-zinc-50 rounded-2xl p-6 shadow-sm ring-1 ring-black/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
+                Recommended
+              </div>
+              <div className="flex items-center gap-4 text-left mb-5">
+                <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
+                  <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-sans text-lg font-bold text-zinc-900">Consult with Melwin</span>
+                    <BadgeCheck className="w-5 h-5 text-blue-500" />
                   </div>
-                )}
-                <AccordionTrigger className="hover:no-underline py-6">
-                   <div className="flex items-center gap-4 text-left">
-                     <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
-                       <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
-                     </div>
-                     <div className="flex flex-col">
-                       <div className="flex items-center gap-1.5">
-                         <span className="font-sans text-lg font-bold text-zinc-900">Consult with Melwin</span>
-                         <BadgeCheck className="w-5 h-5 text-blue-500" />
-                       </div>
-                       <span className="text-sm text-zinc-500 font-normal mt-0.5">1-on-1 session with Dr. Melwin Vincent</span>
-                     </div>
-                   </div>
-                </AccordionTrigger>
-                <AccordionContent className="text-zinc-600 pb-6 leading-relaxed">
-                   Direct access to Dr. Melwin for high-level strategic consulting. Includes a personalized roadmap, priority support, and exclusive insights from his ventures.
-                   <div className="mt-6 pt-6 border-t border-zinc-200 flex flex-col gap-3">
-                     <div className="flex items-center justify-between">
-                       <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
-                       <span className="font-semibold text-zinc-900">45-60 mins</span>
-                     </div>
-                     <div className="flex items-center justify-between">
-                       <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
-                       <div className="text-right">
-                         <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
-                         <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
-                       </div>
-                     </div>
-                   </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+                  <span className="text-sm text-zinc-500 font-normal mt-0.5">1-on-1 session with Dr. Melwin Vincent</span>
+                </div>
+              </div>
+              <p className="text-zinc-600 text-sm leading-relaxed">
+                Direct access to Dr. Melwin for high-level strategic consulting. Includes a personalized roadmap, priority support, and exclusive insights from his ventures.
+              </p>
+              <div className="mt-6 pt-6 border-t border-zinc-200 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-zinc-500 uppercase tracking-wide">Duration</span>
+                  <span className="font-semibold text-zinc-900">45-60 mins</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-zinc-900 uppercase tracking-wide">Investment</span>
+                  <div className="text-right">
+                    <span className="text-sm line-through text-zinc-400 mr-2">₹5,000</span>
+                    <span className="text-2xl font-bold text-zinc-900">₹2,999</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right: Booking form */}
