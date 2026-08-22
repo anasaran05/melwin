@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { BmfCard, CARD_TIERS, CardTier } from '@/lib/supabase/bmf-cards'
 import { QrCode, RotateCw } from 'lucide-react'
+import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 
 interface ExecutiveMetalCardProps {
   card: BmfCard
@@ -167,15 +168,26 @@ export function ExecutiveMetalCard({
               <rect x="220" y="70" width="80" height="80" transform="rotate(45 220 70)" stroke={surface.lineColor} strokeWidth="1" />
             </svg>
 
+            {/* Lottie Animation: Catch the Fish */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 overflow-hidden pr-6 sm:pr-8">
+              <div className="w-[170px] h-[170px] sm:w-[200px] sm:h-[200px] opacity-90 drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">
+                <DotLottieReact
+                  src="/assets/Catch the Fish.lottie"
+                  loop
+                  autoplay
+                />
+              </div>
+            </div>
+
             {/* RIGHT SIDE: USER NAME ALONE (Tilted Vertically) */}
-            <div className="absolute right-4 sm:right-5 top-0 bottom-0 z-10 pointer-events-none flex items-center justify-center [writing-mode:vertical-rl] rotate-180">
+            <div className="absolute right-4 sm:right-5 top-0 bottom-0 z-20 pointer-events-none flex items-center justify-center [writing-mode:vertical-rl] rotate-180">
               <span className="font-serif italic font-medium text-xs sm:text-sm tracking-[0.25em] text-white/90 uppercase select-none drop-shadow-sm whitespace-nowrap">
                 {card.card_holder_name}
               </span>
             </div>
 
             {/* BOTTOM LEFT: BMF CLUB CARD TEXT */}
-            <div className="relative z-10 text-left mt-auto">
+            <div className="relative z-20 text-left mt-auto">
               <span className="font-mono font-black text-[10px] sm:text-[11px] tracking-[0.3em] text-white/70 uppercase select-none block drop-shadow-sm">
                 BMF CLUB CARD
               </span>

@@ -8,9 +8,25 @@ interface BmfIntroAnimationProps {
 }
 
 export function BmfIntroAnimation({ onComplete }: BmfIntroAnimationProps) {
-  const [isVisible, setIsVisible] = useState(true)
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
+    // Check if animation has already been shown in this browser session
+    try {
+      const hasSeenIntro = sessionStorage.getItem('bmf_intro_seen')
+      if (hasSeenIntro === 'true') {
+        if (onComplete) onComplete()
+        return
+      }
+      
+      // Mark as seen for this session immediately
+      sessionStorage.setItem('bmf_intro_seen', 'true')
+      setIsVisible(true)
+    } catch {
+      // Fallback if sessionStorage is not accessible
+      setIsVisible(true)
+    }
+
     // Overall animation finishes and fades into hero section at 2.9s
     const timerExit = setTimeout(() => {
       setIsVisible(false)
@@ -101,6 +117,18 @@ export function BmfIntroAnimation({ onComplete }: BmfIntroAnimationProps) {
                 >
                   Club
                 </motion.span>
+                <motion.img
+                  src="https://img.icons8.com/stickers/500/verified-badge.png"
+                  alt="Verified Badge"
+                  initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                  animate={{ scale: 1, opacity: 1, rotate: 0 }}
+                  transition={{
+                    duration: 0.45,
+                    delay: 1.3,
+                    ease: [0.34, 1.56, 0.64, 1] as const,
+                  }}
+                  className="w-10 h-10 sm:w-14 sm:h-14 md:w-20 md:h-20 lg:w-24 lg:h-24 ml-2 sm:ml-3 object-contain select-none inline-block shrink-0"
+                />
               </div>
 
             </div>

@@ -29,15 +29,6 @@ export function Footer() {
                 { name: 'About Me', href: '/about' },
                 { name: 'BMF Club', href: '/bmf-club' },
                 { name: 'Atom SE (Tech)', href: '/atom-se' },
-                { name: 'Funding & Grants', href: '/funding-grants' },
-                { name: 'Jobs & Talent', href: '/jobs-talent' },
-                { name: 'Startup Academy', href: '/startup-academy' },
-                { name: 'Digital Growth', href: '/digital-growth' },
-                { name: 'Business Services', href: '/business-services' },
-                { name: 'Export & Import', href: '/export-import' },
-                { name: 'Personal Branding', href: '/agency' },
-                { name: 'Services', href: '/#services' },
-                { name: 'Ventures', href: '/#ventures' },
                 { name: 'Contact', href: '/#consultation' }
               ].map((link) => (
                 <Link

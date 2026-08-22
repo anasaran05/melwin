@@ -132,9 +132,14 @@ export function BmfHeroSection() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl sm:text-7xl md:text-8xl lg:text-[5.8rem] font-black tracking-tight text-[#111111] max-w-4xl mx-auto leading-[1.02]"
+          className="text-5xl sm:text-7xl md:text-8xl lg:text-[5.8rem] font-black tracking-tight text-[#111111] max-w-4xl mx-auto leading-[1.02] inline-flex items-center justify-center gap-2.5 sm:gap-3.5 md:gap-5"
         >
-          BMF Club
+          <span>BMF Club</span>
+          <img
+            src="https://img.icons8.com/stickers/500/verified-badge.png"
+            alt="Verified Badge"
+            className="w-9 h-9 sm:w-12 sm:h-12 md:w-16 md:h-16 lg:w-[4.6rem] lg:h-[4.6rem] object-contain select-none shrink-0"
+          />
         </motion.h1>
       </div>
 
@@ -276,12 +281,12 @@ export function BmfHeroSection() {
             <ArrowRight className="w-4 h-4" />
           </Link>
 
-          <a
-            href="#showcases"
+          <Link
+            href="/bmf-club/directory"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-7 py-3.5 sm:py-4 rounded-full font-semibold text-sm transition-colors shadow-xs hover:scale-[1.02] active:scale-[0.98]"
           >
             <span>Explore Founder Showcase</span>
-          </a>
+          </Link>
         </motion.div>
       </div>
     </section>

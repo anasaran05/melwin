@@ -16,49 +16,57 @@ export interface TabItem {
 const DEFAULT_SERVICES: TabItem[] = [
   {
     id: "01",
-    title: "Founder-to-Founder Circles",
+    title: "Founder Podcasts",
     description:
-      "Unfiltered, confidential peer advisory groups. Get direct insights on hiring executives, term sheet negotiations, and enterprise sales from founders who did it.",
+      "Exclusive deep-dive founder stories, tactical growth breakdowns, and raw insights broadcasted across premier entrepreneurial media channels.",
+    image:
+      "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "02",
+    title: "Founder Conferences",
+    description:
+      "Flagship annual summits, regional conclaves, and high-impact stages bringing together Tamil Nadu's boldest visionaries and industry pioneers.",
+    image:
+      "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "03",
+    title: "Funding & Investment Access",
+    description:
+      "Direct bridge to angel syndicates, institutional VCs, seed funds, and grant programs actively deploying capital in emerging ventures.",
+    image:
+      "https://images.unsplash.com/photo-1559526324-4b87b5e36e44?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "04",
+    title: "Expert Masterclasses",
+    description:
+      "Hands-on tactical workshops on scale, unit economics, regulatory compliance, product architecture, and enterprise sales led by proven operators.",
+    image:
+      "https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "05",
+    title: "Access to Top Agencies",
+    description:
+      "Curated partnerships with elite design studios, tech talent providers, PR firms, and legal/tax advisors at pre-negotiated founder rates.",
     image:
       "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=1200&auto=format&fit=crop",
   },
   {
-    id: "02",
-    title: "Private Dinners & Masterminds",
-    description:
-      "Curated, closed-door dinners in Bangalore, Dubai, London, and Singapore with fellow top operators, angel investors, and venture partners.",
-    image:
-      "https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "03",
-    title: "Company Showcases & Demo Days",
-    description:
-      "Present your product directly to an exclusive syndicate of tier-1 angels, syndicate leads, and enterprise buyers looking to adopt new technology.",
-    image:
-      "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "04",
-    title: "23,000+ Operator Community",
-    description:
-      "Direct access to vetted WhatsApp circles, private resource archives, pitch teardowns, and instant co-founder/advisory matchmaking.",
-    image:
-      "https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
-    id: "05",
-    title: "Zero Noise, High Signal",
-    description:
-      "Strict vetting criteria ensures discussions stay actionable. No spam, no low-effort pitches, only high-conviction collaboration.",
-    image:
-      "https://images.unsplash.com/photo-1507679799987-c73779587ccf?q=80&w=1200&auto=format&fit=crop",
-  },
-  {
     id: "06",
-    title: "1-on-1 Strategy with Dr. Melwin",
+    title: "Founder Networking",
     description:
-      "Quarterly strategic audits, growth diagnosis, and direct introductions across global health, education, and venture capital networks.",
+      "High-signal closed-door meetups, peer advisory circles, and regional chapter gatherings with fellow relentless builders and mentors.",
+    image:
+      "https://images.unsplash.com/photo-1511795409834-ef04bbd61622?q=80&w=1200&auto=format&fit=crop",
+  },
+  {
+    id: "07",
+    title: "Business Opportunities",
+    description:
+      "Unlock B2B vendor deals, institutional pilots, cross-border expansions, government enterprise connects, and co-creation synergies.",
     image:
       "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?q=80&w=1200&auto=format&fit=crop",
   },
@@ -68,14 +76,19 @@ const AUTO_PLAY_DURATION = 5000;
 
 interface VerticalTabsProps {
   items?: TabItem[];
-  title?: string;
+  title?: React.ReactNode;
   badge?: string;
   className?: string;
 }
 
 export function VerticalTabs({
   items = DEFAULT_SERVICES,
-  title = "Why the World’s Best Founders Join",
+  title = (
+    <>
+      Be a part of the most reliable startup ecosystem of{" "}
+      <span className="font-semibold tracking-normal">தமிழ்நாடு</span>
+    </>
+  ),
   badge = "MEMBERSHIP EXPERIENCE",
   className,
 }: VerticalTabsProps) {
@@ -154,7 +167,7 @@ export function VerticalTabs({
                     key={service.id}
                     onClick={() => handleTabClick(index)}
                     className={cn(
-                      "group relative flex items-start gap-4 py-5 md:py-6 text-left transition-all duration-300 border-t border-black/10 first:border-0",
+                      "group relative flex items-start gap-4 py-3.5 md:py-4 text-left transition-all duration-300 border-t border-black/10 first:border-0",
                       isActive
                         ? "text-[#111111]"
                         : "text-neutral-400 hover:text-neutral-800"

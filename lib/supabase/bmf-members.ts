@@ -68,6 +68,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: true,
+    created_at: '2026-06-14T09:00:00Z',
   },
   {
     id: 'bmf-2',
@@ -89,6 +90,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: true,
+    created_at: '2026-07-02T10:30:00Z',
   },
   {
     id: 'bmf-3',
@@ -110,6 +112,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: true,
+    created_at: '2026-07-18T14:15:00Z',
   },
   {
     id: 'bmf-4',
@@ -131,6 +134,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: true,
+    created_at: '2026-08-01T11:00:00Z',
   },
   {
     id: 'bmf-5',
@@ -152,6 +156,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: false,
+    created_at: '2026-08-05T16:20:00Z',
   },
   {
     id: 'bmf-6',
@@ -173,6 +178,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: false,
+    created_at: '2026-08-11T12:00:00Z',
   },
   {
     id: 'bmf-7',
@@ -194,6 +200,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: false,
+    created_at: '2026-08-15T15:40:00Z',
   },
   {
     id: 'bmf-8',
@@ -215,6 +222,7 @@ export const INITIAL_BMF_MEMBERS: BmfMember[] = [
     is_verified: true,
     is_approved: true,
     is_featured: false,
+    created_at: '2026-08-18T18:00:00Z',
   }
 ]
 

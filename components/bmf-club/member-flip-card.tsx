@@ -5,7 +5,6 @@ import { motion } from 'framer-motion'
 import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, DEFAULT_FOUNDER_AVATAR } from '@/lib/image-utils'
 import { 
-  CheckCircle2, 
   Linkedin, 
   Twitter, 
   Globe, 
@@ -13,13 +12,23 @@ import {
   Users, 
   TrendingUp, 
   ArrowUpRight,
-  ShieldCheck,
   Building2,
   Sparkles
 } from 'lucide-react'
 
 interface MemberFlipCardProps {
   member: BmfMember
+}
+
+function formatMemberSince(dateStr?: string) {
+  if (!dateStr) return 'Aug 2026'
+  try {
+    const date = new Date(dateStr)
+    if (isNaN(date.getTime())) return 'Aug 2026'
+    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+  } catch {
+    return 'Aug 2026'
+  }
 }
 
 export function MemberFlipCard({ member }: MemberFlipCardProps) {
@@ -29,7 +38,7 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
 
   return (
     <div
-      className="group relative w-full h-[395px] [perspective:1400px] cursor-pointer select-none"
+      className="group relative w-[155px] sm:w-[210px] md:w-[220px] h-[225px] sm:h-[315px] [perspective:1400px] cursor-pointer select-none shrink-0"
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
       onClick={() => setIsFlipped((prev) => !prev)}
@@ -46,13 +55,13 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full h-full relative [transform-style:preserve-3d] rounded-2xl shadow-md hover:shadow-xl transition-shadow"
+        className="w-full h-full relative [transform-style:preserve-3d] rounded-xl sm:rounded-2xl shadow-md hover:shadow-xl transition-shadow"
       >
         {/* ======================================================================= */}
         {/* 1. FRONT FACE: Full-bleed Photo + Verified Badge + Inside Name Text Only */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl overflow-hidden [backface-visibility:hidden] border border-black/10 bg-neutral-900"
+          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] border border-black/10 bg-neutral-900"
           style={{ transform: 'rotateY(0deg)' }}
         >
           {/* Full-bleed Portrait Image */}
@@ -67,25 +76,25 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
           />
 
           {/* Top & Bottom Vignette Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/25 to-black/30 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
 
           {/* Bottom Inside Text: Member Name & Role */}
-          <div className="absolute inset-x-0 bottom-0 p-4 sm:p-5 z-10 flex flex-col justify-end space-y-1 text-left">
-            <div className="flex items-center gap-1.5">
-              <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white drop-shadow-md leading-tight">
+          <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3.5 z-10 flex flex-col justify-end space-y-0.5 text-left">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <h3 className="text-xs sm:text-lg font-black tracking-tight text-white drop-shadow-md leading-tight truncate">
                 {member.full_name}
               </h3>
               {member.is_featured && (
                 <img 
                   src="https://img.icons8.com/stickers/500/verified-badge.png" 
                   alt="Featured Verified Founder" 
-                  className="w-4 h-4 sm:w-5 sm:h-5 object-contain shrink-0 drop-shadow-sm"
+                  className="w-3 h-3 sm:w-4 sm:h-4 object-contain shrink-0 drop-shadow-sm"
                 />
               )}
             </div>
 
-            <div className="pt-0.5">
-              <span className="text-[11px] text-neutral-300 font-mono tracking-wide">
+            <div className="pt-0.2 sm:pt-0.5">
+              <span className="text-[8.5px] sm:text-[10px] text-neutral-300 font-mono tracking-wide block truncate">
                 {member.role}
               </span>
             </div>
@@ -96,127 +105,147 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
         {/* 2. BACK FACE: Role, Company Logo, Description, Metrics, Social Links   */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-2xl p-4 sm:p-5 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#141414] text-white border border-neutral-800 flex flex-col justify-between overflow-y-auto"
+          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#141414] text-white border border-neutral-800 flex flex-col justify-between overflow-hidden"
         >
           {/* Top Bar: Company Identity & Category */}
-          <div className="space-y-3 text-left">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2.5 min-w-0">
+          <div className="space-y-1 sm:space-y-2 text-left">
+            <div className="flex items-center justify-between gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
                     alt={member.company_name}
-                    className="w-8 h-8 rounded-xl object-cover border border-white/20 shadow-xs bg-neutral-800 shrink-0"
+                    className="w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg object-cover border border-white/20 shadow-xs bg-neutral-800 shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-xl bg-neutral-800 border border-white/10 flex items-center justify-center text-white font-bold shrink-0">
-                    <Building2 className="w-4 h-4 text-neutral-300" />
+                  <div className="w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg bg-neutral-800 border border-white/10 flex items-center justify-center text-white font-bold shrink-0">
+                    <Building2 className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-neutral-300" />
                   </div>
                 )}
                 <div className="min-w-0">
-                  <h4 className="text-sm font-extrabold text-white leading-tight truncate">
+                  <h4 className="text-[10px] sm:text-xs font-bold text-white leading-tight truncate">
                     {member.company_name}
                   </h4>
-                  <span className="text-[11px] text-emerald-400 font-mono font-medium block truncate">
+                  <span className="text-[8.5px] sm:text-[10px] text-emerald-400 font-mono block truncate">
                     {member.role}
                   </span>
                 </div>
               </div>
 
-              <span className="text-[9px] font-mono font-bold tracking-wider bg-white/10 text-neutral-200 px-2 py-0.5 rounded-full border border-white/10 shrink-0">
-                {member.category}
-              </span>
+              {member.category?.trim() && (
+                <span className="text-[7px] sm:text-[8.5px] font-mono font-semibold tracking-wide bg-white/10 text-neutral-200 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full border border-white/10 shrink-0 max-w-[60px] sm:max-w-[85px] truncate">
+                  {member.category}
+                </span>
+              )}
             </div>
 
             {/* Description: What they do */}
-            <div className="pt-0.5">
-              <p className="text-[11px] text-neutral-300 leading-relaxed font-normal line-clamp-3">
-                {member.description || member.tagline}
+            {(member.description?.trim() || member.tagline?.trim()) && (
+              <p className="text-[8px] sm:text-[10px] text-neutral-300 leading-tight sm:leading-snug line-clamp-2">
+                {member.description?.trim() || member.tagline?.trim()}
               </p>
-            </div>
+            )}
 
-            {/* Key Traction & Metrics Container */}
-            <div className="bg-neutral-900/90 rounded-xl p-2.5 border border-white/10 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-neutral-400 font-mono text-[10px] flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5 text-amber-400" />
-                  Stage
-                </span>
-                <span className="font-bold text-white text-[11px] truncate max-w-[55%] text-right">{member.stage}</span>
+            {/* Key Traction & Metrics Container (Optional) */}
+            {(member.stage?.trim() || member.metrics?.trim()) && (
+              <div className="bg-neutral-900/90 rounded-md sm:rounded-lg p-1 sm:p-2 border border-white/10 space-y-0.5 sm:space-y-1">
+                {member.stage?.trim() && (
+                  <div className="flex items-center justify-between text-[8px] sm:text-[10px]">
+                    <span className="text-neutral-400 font-mono text-[7px] sm:text-[9px] flex items-center gap-0.5 sm:gap-1">
+                      <Sparkles className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 text-amber-400 shrink-0" />
+                      Stage
+                    </span>
+                    <span className="font-bold text-white text-[7.5px] sm:text-[10px] truncate max-w-[60%] text-right">{member.stage}</span>
+                  </div>
+                )}
+
+                {member.metrics?.trim() && (
+                  <div className="flex items-center justify-between text-[8px] sm:text-[10px]">
+                    <span className="text-neutral-400 font-mono text-[7px] sm:text-[9px] flex items-center gap-0.5 sm:gap-1">
+                      <TrendingUp className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 text-emerald-400 shrink-0" />
+                      Traction
+                    </span>
+                    <span className="font-bold text-emerald-400 text-[7.5px] sm:text-[10px] truncate max-w-[60%] text-right">{member.metrics}</span>
+                  </div>
+                )}
               </div>
+            )}
 
-              <div className="flex items-center justify-between text-[11px]">
-                <span className="text-neutral-400 font-mono text-[10px] flex items-center gap-1">
-                  <TrendingUp className="w-2.5 h-2.5 text-emerald-400" />
-                  Traction
-                </span>
-                <span className="font-bold text-emerald-400 text-[11px] truncate max-w-[55%] text-right">{member.metrics}</span>
+            {/* Location & Team Size Meta (Optional) */}
+            {(member.location?.trim() || member.team_size?.trim()) && (
+              <div className="flex items-center justify-between text-[7.5px] sm:text-[9.5px] font-mono text-neutral-400 pt-0.2">
+                {member.location?.trim() ? (
+                  <span className="flex items-center gap-0.5 sm:gap-1 truncate max-w-[50%]">
+                    <MapPin className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 text-neutral-500 shrink-0" />
+                    {member.location}
+                  </span>
+                ) : <span />}
+                {member.team_size?.trim() && (
+                  <span className="flex items-center gap-0.5 sm:gap-1 truncate max-w-[45%]">
+                    <Users className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5 text-neutral-500 shrink-0" />
+                    {member.team_size}
+                  </span>
+                )}
               </div>
-            </div>
-
-            {/* Location & Team Size Meta */}
-            <div className="flex items-center justify-between text-[10px] font-mono text-neutral-400 pt-0.5">
-              <span className="flex items-center gap-1 truncate max-w-[50%]">
-                <MapPin className="w-2.5 h-2.5 text-neutral-500 shrink-0" />
-                {member.location}
-              </span>
-              <span className="flex items-center gap-1 truncate max-w-[45%]">
-                <Users className="w-2.5 h-2.5 text-neutral-500 shrink-0" />
-                {member.team_size}
-              </span>
-            </div>
+            )}
           </div>
 
-          {/* Bottom Actions: Social Profiles & Direct Connect */}
-          <div className="pt-3 border-t border-neutral-800">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                {member.linkedin_url && (
+          {/* Bottom Actions & Member Since Meta */}
+          <div className="pt-1 sm:pt-2 flex flex-col gap-1 sm:gap-2">
+            {/* Actions Above Line: Social Profiles & Intro Button */}
+            <div className="flex items-center justify-between gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+                {member.linkedin_url?.trim() && (
                   <a
                     href={member.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-7 h-7 rounded-full bg-neutral-800 hover:bg-[#0A66C2] text-white flex items-center justify-center transition-colors border border-white/10"
+                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-[#0A66C2] text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
                     aria-label="LinkedIn Profile"
                   >
-                    <Linkedin className="w-3 h-3" />
+                    <Linkedin className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                   </a>
                 )}
-                {member.twitter_url && (
+                {member.twitter_url?.trim() && (
                   <a
                     href={member.twitter_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10"
+                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
                     aria-label="Twitter/X Profile"
                   >
-                    <Twitter className="w-3 h-3" />
+                    <Twitter className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                   </a>
                 )}
-                {member.website_url && (
+                {member.website_url?.trim() && (
                   <a
                     href={member.website_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-7 h-7 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10"
+                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
                     aria-label="Company Website"
                   >
-                    <Globe className="w-3 h-3" />
+                    <Globe className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                   </a>
                 )}
               </div>
 
               <a
-                href="#apply"
+                href="/bmf-club/login"
                 onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-1 bg-white hover:bg-neutral-200 text-black px-3 py-1 rounded-full text-[11px] font-bold transition-all shadow-xs"
+                className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0"
               >
                 <span>Intro</span>
-                <ArrowUpRight className="w-3 h-3" />
+                <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
               </a>
+            </div>
+
+            {/* Bottom Line Divider & Member Since Text alone */}
+            <div className="border-t border-neutral-800/80 pt-0.5 sm:pt-1.5 flex items-center justify-start text-[7.5px] sm:text-[9px] font-mono text-neutral-400">
+              <span>Member since {formatMemberSince(member.created_at)}</span>
             </div>
           </div>
 

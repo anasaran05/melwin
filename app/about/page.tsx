@@ -38,7 +38,7 @@ export default function AboutPage() {
       website: 'ZaneProEd.com',
       url: 'https://zaneproed.com',
       badge: 'EdTech & Bioscience',
-      logo: '/zaneproed-logo.png',
+      logo: '/ventures logos/zaneproed.png',
       highlights: [
         'Built a leading bioscience learning platform combining real-world job simulations with an AI-driven career portfolio system.',
         'Developed a strong B2B and B2C engine with collaborations across biotech & pharma companies in India, U.S.A., and Europe.',
@@ -131,8 +131,23 @@ export default function AboutPage() {
           <Sparkles className="w-3.5 h-3.5 text-[#111111] shrink-0" /> <span className="truncate">Healthcare & EdTech Innovator</span>
         </div>
         
-        <h1 className="text-4xl sm:text-7xl md:text-8xl font-black tracking-tighter text-[#111111] mb-6 sm:mb-8 leading-[0.95]">
-          Dr. Melwin Vincent
+        <h1 className="text-4xl sm:text-7xl md:text-8xl font-black tracking-tighter text-[#111111] mb-6 sm:mb-8 leading-[0.95] flex items-center justify-center flex-wrap gap-2 sm:gap-4">
+          <span>Dr. Melwin Vincent</span>
+          <svg 
+            className="w-7 h-7 sm:w-12 sm:h-12 md:w-14 md:h-14 inline-block shrink-0 drop-shadow-sm select-none" 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            aria-label="Verified Account"
+          >
+            <path
+              d="M22.5 12c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.79-4-4-4-.495 0-.965.084-1.4.238C14.55 1.975 13.18 1.1 11.6 1.1s-2.95.875-3.6 2.148c-.435-.154-.905-.238-1.4-.238-2.21 0-4 1.79-4 4 0 .495.084.965.238 1.4C1.575 9.05.7 10.42.7 12s.875 2.95 2.148 3.6c-.154.435-.238.905-.238 1.4 0 2.21 1.79 4 4 4 .495 0 .965-.084 1.4-.238.65 1.273 2.02 2.148 3.6 2.148s2.95-.875 3.6-2.148c.435.154.905.238 1.4.238 2.21 0 4-1.79 4-4 0-.495-.084-.965-.238-1.4 1.273-.65 2.148-2.02 2.148-3.6z"
+              fill="#0095F6"
+            />
+            <path
+              d="M10.2 16.2l-3.8-3.8 1.4-1.4 2.4 2.4 5.9-5.9 1.4 1.4-7.3 7.3z"
+              fill="#FFFFFF"
+            />
+          </svg>
         </h1>
         
         <p className="text-lg sm:text-2xl text-[#111111]/80 max-w-4xl mx-auto font-medium leading-relaxed mb-10 sm:mb-14 px-2">
@@ -208,12 +223,12 @@ export default function AboutPage() {
               >
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-6 sm:mb-8">
-                    <div className="h-12 w-auto min-w-[48px] max-w-[160px] p-2 rounded-2xl bg-[#f8f8f8] border border-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 relative overflow-hidden">
+                    <div className="h-12 sm:h-14 w-auto min-w-[56px] max-w-[200px] px-3.5 py-2 rounded-2xl bg-[#f8f8f8] border border-neutral-200 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 relative overflow-hidden">
                       <Image 
                         src={venture.logo} 
                         alt={`${venture.company} logo`} 
-                        width={140} 
-                        height={40} 
+                        width={160} 
+                        height={48} 
                         className="object-contain h-full w-auto"
                       />
                     </div>

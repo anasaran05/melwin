@@ -428,6 +428,8 @@ export default function BmfMemberDashboardPage() {
         setProfile((prev) => ({
           ...prev,
           ...finalProfileData,
+          avatar_url: finalProfileData.avatar_url ?? prev.avatar_url ?? '',
+          company_logo: finalProfileData.company_logo ?? prev.company_logo ?? '',
           updated_at: new Date().toISOString(),
         }))
         setProfileForm(finalProfileData)
@@ -867,9 +869,9 @@ export default function BmfMemberDashboardPage() {
                     ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60' 
                     : card.approval_status === 'pending'
                     ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                    : 'bg-neutral-800 text-neutral-300 border border-neutral-700'
+                    : 'bg-neutral-800/80 text-neutral-400 border border-neutral-700/60'
                 }`}>
-                  {isCardLive ? `${card.card_tier} pass` : card.approval_status === 'pending' ? 'in review' : 'apply now'}
+                  {isCardLive ? `${card.card_tier} pass` : card.approval_status === 'pending' ? 'in review' : 'coming soon'}
                 </span>
               </div>
             </div>
@@ -904,14 +906,11 @@ export default function BmfMemberDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {!isCardLive && card.approval_status !== 'pending' && (
-              <button
-                onClick={() => setIsCardAppModalOpen(true)}
-                className="bg-white hover:bg-neutral-200 text-black px-4 py-2 rounded-full font-bold text-xs transition-all shadow-md inline-flex items-center gap-1.5 cursor-pointer"
-              >
-                <CreditCard className="w-3.5 h-3.5" />
-                <span>Apply for Card</span>
-              </button>
+            {!isCardLive && (
+              <span className="bg-neutral-900 border border-neutral-800 text-neutral-400 px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold inline-flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-neutral-400" />
+                <span>Coming Soon</span>
+              </span>
             )}
           </div>
         </div>
@@ -957,22 +956,21 @@ export default function BmfMemberDashboardPage() {
                       </p>
                     </div>
 
-                    {!isCardLive && card.approval_status !== 'pending' && (
-                      <button
-                        onClick={() => setIsCardAppModalOpen(true)}
-                        className="bg-white hover:bg-neutral-200 text-black px-4 py-2 rounded-full font-bold text-xs transition-all shadow-md shrink-0 inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>Apply for Pass</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
+                    {!isCardLive && (
+                      <span className="bg-neutral-800/80 border border-neutral-700/60 text-neutral-300 px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 shadow-xs">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Coming Soon</span>
+                      </span>
                     )}
                   </div>
 
-                  {/* Card Teaser (Blurred & Apply Overlay when not live) */}
-                  <div className="pt-2 flex flex-col items-center justify-center relative">
-                    {isCardLive ? (
-                      <div className="space-y-4 flex flex-col items-center">
-                        <ExecutiveMetalCard card={card} showControls={false} />
+                  {/* Card Display (Fully Unblurred) */}
+                  <div className="pt-2 flex flex-col items-center justify-center space-y-3">
+                    <div className="w-full flex justify-center">
+                      <ExecutiveMetalCard card={card} showControls={false} />
+                    </div>
+                    {isCardLive && (
+                      <>
                         {nfcSimulated && (
                           <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-600/70 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-in zoom-in-95 duration-200">
                             <Wifi className="w-4 h-4 text-emerald-400 animate-pulse" />
@@ -997,47 +995,7 @@ export default function BmfMemberDashboardPage() {
                             <span>Add to Wallet</span>
                           </button>
                         </div>
-                      </div>
-                    ) : (
-                      <div 
-                        className="relative group cursor-pointer" 
-                        onClick={() => {
-                          if (card.approval_status !== 'pending') {
-                            setIsCardAppModalOpen(true)
-                          }
-                        }}
-                      >
-                        <div className="blur-xs opacity-70 pointer-events-none transition-all group-hover:opacity-80">
-                          <ExecutiveMetalCard card={card} showControls={false} />
-                        </div>
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 bg-black/40 backdrop-blur-xs rounded-2xl border border-white/10 text-center space-y-3">
-                          {card.approval_status === 'pending' ? (
-                            <>
-                              <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 shadow-lg">
-                                <Clock className="w-5 h-5 animate-pulse" />
-                              </div>
-                              <span className="text-xs font-bold text-white uppercase tracking-wider">
-                                Application Under Review
-                              </span>
-                              <span className="text-[11px] text-amber-300">
-                                Your application is being reviewed by the admissions committee.
-                              </span>
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setIsCardAppModalOpen(true)
-                              }}
-                              className="bg-white hover:bg-neutral-200 text-black px-6 py-3 rounded-full font-bold text-xs transition-all shadow-xl inline-flex items-center gap-2 cursor-pointer group-hover:scale-105"
-                            >
-                              <CreditCard className="w-4 h-4 text-black" />
-                              <span>Apply for BMF Club Card &rarr;</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
+                      </>
                     )}
                   </div>
                 </div>
@@ -1250,10 +1208,11 @@ export default function BmfMemberDashboardPage() {
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-300">Stage</label>
                     <select
-                      value={profileForm.stage || 'Seed Stage ($1M - $3M)'}
+                      value={profileForm.stage || ''}
                       onChange={(e) => setProfileForm({ ...profileForm, stage: e.target.value })}
                       className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-white"
                     >
+                      <option value="">None / Not Specified</option>
                       {STAGES.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}

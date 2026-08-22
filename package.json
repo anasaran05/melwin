@@ -13,6 +13,7 @@
     "@hookform/resolvers": "^3.9.1",
     "@hugeicons/core-free-icons": "^4.3.0",
     "@hugeicons/react": "^1.1.10",
+    "@lottiefiles/dotlottie-react": "^0.19.15",
     "@marsidev/react-turnstile": "^1.5.2",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",

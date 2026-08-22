@@ -930,9 +930,9 @@ export default function BmfAdminReviewPage() {
                   <p className="text-xs text-neutral-400 font-mono">
                     {reg.email} &bull; {reg.phone || 'No phone'}
                   </p>
-                  {reg.guest_notes && (
+                  {reg.notes && (
                     <p className="text-xs text-neutral-300 italic pt-1">
-                      &ldquo;{reg.guest_notes}&rdquo;
+                      &ldquo;{reg.notes}&rdquo;
                     </p>
                   )}
                 </div>

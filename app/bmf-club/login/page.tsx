@@ -216,9 +216,9 @@ export default function BmfMemberLoginPage() {
           }}
           footerContent={
             <>
-              Not a member yet?{" "}
-              <Link href="/bmf-club#apply" className="text-white hover:underline font-semibold">
-                Apply for admission &rarr;
+              Explore the ecosystem{" "}
+              <Link href="/bmf-club" className="text-white hover:underline font-semibold">
+                View BMF Club Showcase &rarr;
               </Link>
             </>
           }
