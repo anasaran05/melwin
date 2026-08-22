@@ -1,6 +1,7 @@
 'use client'
 
 import Link from "next/link"
+import { Lock } from "lucide-react"
 
 export function Footer() {
   return (
@@ -28,16 +29,27 @@ export function Footer() {
                 { name: 'Home', href: '/' },
                 { name: 'About Me', href: '/about' },
                 { name: 'BMF Club', href: '/bmf-club' },
-                { name: 'Atom SE (Tech)', href: '/atom-se' },
+                { name: 'Atom SE (Tech)', href: '#', isLocked: true },
                 { name: 'Contact', href: '/#consultation' }
               ].map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  className="bg-[#f2f2f2] text-black px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold hover:bg-white hover:scale-105 active:scale-95 transition-all"
-                >
-                  {link.name}
-                </Link>
+                link.isLocked ? (
+                  <span
+                    key={link.name}
+                    title="Atom SE (Tech) is currently locked / invitation-only"
+                    className="bg-[#e5e5e5] text-neutral-600 px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-not-allowed select-none opacity-85"
+                  >
+                    <Lock className="w-3 h-3 text-neutral-500 shrink-0" />
+                    <span>{link.name}</span>
+                  </span>
+                ) : (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    className="bg-[#f2f2f2] text-black px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold hover:bg-white hover:scale-105 active:scale-95 transition-all"
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
             </div>
           </div>
