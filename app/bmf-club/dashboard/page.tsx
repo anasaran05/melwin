@@ -52,7 +52,8 @@ import {
   QrCode,
   ChevronsUpDown,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Edit3
 } from 'lucide-react'
 
 const CATEGORIES = [
@@ -111,6 +112,7 @@ export default function BmfMemberDashboardPage() {
 
   // Card Application Form State
   const [isCardAppModalOpen, setIsCardAppModalOpen] = useState(false)
+  const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false)
   const [cardAppForm, setCardAppForm] = useState({
     requested_tier: 'obsidian' as CardTier,
     traction_metric: '',
@@ -149,6 +151,13 @@ export default function BmfMemberDashboardPage() {
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [authStatus, setAuthStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [authMessage, setAuthMessage] = useState('')
+
+  // Pass Gating Modal State (for Jobs & Events)
+  const [isPassModalOpen, setIsPassModalOpen] = useState(false)
+  const [passModalFeature, setPassModalFeature] = useState<'job' | 'event'>('job')
+
+  // Check if current user has an active / approved BMF Club Pass
+  const hasActivePass = card?.approval_status === 'approved' || profile.role === 'admin'
 
   const [isLoading, setIsLoading] = useState(true)
 
@@ -916,16 +925,19 @@ export default function BmfMemberDashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
               {/* Left Column: Live 3D Perspective Member Card */}
-              <div className="lg:col-span-5 space-y-4 text-left">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400">
-                    Live 3D Member Card
+              <div className="lg:col-span-5 flex flex-col items-center justify-center">
+                <div className="flex flex-col items-center text-center gap-4">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400 text-center">
+                    Member Card
                   </span>
-                
-                </div>
-
-                <div className="max-w-[340px] mx-auto lg:mx-0">
                   <MemberFlipCard member={profile} />
+                  <button
+                    onClick={() => setActiveTab('profile')}
+                    className="inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 hover:border-neutral-600 text-neutral-200 hover:text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-sm mt-1"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-neutral-400" />
+                    <span>Edit Founder Card Details</span>
+                  </button>
                 </div>
               </div>
 
@@ -979,6 +991,18 @@ export default function BmfMemberDashboardPage() {
                         </div>
                       </>
                     )}
+                    {!isCardLive && (
+                      <div className="pt-1 flex justify-center">
+                        <button
+                          type="button"
+                          onClick={() => setIsComingSoonModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>Apply for Pass (Coming Soon)</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1001,8 +1025,13 @@ export default function BmfMemberDashboardPage() {
 
                   <button
                     onClick={() => {
-                      setActiveTab('jobs')
-                      setIsCreatingJob(true)
+                      if (!hasActivePass) {
+                        setPassModalFeature('job')
+                        setIsPassModalOpen(true)
+                      } else {
+                        setActiveTab('jobs')
+                        setIsCreatingJob(true)
+                      }
                     }}
                     className="p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 hover:border-neutral-600 transition-all text-left space-y-2 group cursor-pointer"
                   >
@@ -1305,6 +1334,37 @@ export default function BmfMemberDashboardPage() {
         {/* ======================================================================= */}
         {activeTab === 'jobs' && (
           <div className="py-8 animate-in fade-in-0 duration-300 max-w-4xl text-left space-y-8">
+            
+            {/* Exclusive Pass Gating Banner if Not Approved */}
+            {!hasActivePass && (
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-950/40 via-[#16161c] to-[#121216] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/30">
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white">Executive Pass Required</h4>
+                      <span className="text-[9px] font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
+                        Exclusive Member Perk
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Only verified BMF Club Pass holders can publish hiring opportunities to the talent network.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsComingSoonModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Apply for Pass</span>
+                </button>
+              </div>
+            )}
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-6">
               <div className="space-y-1">
                 <h2 className="text-2xl sm:text-3xl font-black text-white">Startup Job Manager</h2>
@@ -1316,7 +1376,14 @@ export default function BmfMemberDashboardPage() {
               {!isCreatingJob && (
                 <Button
                   type="button"
-                  onClick={() => setIsCreatingJob(true)}
+                  onClick={() => {
+                    if (!hasActivePass) {
+                      setPassModalFeature('job')
+                      setIsPassModalOpen(true)
+                    } else {
+                      setIsCreatingJob(true)
+                    }
+                  }}
                   className="bg-white hover:bg-neutral-200 text-black px-6 py-2.5 rounded-full font-bold text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
@@ -1472,8 +1539,15 @@ export default function BmfMemberDashboardPage() {
                   <Briefcase className="w-8 h-8 text-neutral-600 mx-auto" />
                   <p className="text-xs text-neutral-400">No active job postings yet.</p>
                   <button
-                    onClick={() => setIsCreatingJob(true)}
-                    className="text-xs font-bold text-white hover:underline mt-1"
+                    onClick={() => {
+                      if (!hasActivePass) {
+                        setPassModalFeature('job')
+                        setIsPassModalOpen(true)
+                      } else {
+                        setIsCreatingJob(true)
+                      }
+                    }}
+                    className="text-xs font-bold text-white hover:underline mt-1 cursor-pointer"
                   >
                     + Post your first role
                   </button>
@@ -1534,57 +1608,88 @@ export default function BmfMemberDashboardPage() {
         {/* ======================================================================= */}
         {activeTab === 'events' && (
           <div className="py-8 animate-in fade-in-0 duration-300 max-w-4xl text-left space-y-8">
-            <div className="space-y-1 border-b border-neutral-800 pb-6">
-              <h2 className="text-2xl sm:text-3xl font-black text-white">Private Founder Masterminds</h2>
-              <p className="text-xs sm:text-sm text-neutral-400">
-                Closed-door sessions, strategic roundtables, and VIP investor dinners across Bangalore and Silicon Valley.
-              </p>
+            
+            {/* Exclusive Pass Gating Banner if Not Approved */}
+            {!hasActivePass && (
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-amber-950/40 via-[#16161c] to-[#121216] border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-start gap-3.5">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 border border-amber-500/30">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-sm font-bold text-white">Executive Pass Required for Masterminds</h4>
+                      <span className="text-[9px] font-mono uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
+                        Syndicate Access
+                      </span>
+                    </div>
+                    <p className="text-xs text-neutral-400 leading-relaxed">
+                      Closed-door masterminds, investor dinners, and event hosting are reserved for active BMF Club Pass holders.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsComingSoonModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black text-xs font-bold transition-all shadow-md shrink-0 cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Apply for Pass</span>
+                </button>
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-6">
+              <div className="space-y-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-white">Private Founder Masterminds</h2>
+                <p className="text-xs sm:text-sm text-neutral-400">
+                  Closed-door sessions, strategic roundtables, and VIP investor dinners across Bangalore and Silicon Valley.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  if (!hasActivePass) {
+                    setPassModalFeature('event')
+                    setIsPassModalOpen(true)
+                  } else {
+                    alert('Founder Mastermind Host Portal is active. Our concierge team will reach out to schedule your session.')
+                  }
+                }}
+                className="bg-white hover:bg-neutral-200 text-black px-6 py-2.5 rounded-full font-bold text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Propose Mastermind</span>
+              </Button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-[#121216] border border-neutral-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider bg-sky-950/80 text-sky-400 border border-sky-800/60 px-2.5 py-1 rounded-full font-bold">
-                    Upcoming Dinner
-                  </span>
-                  <span className="text-xs font-mono text-neutral-500">March 2026</span>
-                </div>
-                <h3 className="text-lg font-bold text-white">AI Infrastructure & Sovereign LLMs Mastermind</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Closed-door gathering of 12 Series A/B founders discussing high-throughput inference optimization and GPU cluster economics.
-                </p>
-                <div className="pt-2 flex items-center justify-between border-t border-neutral-800/80">
-                  <span className="text-xs text-neutral-400 font-mono">Bangalore (Indiranagar)</span>
-                  <button 
-                    onClick={() => alert('RSVP confirmed! You will receive WhatsApp details 48h prior to the dinner.')}
-                    className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer"
-                  >
-                    RSVP Access
-                  </button>
-                </div>
+            {/* Empty Masterminds State */}
+            <div className="p-10 rounded-3xl bg-[#121216] border border-neutral-800 text-center space-y-4 shadow-xl">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-700/80 text-neutral-400 flex items-center justify-center mx-auto shadow-inner">
+                <Calendar className="w-6 h-6" />
               </div>
-
-              <div className="bg-[#121216] border border-neutral-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-mono uppercase tracking-wider bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 px-2.5 py-1 rounded-full font-bold">
-                    Virtual Syndicate
-                  </span>
-                  <span className="text-xs font-mono text-neutral-500">Bi-Weekly</span>
-                </div>
-                <h3 className="text-lg font-bold text-white">Dr. Melwin Strategy & Deal Room</h3>
+              <div className="space-y-1 max-w-md mx-auto">
+                <h3 className="text-base font-bold text-white">No Active Masterminds Scheduled</h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">
-                  Deep-dive teardown of pitch metrics, term sheet negotiation, and zero-capital scaling architecture.
+                  Upcoming closed-door roundtables and VIP founder sessions will appear here once announced.
                 </p>
-                <div className="pt-2 flex items-center justify-between border-t border-neutral-800/80">
-                  <span className="text-xs text-neutral-400 font-mono">Zoom Room (Encrypted)</span>
-                  <button 
-                    onClick={() => alert('Booked! Link dispatched to your registered email.')}
-                    className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 rounded-full transition-all cursor-pointer"
-                  >
-                    Join Queue
-                  </button>
-                </div>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!hasActivePass) {
+                    setPassModalFeature('event')
+                    setIsPassModalOpen(true)
+                  } else {
+                    alert('Mastermind Proposal portal is active. Our concierge team will reach out to schedule your session.')
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Propose a Session</span>
+              </button>
             </div>
           </div>
         )}
@@ -1774,6 +1879,156 @@ export default function BmfMemberDashboardPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================= */}
+      {/* PASS GATING MODAL (FOR JOBS & EVENTS) */}
+      {/* ======================================================================= */}
+      {isPassModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in-0 duration-200">
+          <div className="bg-[#141418] border border-neutral-800 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl relative space-y-6 text-left border-t-amber-500/40">
+            
+            <button
+              type="button"
+              onClick={() => setIsPassModalOpen(false)}
+              className="absolute top-6 right-6 text-neutral-400 hover:text-white p-2 rounded-full bg-neutral-900 border border-neutral-800 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Pass Header Icon */}
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-900/40 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-inner shrink-0">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[10px] font-mono font-bold tracking-widest text-amber-400 uppercase">
+                  BMF CLUB PASS PRIVILEGE
+                </span>
+                <h3 className="text-lg sm:text-xl font-bold text-white">
+                  {passModalFeature === 'job' 
+                    ? 'Executive Pass Required to Post Jobs' 
+                    : 'Executive Pass Required to Host Masterminds'}
+                </h3>
+              </div>
+            </div>
+
+            {/* Explanation */}
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+              {passModalFeature === 'job'
+                ? 'Startup Job Postings are reserved exclusively for active BMF Club Pass holders to maintain the highest quality signal across our ecosystem and talent directory.'
+                : 'Hosting private closed-door masterminds and investor roundtables is an exclusive benefit reserved for active BMF Club Pass holders.'}
+            </p>
+
+            {/* Pass Benefits List */}
+            <div className="p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-2.5">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 font-bold block">
+                Included with BMF Executive Pass:
+              </span>
+              <div className="space-y-2 text-xs text-neutral-300">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Unlimited verified job posts with direct founder branding</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Host closed-door masterminds & VIP investor dinners</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span>Laser-engraved physical metal pass with NFC syndicate credentials</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+              <Button
+                type="button"
+                onClick={() => {
+                  setIsPassModalOpen(false)
+                  setIsComingSoonModalOpen(true)
+                }}
+                className="w-full sm:w-auto flex-1 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black px-6 py-3 rounded-full font-bold text-xs transition-all shadow-lg shadow-amber-500/10 cursor-pointer flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Apply for Founder Pass</span>
+              </Button>
+
+              <button
+                type="button"
+                onClick={() => setIsPassModalOpen(false)}
+                className="w-full sm:w-auto px-5 py-3 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-400 hover:text-white text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Maybe Later
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================================= */}
+      {/* PASS COMING SOON MODAL */}
+      {/* ======================================================================= */}
+      {isComingSoonModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto animate-in fade-in-0 duration-200">
+          <div className="bg-[#141418] border border-neutral-800 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative space-y-6 text-center border-t-amber-500/40">
+            
+            <button
+              type="button"
+              onClick={() => setIsComingSoonModalOpen(false)}
+              className="absolute top-6 right-6 text-neutral-400 hover:text-white p-2 rounded-full bg-neutral-900 border border-neutral-800 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {/* Icon */}
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-900/40 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-inner">
+              <Sparkles className="w-7 h-7 animate-pulse" />
+            </div>
+
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-mono font-bold tracking-widest text-amber-400 uppercase">
+                EXCLUSIVE FOUNDER PASS
+              </span>
+              <h3 className="text-xl font-bold text-white">
+                Pass Applications Opening Soon
+              </h3>
+              <p className="text-xs text-neutral-400 leading-relaxed pt-1">
+                The laser-engraved BMF Executive Metal Pass with NFC syndicate access is currently in private minting. Pass intake will open soon for founding members.
+              </p>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="p-4 rounded-2xl bg-neutral-900/90 border border-neutral-800 space-y-2 text-left text-xs text-neutral-300">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Priority Talent & Verified Hiring Hub</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Closed-Door Mastermind & Dinner Invites</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Direct Syndicate & Investor Connections</span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              onClick={() => {
+                setIsComingSoonModalOpen(false)
+                alert('You are on the priority founding member list! We will notify you when passes go live.')
+              }}
+              className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black py-3 rounded-full font-bold text-xs transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
+            >
+              Join Priority Waitlist
+            </Button>
+
           </div>
         </div>
       )}

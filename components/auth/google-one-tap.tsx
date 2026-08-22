@@ -26,6 +26,21 @@ interface GoogleOneTapProps {
   onSuccess?: (user: any) => void
 }
 
+// Generates a cryptographically random raw nonce and its SHA-256 hash for Supabase + Google One Tap
+async function generateNonce(): Promise<{ rawNonce: string; hashedNonce: string }> {
+  const rawArray = new Uint8Array(16)
+  crypto.getRandomValues(rawArray)
+  const rawNonce = Array.from(rawArray, (b) => b.toString(16).padStart(2, '0')).join('')
+
+  const encoder = new TextEncoder()
+  const data = encoder.encode(rawNonce)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  const hashedNonce = hashArray.map((b) => b.toString(16).padStart(2, '0')).join('')
+
+  return { rawNonce, hashedNonce }
+}
+
 export function GoogleOneTap({ 
   redirectTo = '/bmf-club/dashboard',
   autoPrompt = true,
@@ -64,15 +79,20 @@ export function GoogleOneTap({
 
         setIsInitializing(true)
 
-        // 2. Initialize Google Identity Services One Tap
+        // 2. Generate matching SHA-256 nonce pair for Google and Supabase
+        const { rawNonce, hashedNonce } = await generateNonce()
+
+        // 3. Initialize Google Identity Services One Tap
         window.google.accounts.id.initialize({
           client_id: googleClientId,
+          nonce: hashedNonce,
           callback: async (response: any) => {
             try {
-              // 3. Authenticate with Supabase using the Google ID token (Zero-redirect login)
+              // 4. Authenticate with Supabase using the Google ID token and rawNonce
               const { data, error } = await supabase.auth.signInWithIdToken({
                 provider: 'google',
                 token: response.credential,
+                nonce: rawNonce,
               })
 
               if (error) {
@@ -100,7 +120,7 @@ export function GoogleOneTap({
           use_fedcm_for_prompt: true,
         })
 
-        // 4. Prompt the One Tap Floating Widget
+        // 5. Prompt the One Tap Floating Widget
         if (autoPrompt) {
           window.google.accounts.id.prompt((notification: any) => {
             if (notification.isNotDisplayed()) {

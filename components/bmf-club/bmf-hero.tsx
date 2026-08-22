@@ -6,61 +6,61 @@ import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 
-// High-resolution visual cards curated for BMF Club
+// High-resolution founder avatar portraits curated for BMF Club
 const streamImages = [
   {
     id: 'img-1',
     src: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #f97316 0%, #dc2626 50%, #7c2d12 100%)',
-    alt: 'Founder Leadership',
+    fallbackBg: 'linear-gradient(135deg, #18181b 0%, #27272a 100%)',
+    alt: 'AI & Machine Learning Founder',
   },
   {
     id: 'img-2',
-    src: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #09090b 0%, #ef4444 50%, #000000 100%)',
-    alt: 'Obsidian Neon Arc',
+    src: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #09090b 0%, #1c1917 100%)',
+    alt: 'SaaS & Cloud Architect',
   },
   {
     id: 'img-3',
-    src: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #0284c7 0%, #1e3a8a 50%, #0f172a 100%)',
-    alt: 'Twilight Horizon',
+    src: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%)',
+    alt: 'DeepTech Venture Executive',
   },
   {
     id: 'img-4',
-    src: 'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #9333ea 0%, #4c1d95 50%, #000000 100%)',
-    alt: 'Cosmic Vortex Aura',
+    src: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
+    alt: 'Fintech & Quant Lead',
   },
   {
     id: 'img-5',
-    src: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #f59e0b 0%, #b45309 50%, #78350f 100%)',
-    alt: 'Surreal Gold Art',
+    src: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #451a03 0%, #78350f 100%)',
+    alt: 'Robotics & Hardware Innovator',
   },
   {
     id: 'img-6',
-    src: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #52525b 0%, #27272a 50%, #09090b 100%)',
-    alt: 'Monochrome Horizon',
+    src: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #172554 0%, #1e3a8a 100%)',
+    alt: 'BioTech & Sovereign Compute Founder',
   },
   {
     id: 'img-7',
-    src: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #3b82f6 0%, #ec4899 50%, #8b5cf6 100%)',
-    alt: 'Iridescent Innovation',
+    src: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #3b0764 0%, #581c87 100%)',
+    alt: 'Product & Design Partner',
   },
   {
     id: 'img-8',
-    src: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #10b981 0%, #047857 50%, #064e3b 100%)',
-    alt: 'Cyber Hardware Interface',
+    src: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #18181b 0%, #09090b 100%)',
+    alt: 'Distributed Systems Founder',
   },
   {
     id: 'img-9',
-    src: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=800&auto=format&fit=crop',
-    fallbackBg: 'linear-gradient(135deg, #06b6d4 0%, #0284c7 50%, #082f49 100%)',
-    alt: 'Cyan Velocity Streak',
+    src: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=800&auto=format&fit=crop',
+    fallbackBg: 'linear-gradient(135deg, #082f49 0%, #0c4a6e 100%)',
+    alt: 'Venture Builder & Managing Partner',
   },
 ]
 
@@ -278,28 +278,18 @@ export function BmfHeroSection() {
           Builders Connect.
         </motion.h2>
 
-        {/* Subtitle */}
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-[#555555] max-w-3xl mx-auto font-normal leading-relaxed"
-        >
-          A private network of extraordinary founders, technical innovators, and venture leaders. Company showcases, closed-door masterminds, peer-to-peer insights, and direct investor connections.
-        </motion.p>
-
         {/* CTA Buttons */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
         >
           <Link
             href="/bmf-club/dashboard"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>{isLoggedIn ? 'Go to Dashboard' : 'Get Started'}</span>
+            <span>{isLoggedIn ? 'Go to Dashboard' : 'Join Now (Free)'}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 

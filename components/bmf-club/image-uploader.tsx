@@ -43,7 +43,7 @@ export function ImageUploader({
     setIsCompressing(true)
 
     try {
-      // Compress to WebP at 80% quality
+      // Compress to WebP at 80% quality silently in the background
       const result = await compressImageToWebP(file, {
         quality: 0.8,
         maxWidth: aspectRatio === 'square' ? 800 : 1400,
@@ -51,14 +51,11 @@ export function ImageUploader({
       })
 
       setPreviewUrl(result.previewUrl)
-      setCompressionStats(
-        `Optimized: ${result.originalSizeKb}KB → ${result.compressedSizeKb}KB (WebP)`
-      )
       // Pass the compressed File & previewUrl to parent form state
       onFileSelect(result.file, result.previewUrl)
     } catch (err: any) {
       console.error('Image compression error:', err)
-      setError('Could not optimize image. Please try another file.')
+      setError('Could not process image. Please try another file.')
     } finally {
       setIsCompressing(false)
     }
@@ -162,7 +159,7 @@ export function ImageUploader({
                 <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white gap-1 p-2 text-center">
                   <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
                   <span className="text-[10px] font-mono text-neutral-300">
-                    {isCompressing ? 'Optimizing WebP...' : 'Uploading...'}
+                    {isCompressing ? 'Processing...' : 'Uploading...'}
                   </span>
                 </div>
               )}
@@ -172,7 +169,7 @@ export function ImageUploader({
               <div>
                 <p className="text-xs font-semibold text-white truncate">{label}</p>
                 <p className="text-[11px] text-neutral-400">
-                  {compressionStats || (isPendingSave ? 'WebP 80% ready' : 'Image active')}
+                  Image active
                 </p>
               </div>
               <div className="flex items-center gap-2 pt-1">
@@ -210,10 +207,10 @@ export function ImageUploader({
             </div>
             <div className="space-y-0.5">
               <p className="text-xs font-medium text-neutral-200">
-                {isCompressing ? 'Optimizing to WebP...' : 'Click or drag image here to upload'}
+                {isCompressing ? 'Processing...' : 'Click or drag image here to upload'}
               </p>
               <p className="text-[10px] text-neutral-500">
-                Auto-compressed to WebP (80% Quality) on upload
+                PNG, JPG, or WEBP up to 10MB
               </p>
             </div>
           </div>

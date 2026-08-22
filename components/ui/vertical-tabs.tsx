@@ -156,9 +156,9 @@ export function VerticalTabs({
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-          {/* Left Column: Content Tabs */}
-          <div className="lg:col-span-5 flex flex-col justify-center order-2 lg:order-1">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
+          {/* Left Column: Content Tabs (Full width on mobile, 5 cols on desktop) */}
+          <div className="col-span-1 lg:col-span-5 flex flex-col justify-center order-1">
             <div className="flex flex-col space-y-0">
               {items.map((service, index) => {
                 const isActive = activeIndex === index;
@@ -229,8 +229,8 @@ export function VerticalTabs({
             </div>
           </div>
 
-          {/* Right Column: Dynamic Visual Showcase with controls */}
-          <div className="lg:col-span-7 flex flex-col justify-center h-full order-1 lg:order-2">
+          {/* Right Column: Dynamic Visual Showcase with controls (Desktop only: hidden on mobile) */}
+          <div className="hidden lg:flex lg:col-span-7 flex-col justify-center h-full order-2">
             <div
               className="relative group/gallery"
               onMouseEnter={() => setIsPaused(true)}

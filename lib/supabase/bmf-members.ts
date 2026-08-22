@@ -374,6 +374,30 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
   }
 }
 
+async function ensureHostedMediaUrl(url: string | undefined, folder: 'founders' | 'companies', userId: string): Promise<string | undefined> {
+  if (!url || !url.startsWith('data:image/')) {
+    return url
+  }
+  try {
+    const res = await fetch('/api/bmf/upload-media', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        base64Data: url,
+        folder,
+        userId,
+      }),
+    })
+    const data = await res.json()
+    if (data.success && data.url) {
+      return data.url
+    }
+  } catch (e) {
+    console.error('[Base64 Auto-Upload Error]:', e)
+  }
+  return url
+}
+
 export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<{ success: boolean; error?: string }> {
   try {
     const supabase = getSupabaseBrowserClient()
@@ -394,6 +418,15 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       return { success: false, error: 'User must be authenticated to update profile' }
     }
 
+    // Auto-convert any base64 image data to hosted CDN storage URL before database write
+    const sanitizedMember = { ...member }
+    if (sanitizedMember.avatar_url && sanitizedMember.avatar_url.startsWith('data:image/')) {
+      sanitizedMember.avatar_url = await ensureHostedMediaUrl(sanitizedMember.avatar_url, 'founders', user.id)
+    }
+    if (sanitizedMember.company_logo && sanitizedMember.company_logo.startsWith('data:image/')) {
+      sanitizedMember.company_logo = await ensureHostedMediaUrl(sanitizedMember.company_logo, 'companies', user.id)
+    }
+
     // Check if profile exists by user_id or id
     const { data: existing } = await supabase
       .from('bmf_members')
@@ -407,9 +440,9 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       const { error } = await supabase
         .from('bmf_members')
         .update({
-          ...member,
+          ...sanitizedMember,
           user_id: user.id,
-          email: user.email || member.email,
+          email: user.email || sanitizedMember.email,
           updated_at: new Date().toISOString(),
         })
         .eq('id', existing.id)
@@ -418,10 +451,10 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       const { error } = await supabase
         .from('bmf_members')
         .insert({
-          id: member.id || user.id,
+          id: sanitizedMember.id || user.id,
           user_id: user.id,
-          email: user.email || member.email,
-          ...member,
+          email: user.email || sanitizedMember.email,
+          ...sanitizedMember,
           updated_at: new Date().toISOString(),
         })
       saveErr = error

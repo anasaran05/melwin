@@ -244,7 +244,7 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
             </div>
 
             {/* Bottom Line Divider & Member Since Text alone */}
-            <div className="border-t border-neutral-800/80 pt-0.5 sm:pt-1.5 flex items-center justify-start text-[7.5px] sm:text-[9px] font-mono text-neutral-400">
+            <div className="border-t border-neutral-800/80 pt-0.5 sm:pt-1.5 flex items-center justify-center text-center text-[7.5px] sm:text-[9px] font-mono text-neutral-400">
               <span>Member since {formatMemberSince(member.created_at)}</span>
             </div>
           </div>
