@@ -1,9 +1,11 @@
+import { Suspense } from 'react'
 import type { Metadata } from 'next'
 import { DM_Serif_Display, DM_Mono, Geist } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import { AppBackground } from '@/components/ui/background'
 import SplashCursor from '@/components/nurui/splash-cursor'
+import { ScrollToTop } from '@/components/scroll-to-top'
 import './globals.css'
 
 const dmSerif = DM_Serif_Display({ weight: '400', subsets: ['latin'], variable: '--font-dm-serif' })
@@ -25,8 +27,11 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className={`${dmSerif.variable} ${dmMono.variable} ${geist.variable} scroll-smooth`}>
+    <html lang="en" className={`${dmSerif.variable} ${dmMono.variable} ${geist.variable}`}>
       <body className="font-geist antialiased">
+        <Suspense fallback={null}>
+          <ScrollToTop />
+        </Suspense>
         <AppBackground>
           <SplashCursor />
           {children}

@@ -59,6 +59,12 @@ export function ManagerSidebar({ activeClientId, onOpenCreateClient }: ManagerSi
       icon: Film,
       active: pathname === '/dashboard/manager/analytics',
     },
+    {
+      name: 'BMF Showcase Review',
+      href: '/dashboard/manager/bmf-review',
+      icon: ShieldCheck,
+      active: pathname === '/dashboard/manager/bmf-review',
+    },
   ];
 
   const clientNavItems = activeClientId

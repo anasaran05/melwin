@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "21st": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://21st.dev/api/mcp",
+        "--header",
+        "x-api-key: 21st_sk_6c455c11571af61cfe990fc714994fbd7725bf3921ec14b422009f42ff17e65e"
+      ]
+    }
+  }
+}

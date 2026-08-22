@@ -23,19 +23,27 @@ export function Footer() {
           {/* Quick Links */}
           <div className="flex flex-col gap-6">
             <span className="text-gray-400 text-lg">Quick links</span>
-            <div className="flex flex-wrap gap-3 max-w-[340px]">
+            <div className="flex flex-wrap gap-2.5 max-w-[440px]">
               {[
                 { name: 'Home', href: '/' },
                 { name: 'About Me', href: '/about' },
-                { name: 'Agency', href: '/agency' },
+                { name: 'BMF Club', href: '/bmf-club' },
+                { name: 'Atom SE (Tech)', href: '/atom-se' },
+                { name: 'Funding & Grants', href: '/funding-grants' },
+                { name: 'Jobs & Talent', href: '/jobs-talent' },
+                { name: 'Startup Academy', href: '/startup-academy' },
+                { name: 'Digital Growth', href: '/digital-growth' },
+                { name: 'Business Services', href: '/business-services' },
+                { name: 'Export & Import', href: '/export-import' },
+                { name: 'Agency Plans', href: '/agency' },
                 { name: 'Services', href: '/#services' },
-                { name: 'Works', href: '/#ventures' },
+                { name: 'Ventures', href: '/#ventures' },
                 { name: 'Contact', href: '/#consultation' }
               ].map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="bg-[#f2f2f2] text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-white transition-colors"
+                  className="bg-[#f2f2f2] text-black px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold hover:bg-white hover:scale-105 active:scale-95 transition-all"
                 >
                   {link.name}
                 </Link>

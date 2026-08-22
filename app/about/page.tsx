@@ -94,7 +94,7 @@ export default function AboutPage() {
     },
     {
       title: 'Community',
-      description: 'Built a personal brand to 50,000+ followers and 1.7M+ content impressions. Launched a private founders club scaling to 23,000+ WhatsApp members in 2 months.',
+      description: 'Built a personal brand to 50,000+ followers and 1.7M+ content impressions. Launched the private BMF Club scaling to 23,000+ WhatsApp members in 2 months.',
       icon: Users
     },
     {
