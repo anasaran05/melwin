@@ -587,7 +587,7 @@ export default function BmfMemberDashboardPage() {
             href="/bmf-club"
             className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-white transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            
             <span>&larr; Back to BMF Club Directory</span>
           </Link>
         </div>
@@ -869,9 +869,9 @@ export default function BmfMemberDashboardPage() {
                     ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60' 
                     : card.approval_status === 'pending'
                     ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
-                    : 'bg-neutral-800/80 text-neutral-400 border border-neutral-700/60'
+                    : 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
                 }`}>
-                  {isCardLive ? `${card.card_tier} pass` : card.approval_status === 'pending' ? 'in review' : 'coming soon'}
+                  {isCardLive ? `${card.card_tier} pass` : card.approval_status === 'pending' ? 'in review' : 'founder pass'}
                 </span>
               </div>
             </div>
@@ -904,15 +904,6 @@ export default function BmfMemberDashboardPage() {
               BMF Founder Studio &bull; {profile.company_name}
             </p>
           </div>
-
-          <div className="flex items-center gap-3">
-            {!isCardLive && (
-              <span className="bg-neutral-900 border border-neutral-800 text-neutral-400 px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold inline-flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-neutral-400" />
-                <span>Coming Soon</span>
-              </span>
-            )}
-          </div>
         </div>
 
         {/* ======================================================================= */}
@@ -930,9 +921,7 @@ export default function BmfMemberDashboardPage() {
                   <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-400">
                     Live 3D Member Card
                   </span>
-                  <span className="text-[10px] font-mono text-neutral-500">
-                    Hover / Tap to Flip Card
-                  </span>
+                
                 </div>
 
                 <div className="max-w-[340px] mx-auto lg:mx-0">
@@ -955,13 +944,6 @@ export default function BmfMemberDashboardPage() {
                         Laser-engraved physical metal pass with syndicate privileges.
                       </p>
                     </div>
-
-                    {!isCardLive && (
-                      <span className="bg-neutral-800/80 border border-neutral-700/60 text-neutral-300 px-3.5 py-1.5 rounded-full font-mono text-xs font-semibold inline-flex items-center gap-1.5 shrink-0 shadow-xs">
-                        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Coming Soon</span>
-                      </span>
-                    )}
                   </div>
 
                   {/* Card Display (Fully Unblurred) */}

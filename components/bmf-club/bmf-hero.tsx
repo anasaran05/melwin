@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion'
 import { ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 
 // High-resolution visual cards curated for BMF Club
 const streamImages = [
@@ -66,6 +67,7 @@ const streamImages = [
 export function BmfHeroSection() {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
 
@@ -79,6 +81,40 @@ export function BmfHeroSection() {
   const [progress, setProgress] = useState(0)
 
   useEffect(() => {
+    let isSubscribed = true
+    const checkAuth = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user && isSubscribed) {
+            setIsLoggedIn(true)
+            return
+          }
+
+          supabase.auth.onAuthStateChange((_event, session) => {
+            if (isSubscribed) {
+              setIsLoggedIn(!!session?.user)
+            }
+          })
+        }
+        if (typeof window !== 'undefined') {
+          const storedEmail = localStorage.getItem('bmf_current_user_email')
+          if (storedEmail && isSubscribed) {
+            setIsLoggedIn(true)
+          }
+        }
+      } catch (err) {
+        console.error('Error checking auth in BmfHeroSection:', err)
+      }
+    }
+    checkAuth()
+    return () => {
+      isSubscribed = false
+    }
+  }, [])
+
+  useEffect(() => {
     setIsMounted(true)
     let animationFrameId: number
     let lastTime = performance.now()
@@ -86,7 +122,6 @@ export function BmfHeroSection() {
     const step = (now: number) => {
       const delta = (now - lastTime) / 1000
       lastTime = now
-      // Smooth continuous outward drift: cards travel seamlessly from center depth outward
       const speed = (numCards / 22) * delta
       setProgress((prev) => (prev + speed) % numCards)
       animationFrameId = requestAnimationFrame(step)
@@ -110,7 +145,7 @@ export function BmfHeroSection() {
     mouseY.set(0)
   }
 
-  const activeProgress = isMounted ? progress : 0
+  if (!isMounted) return null
 
   return (
     <section
@@ -120,14 +155,11 @@ export function BmfHeroSection() {
       onMouseLeave={handleMouseLeave}
       className="relative w-full pt-16 sm:pt-20 md:pt-24 pb-16 px-0 overflow-hidden select-none flex flex-col items-center justify-between"
     >
-      {/* Subtle Radial Atmosphere */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[550px] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.03)_0%,transparent_70%)]" />
       </div>
 
-      {/* 1. TOP OF MARQUEE: "BMF Club" Title (tucked inward closer to marquee) */}
       <div className="relative z-30 text-center max-w-5xl mx-auto px-4 -mb-2 sm:-mb-5 md:-mb-8">
-        {/* Top Title Only */}
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -143,28 +175,19 @@ export function BmfHeroSection() {
         </motion.h1>
       </div>
 
-      {/* 2. 3D Perspective Image Stream Corridor (Full-bleed edge to edge) */}
       <div className="relative z-10 w-full overflow-visible my-0 py-0 flex items-center justify-center [perspective:1200px]">
         <motion.div
           style={{ rotateX, rotateY }}
           className="relative w-full h-[280px] sm:h-[360px] md:h-[440px] flex items-center justify-center"
         >
-          {/* LEFT RAIL: Cards emerge from center vanishing point (behind) and travel outward to screen edge (front) */}
           <div className="absolute left-1/2 top-1/2 -translate-y-1/2 flex items-center justify-end pointer-events-none">
             {streamImages.map((item, idx) => {
-              // Normalized progress from center (0.0) to outer left edge (1.0)
-              const pos = ((idx + activeProgress) % numCards + numCards) % numCards
+              const pos = ((idx + progress) % numCards + numCards) % numCards
               const t = pos / numCards
-
-              // Distance & perspective easing curves
               const curve = Math.pow(t, 1.25)
-              const scale = 0.28 + t * 0.88 // 0.28 at center to 1.16 at outer edge
-              const rotateYAngle = 16 + t * 40 // 16deg at center to 56deg at outer edge
-              
-              // Stacking order: Outer foreground cards strictly on top of inner background cards
+              const scale = 0.28 + t * 0.88
+              const rotateYAngle = 16 + t * 40
               const zIndex = Math.floor(t * 1000) + 1
-              
-              // Smooth fade-in as it emerges from center, smooth fade-out as it exits edge
               const opacity = t < 0.04 ? t / 0.04 : t > 0.88 ? (1 - t) / 0.12 : 1
 
               return (
@@ -195,11 +218,10 @@ export function BmfHeroSection() {
             })}
           </div>
 
-          {/* RIGHT RAIL: Mirrored twin images emerge from center vanishing point (behind) and travel outward to screen edge (front) */}
           <div className="absolute left-1/2 top-1/2 -translate-y-1/2 flex items-center justify-start pointer-events-none">
             {streamImages.map((item, idx) => {
               // Normalized progress from center (0.0) to outer right edge (1.0)
-              const pos = ((idx + activeProgress) % numCards + numCards) % numCards
+              const pos = ((idx + progress) % numCards + numCards) % numCards
               const t = pos / numCards
 
               // Distance & perspective easing curves
@@ -277,7 +299,7 @@ export function BmfHeroSection() {
             href="/bmf-club/dashboard"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Get Started</span>
+            <span>{isLoggedIn ? 'Go to Dashboard' : 'Get Started'}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 

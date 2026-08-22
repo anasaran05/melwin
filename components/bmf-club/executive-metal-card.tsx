@@ -169,7 +169,7 @@ export function ExecutiveMetalCard({
             </svg>
 
             {/* Lottie Animation: Catch the Fish */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 overflow-hidden pr-6 sm:pr-8">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10 overflow-hidden pr-6 sm:pr-8 -translate-y-4 sm:-translate-y-10">
               <div className="w-[170px] h-[170px] sm:w-[200px] sm:h-[200px] opacity-90 drop-shadow-[0_0_20px_rgba(255,255,255,0.15)]">
                 <DotLottieReact
                   src="/assets/Catch the Fish.lottie"

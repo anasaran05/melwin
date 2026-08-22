@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
@@ -29,6 +29,40 @@ export default function BmfMemberLoginPage() {
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  useEffect(() => {
+    let isSubscribed = true
+    const checkExistingSession = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user && isSubscribed) {
+            router.replace('/bmf-club/dashboard')
+            return
+          }
+        }
+        if (typeof window !== 'undefined') {
+          const storedEmail = localStorage.getItem('bmf_current_user_email')
+          if (storedEmail && isSubscribed) {
+            router.replace('/bmf-club/dashboard')
+            return
+          }
+        }
+      } catch (err) {
+        console.error('Error checking login session:', err)
+      } finally {
+        if (isSubscribed) {
+          setIsCheckingAuth(false)
+        }
+      }
+    }
+    checkExistingSession()
+    return () => {
+      isSubscribed = false
+    }
+  }, [router])
 
   const handleGoogleSignIn = async () => {
     setStatus('loading')
@@ -179,7 +213,7 @@ export default function BmfMemberLoginPage() {
           href="/bmf-club"
           className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-white transition-colors"
         >
-          <ArrowLeft className="w-3.5 h-3.5" />
+          
           <span>&larr; Back to BMF Club Directory</span>
         </Link>
       </div>
