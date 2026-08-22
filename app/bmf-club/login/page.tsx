@@ -4,21 +4,97 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, ShieldCheck, Sparkles, Loader2, KeyRound } from 'lucide-react'
+import { ArrowLeft, Loader2 } from 'lucide-react'
+
+const IconGoogle = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" {...props}><title>Google</title><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.386-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.85l3.25-3.138C18.189 1.186 15.479 0 12.24 0 5.48 0 0 5.48 0 12.24s5.48 12.24 12.24 12.24c6.885 0 11.954-4.823 11.954-12.015 0-.795-.084-1.588-.239-2.356H12.24z" fill="currentColor"/></svg>
+)
+
+const IconGithub = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" {...props}><title>GitHub</title><path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.085 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12Z" fill="currentColor"/></svg>
+)
+
+const IconMail = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" {...props}><title>Mail</title><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z" fill="currentColor"/></svg>
+)
+
+const BMF_LOGO_URL = "https://img.icons8.com/stickers/500/verified-badge.png"
 
 export default function BmfMemberLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showEmailForm, setShowEmailForm] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleGoogleSignIn = async () => {
+    setStatus('loading')
+    setMessage('')
+    try {
+      const supabase = getSupabaseBrowserClient()
+      if (supabase) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+          },
+        })
+        if (error) {
+          setStatus('error')
+          setMessage(error.message)
+        }
+      } else {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bmf_current_user_email', 'google.founder@bmf.club')
+        }
+        setStatus('success')
+        router.push('/bmf-club/dashboard')
+      }
+    } catch (err: any) {
+      setStatus('error')
+      setMessage(err.message || 'Google authentication failed')
+    }
+  }
+
+  const handleGithubSignIn = async () => {
+    setStatus('loading')
+    setMessage('')
+    try {
+      const supabase = getSupabaseBrowserClient()
+      if (supabase) {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'github',
+          options: {
+            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+          },
+        })
+        if (error) {
+          setStatus('error')
+          setMessage(error.message)
+        }
+      } else {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('bmf_current_user_email', 'github.founder@bmf.club')
+        }
+        setStatus('success')
+        router.push('/bmf-club/dashboard')
+      }
+    } catch (err: any) {
+      setStatus('error')
+      setMessage(err.message || 'GitHub authentication failed')
+    }
+  }
+
+  const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!email.trim()) {
+      setStatus('error')
+      setMessage('Please enter a valid email address.')
+      return
+    }
     setStatus('loading')
     setMessage('')
 
@@ -26,44 +102,58 @@ export default function BmfMemberLoginPage() {
       const supabase = getSupabaseBrowserClient()
 
       if (!supabase) {
-        // Local demo access fallback if Supabase env is not configured
         if (typeof window !== 'undefined') {
           localStorage.setItem('bmf_current_user_email', email)
         }
         setStatus('success')
-        setMessage('Demo login successful! Redirecting to your member dashboard...')
+        setMessage('Demo login successful! Redirecting...')
         setTimeout(() => {
           router.push('/bmf-club/dashboard')
-        }, 800)
+        }, 600)
         return
       }
 
-      // Try Password sign in
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
+      if (password.trim()) {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
 
-      if (error) {
-        // If password fails or user wants magic link, try OTP magic link
+        if (error) {
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            },
+          })
+
+          if (otpError) {
+            setStatus('error')
+            setMessage(error.message || otpError.message)
+          } else {
+            setStatus('success')
+            setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
+          }
+        } else if (data.user) {
+          setStatus('success')
+          setMessage('Signed in successfully!')
+          router.push('/bmf-club/dashboard')
+        }
+      } else {
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/bmf-club/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
           },
         })
 
         if (otpError) {
           setStatus('error')
-          setMessage(error.message || 'Invalid credentials. If you are a new member, please contact the admissions team.')
+          setMessage(otpError.message)
         } else {
           setStatus('success')
           setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
         }
-      } else if (data.user) {
-        setStatus('success')
-        setMessage('Signed in successfully!')
-        router.push('/bmf-club/dashboard')
       }
     } catch (err: any) {
       setStatus('error')
@@ -71,7 +161,6 @@ export default function BmfMemberLoginPage() {
     }
   }
 
-  // Quick Demo Access Handler
   const handleQuickDemoAccess = () => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bmf_current_user_email', 'kishore@pharmpulse.ai')
@@ -80,12 +169,12 @@ export default function BmfMemberLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d0d0d] text-white p-4 relative overflow-hidden select-none">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#0d0d0d] text-white p-4 relative overflow-hidden select-none font-sans">
       {/* Ambient background glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.12)_0%,transparent_70%)] pointer-events-none" />
 
       {/* Back button */}
-      <div className="w-full max-w-md mb-6">
+      <div className="w-full max-w-sm mb-6 relative z-10">
         <Link 
           href="/bmf-club"
           className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-white transition-colors"
@@ -95,98 +184,100 @@ export default function BmfMemberLoginPage() {
         </Link>
       </div>
 
-      <Card className="w-full max-w-md bg-[#161616] border-neutral-800 text-neutral-100 shadow-2xl rounded-3xl overflow-hidden relative z-10">
-        <CardHeader className="space-y-2 text-center pb-4 pt-8">
-          <div className="w-12 h-12 rounded-2xl bg-white/10 text-white flex items-center justify-center mx-auto border border-white/10 shadow-md">
-            <ShieldCheck className="w-6 h-6 text-sky-400" />
-          </div>
-          <CardTitle className="text-2xl font-black tracking-tight text-white">
-            BMF Member Portal
-          </CardTitle>
-          <CardDescription className="text-xs sm:text-sm text-neutral-400 max-w-xs mx-auto">
-            Log in to manage your executive profile card, company bio, and venture metrics.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-5 px-6 sm:px-8 pb-8">
-          <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-1.5 text-left">
-              <Label htmlFor="email" className="text-xs font-medium text-neutral-300">
-                Registered Member Email
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                placeholder="founder@yourcompany.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-4 py-2.5 text-xs focus-visible:ring-sky-500"
-              />
-            </div>
-
-            <div className="space-y-1.5 text-left">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-xs font-medium text-neutral-300">
-                  Password (or leave blank for Magic Link)
-                </Label>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-neutral-900 border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-4 py-2.5 text-xs focus-visible:ring-sky-500"
-              />
-            </div>
-
-            {message && (
-              <div className={`p-3 text-xs rounded-xl text-center ${
-                status === 'error' 
-                  ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400' 
-                  : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
-              }`}>
-                {message}
-              </div>
-            )}
-
-            <Button
-              type="submit"
-              disabled={status === 'loading'}
-              className="w-full bg-white text-black hover:bg-neutral-200 font-bold text-xs py-5 rounded-full transition-all shadow-md"
-            >
-              {status === 'loading' ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  <span>Authenticating...</span>
-                </>
-              ) : (
-                <span>Access Member Dashboard</span>
-              )}
-            </Button>
-          </form>
-
-          {/* Quick Demo Instant Access */}
-          <div className="pt-2 border-t border-neutral-800 text-center space-y-3">
-            <button
-              type="button"
-              onClick={handleQuickDemoAccess}
-              className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-white/10 px-4 py-2.5 rounded-full text-xs font-medium transition-colors"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Instant Member Studio Preview (Demo Mode)</span>
-            </button>
-
-            <p className="text-[11px] text-neutral-500">
-              Not a member yet?{' '}
+      <div className="w-full max-w-sm relative z-10">
+        <AuthForm
+          logoSrc={BMF_LOGO_URL}
+          logoAlt="BMF Club Logo"
+          title="BMF Member Portal"
+          description="Log in to manage your executive profile card, company bio, and venture metrics."
+          primaryAction={{
+            label: status === 'loading' ? "Authenticating..." : "Continue with Google",
+            icon: status === 'loading' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <IconGoogle />,
+            onClick: handleGoogleSignIn,
+            disabled: status === 'loading',
+          }}
+          secondaryActions={[
+            {
+              label: "Continue with GitHub",
+              icon: <IconGithub />,
+              onClick: handleGithubSignIn,
+              disabled: status === 'loading',
+            },
+            {
+              label: showEmailForm ? "Hide Email Login" : "Continue with Email",
+              icon: <IconMail />,
+              onClick: () => setShowEmailForm(!showEmailForm),
+              disabled: status === 'loading',
+            },
+          ]}
+          skipAction={{
+            label: "Instant Member Studio Preview (Demo Mode)",
+            onClick: handleQuickDemoAccess,
+          }}
+          footerContent={
+            <>
+              Not a member yet?{" "}
               <Link href="/bmf-club#apply" className="text-white hover:underline font-semibold">
                 Apply for admission &rarr;
               </Link>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+            </>
+          }
+        >
+          {showEmailForm && (
+            <form onSubmit={handleEmailSignIn} className="space-y-3 pt-1 pb-2 text-left animate-in fade-in-0 duration-300">
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-neutral-300">Registered Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="founder@yourcompany.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] font-medium text-neutral-300">Password (or leave blank for Magic Link)</label>
+                </div>
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                disabled={status === 'loading'}
+                className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-4 rounded-xl transition-all shadow-md mt-1 cursor-pointer"
+              >
+                {status === 'loading' ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                    <span>Authenticating...</span>
+                  </>
+                ) : (
+                  <span>Access Member Dashboard</span>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {message && (
+            <div className={`p-3 text-xs rounded-xl text-center leading-relaxed ${
+              status === 'error' 
+                ? 'bg-rose-500/10 border border-rose-500/20 text-rose-400' 
+                : 'bg-emerald-500/10 border border-emerald-500/20 text-emerald-300'
+            }`}>
+              {message}
+            </div>
+          )}
+        </AuthForm>
+      </div>
     </div>
   )
 }

@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         registrationStatus = 'pending'
         // Increment registered count
         await supabase
-          .from('bmf_events')
+            .from('bmf_events')
           .update({ registered_count: (event.registered_count || 0) + 1 })
           .eq('id', event_id)
       }

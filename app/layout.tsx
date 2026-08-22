@@ -6,6 +6,7 @@ import { Toaster } from 'sonner'
 import { AppBackground } from '@/components/ui/background'
 import SplashCursor from '@/components/nurui/splash-cursor'
 import { ScrollToTop } from '@/components/scroll-to-top'
+import { GoogleOneTap } from '@/components/auth/google-one-tap'
 import './globals.css'
 
 const dmSerif = DM_Serif_Display({ weight: '400', subsets: ['latin'], variable: '--font-dm-serif' })
@@ -29,6 +30,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable} ${geist.variable}`}>
       <body className="font-geist antialiased">
+        <GoogleOneTap redirectTo="/bmf-club/dashboard" />
         <Suspense fallback={null}>
           <ScrollToTop />
         </Suspense>

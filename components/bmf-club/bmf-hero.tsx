@@ -268,13 +268,13 @@ export function BmfHeroSection() {
           transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
         >
-          <a
-            href="#apply"
+          <Link
+            href="/bmf-club/dashboard"
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
           >
-            <span>Apply for Membership</span>
+            <span>Get Started</span>
             <ArrowRight className="w-4 h-4" />
-          </a>
+          </Link>
 
           <a
             href="#showcases"

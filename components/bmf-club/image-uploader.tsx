@@ -1,66 +1,66 @@
 'use client'
 
-import React, { useState, useRef } from 'react'
-import { Upload, Loader2, CheckCircle2, Image as ImageIcon, Trash2 } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Upload, Loader2, CheckCircle2, Trash2 } from 'lucide-react'
+import { compressImageToWebP, normalizeR2Url } from '@/lib/image-utils'
 
 interface ImageUploaderProps {
   label: string
   description?: string
   currentUrl?: string
-  folder: 'founders' | 'companies'
-  userId?: string
   aspectRatio?: 'square' | 'portrait' | 'landscape'
-  onUploadComplete: (url: string) => void
+  isUploading?: boolean
+  isPendingSave?: boolean
+  onFileSelect: (file: File | null, previewUrl: string) => void
 }
 
 export function ImageUploader({
   label,
   description,
-  currentUrl,
-  folder,
-  userId = 'anonymous',
+  currentUrl = '',
   aspectRatio = 'portrait',
-  onUploadComplete,
+  isUploading = false,
+  isPendingSave = false,
+  onFileSelect,
 }: ImageUploaderProps) {
-  const [isUploading, setIsUploading] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string>(currentUrl || '')
+  const [isCompressing, setIsCompressing] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string>(normalizeR2Url(currentUrl) || '')
+  const [compressionStats, setCompressionStats] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [isDragOver, setIsDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Sync with currentUrl prop when it changes and we're not staging a new file
+  useEffect(() => {
+    if (!isPendingSave) {
+      setPreviewUrl(normalizeR2Url(currentUrl) || '')
+    }
+  }, [currentUrl, isPendingSave])
+
   const handleFile = async (file: File) => {
     if (!file) return
     setError('')
-    setIsUploading(true)
-
-    // Set immediate local preview
-    const localUrl = URL.createObjectURL(file)
-    setPreviewUrl(localUrl)
+    setIsCompressing(true)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', folder)
-      formData.append('userId', userId)
-
-      const response = await fetch('/api/bmf/upload-media', {
-        method: 'POST',
-        body: formData,
+      // Compress to WebP at 80% quality
+      const result = await compressImageToWebP(file, {
+        quality: 0.8,
+        maxWidth: aspectRatio === 'square' ? 800 : 1400,
+        maxHeight: aspectRatio === 'square' ? 800 : 1400,
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success && data.url) {
-        setPreviewUrl(data.url)
-        onUploadComplete(data.url)
-      } else {
-        setError(data.error || 'Upload failed. Please try again.')
-      }
+      setPreviewUrl(result.previewUrl)
+      setCompressionStats(
+        `Optimized: ${result.originalSizeKb}KB → ${result.compressedSizeKb}KB (WebP)`
+      )
+      // Pass the compressed File & previewUrl to parent form state
+      onFileSelect(result.file, result.previewUrl)
     } catch (err: any) {
-      console.error('Upload error:', err)
-      setError('Network error during upload.')
+      console.error('Image compression error:', err)
+      setError('Could not optimize image. Please try another file.')
     } finally {
-      setIsUploading(false)
+      setIsCompressing(false)
     }
   }
 
@@ -84,41 +84,46 @@ export function ImageUploader({
   const handleClear = (e: React.MouseEvent) => {
     e.stopPropagation()
     setPreviewUrl('')
-    onUploadComplete('')
+    setCompressionStats('')
+    onFileSelect(null, '')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
-  const aspectClass = 
-    aspectRatio === 'square' ? 'aspect-square max-w-[140px]' : 
-    aspectRatio === 'landscape' ? 'aspect-video max-w-[240px]' : 
-    'aspect-[3/4] max-w-[160px]'
+  const aspectClass =
+    aspectRatio === 'square'
+      ? 'w-20 h-20 sm:w-24 sm:h-24 rounded-2xl'
+      : aspectRatio === 'landscape'
+      ? 'w-36 h-20 sm:w-40 sm:h-24 rounded-2xl'
+      : 'w-20 h-24 sm:w-24 sm:h-32 rounded-2xl'
+
+  const activeImage = previewUrl || currentUrl
 
   return (
     <div className="space-y-2 text-left">
       <div className="flex items-center justify-between">
         <label className="text-xs font-semibold text-neutral-200">
-          {label} <span className="text-emerald-400">*</span>
+          {label}
         </label>
-        {previewUrl && (
-          <span className="text-[10px] font-mono text-emerald-400 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Ready
+        {activeImage && (
+          <span className="text-[11px] text-emerald-400 flex items-center gap-1 font-medium">
+            <CheckCircle2 className="w-3.5 h-3.5" /> Ready
           </span>
         )}
       </div>
 
       {description && (
-        <p className="text-[11px] text-neutral-400 leading-tight">
+        <p className="text-[11px] text-neutral-400">
           {description}
         </p>
       )}
 
-      {/* Hidden native input */}
+      {/* Hidden native file input */}
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/jpeg,image/png,image/webp,image/svg+xml"
+        accept="image/jpeg,image/png,image/webp,image/svg+xml,image/heic,image/jpg"
         className="hidden"
         onChange={(e) => {
           if (e.target.files && e.target.files[0]) {
@@ -127,56 +132,66 @@ export function ImageUploader({
         }}
       />
 
-      {/* Dropzone Container */}
+      {/* Modern Card Container */}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onClick={() => fileInputRef.current?.click()}
-        className={`relative group cursor-pointer border-2 border-dashed rounded-2xl p-4 transition-all flex flex-col items-center justify-center text-center ${
+        className={`relative group cursor-pointer border rounded-2xl p-4 transition-all ${
           isDragOver
-            ? 'border-sky-400 bg-sky-950/20'
-            : previewUrl
-            ? 'border-neutral-700 bg-neutral-900/50 hover:border-neutral-500'
-            : 'border-neutral-700 hover:border-neutral-500 bg-neutral-900/80'
+            ? 'border-sky-500 bg-sky-950/20'
+            : activeImage
+            ? 'border-neutral-800 bg-[#16161a] hover:border-neutral-700'
+            : 'border-neutral-800 hover:border-neutral-700 bg-[#16161a]'
         }`}
       >
-        {previewUrl ? (
-          <div className="flex items-center gap-4 w-full">
-            <div className={`relative ${aspectClass} w-full rounded-xl overflow-hidden bg-black border border-white/10 shrink-0 shadow-md`}>
+        {activeImage ? (
+          <div className="flex items-center gap-4">
+            <div className={`relative ${aspectClass} overflow-hidden bg-neutral-900 border border-white/10 shrink-0 shadow-md`}>
               <img
-                src={previewUrl}
-                alt="Preview"
+                src={activeImage}
+                alt={label}
                 className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback if URL is invalid or blocked
+                  e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'
+                }}
               />
-              {isUploading && (
-                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center gap-1.5 text-white">
+              {(isCompressing || isUploading) && (
+                <div className="absolute inset-0 bg-black/70 flex flex-col items-center justify-center text-white gap-1 p-2 text-center">
                   <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
-                  <span className="text-[10px] font-mono font-bold">Uploading to R2...</span>
+                  <span className="text-[10px] font-mono text-neutral-300">
+                    {isCompressing ? 'Optimizing WebP...' : 'Uploading...'}
+                  </span>
                 </div>
               )}
             </div>
 
-            <div className="flex-1 text-left space-y-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">Image Uploaded</p>
-              <p className="text-[11px] text-neutral-400 font-mono">
-                {folder === 'founders' ? 'Founder Portrait (Cloudflare R2)' : 'Company Logo (Cloudflare R2)'}
-              </p>
-              <div className="pt-2 flex items-center gap-2">
+            <div className="flex-1 text-left space-y-1.5 min-w-0">
+              <div>
+                <p className="text-xs font-semibold text-white truncate">{label}</p>
+                <p className="text-[11px] text-neutral-400">
+                  {compressionStats || (isPendingSave ? 'WebP 80% ready' : 'Image active')}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
                 <button
                   type="button"
+                  disabled={isCompressing || isUploading}
                   onClick={(e) => {
                     e.stopPropagation()
                     fileInputRef.current?.click()
                   }}
-                  className="text-[11px] font-mono bg-white/10 hover:bg-white/20 text-neutral-200 px-2.5 py-1 rounded-md transition-colors"
+                  className="text-xs font-medium bg-neutral-800 hover:bg-neutral-700 text-neutral-200 px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  Replace
+                  Change Image
                 </button>
                 <button
                   type="button"
+                  disabled={isCompressing || isUploading}
                   onClick={handleClear}
-                  className="text-[11px] font-mono text-rose-400 hover:text-rose-300 p-1 transition-colors"
+                  className="text-xs font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-950/40 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   title="Remove image"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -185,20 +200,20 @@ export function ImageUploader({
             </div>
           </div>
         ) : (
-          <div className="py-4 space-y-2 flex flex-col items-center justify-center">
-            <div className="w-10 h-10 rounded-full bg-white/10 text-neutral-300 flex items-center justify-center group-hover:scale-110 transition-transform">
-              {isUploading ? (
+          <div className="py-6 space-y-2 flex flex-col items-center justify-center text-center">
+            <div className="w-10 h-10 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center group-hover:scale-105 transition-transform">
+              {isCompressing || isUploading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
               ) : (
                 <Upload className="w-5 h-5" />
               )}
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs font-bold text-neutral-200">
-                {isUploading ? 'Uploading to Cloudflare R2...' : 'Click or Drag & Drop to Upload'}
+              <p className="text-xs font-medium text-neutral-200">
+                {isCompressing ? 'Optimizing to WebP...' : 'Click or drag image here to upload'}
               </p>
-              <p className="text-[10px] text-neutral-500 font-mono">
-                PNG, JPG, WEBP or SVG (Max 10MB)
+              <p className="text-[10px] text-neutral-500">
+                Auto-compressed to WebP (80% Quality) on upload
               </p>
             </div>
           </div>
@@ -206,8 +221,8 @@ export function ImageUploader({
       </div>
 
       {error && (
-        <p className="text-xs text-rose-400 font-mono">
-          ⚠️ {error}
+        <p className="text-xs text-rose-400">
+          {error}
         </p>
       )}
     </div>

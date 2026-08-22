@@ -35,7 +35,7 @@ export function Footer() {
                 { name: 'Digital Growth', href: '/digital-growth' },
                 { name: 'Business Services', href: '/business-services' },
                 { name: 'Export & Import', href: '/export-import' },
-                { name: 'Agency Plans', href: '/agency' },
+                { name: 'Personal Branding', href: '/agency' },
                 { name: 'Services', href: '/#services' },
                 { name: 'Ventures', href: '/#ventures' },
                 { name: 'Contact', href: '/#consultation' }

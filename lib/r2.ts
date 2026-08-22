@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3'
 
 export function getR2Client(): S3Client | null {
   const accountId = process.env.R2_ACCOUNT_ID || process.env.CLOUDFLARE_ACCOUNT_ID
@@ -32,15 +32,15 @@ export async function uploadToCloudflareR2({
   contentType,
   folder,
   userId = 'anonymous',
-  originalFileName = 'image.jpg',
+  originalFileName = 'image.webp',
 }: UploadR2Options): Promise<{ success: boolean; url: string; error?: string }> {
   try {
     const r2 = getR2Client()
-    const bucketName = process.env.R2_BUCKET_NAME || 'bmf-club-assets'
+    const bucketName = process.env.R2_BUCKET_NAME || 'buildwithmelwin'
     const publicDomain = process.env.R2_PUBLIC_DOMAIN || process.env.NEXT_PUBLIC_R2_PUBLIC_DOMAIN
 
     // Extract sanitized extension
-    const ext = originalFileName.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg'
+    const ext = originalFileName.split('.').pop()?.toLowerCase().replace(/[^a-z0-9]/g, '') || 'webp'
     const timestamp = Date.now()
     const sanitizedUserId = userId.replace(/[^a-zA-Z0-9_-]/g, '_')
     
@@ -51,7 +51,7 @@ export async function uploadToCloudflareR2({
     const key = `bmf-club/${folder}/${sanitizedUserId}/${prefix}_${timestamp}.${ext}`
 
     if (!r2) {
-      console.warn('[R2] Cloudflare R2 credentials not set. Using base64 data URI fallback for local preview.')
+      console.warn('[R2] Cloudflare R2 credentials not set. Using base64 data URI fallback.')
       const base64 = `data:${contentType};base64,${fileBuffer.toString('base64')}`
       return {
         success: true,
@@ -68,13 +68,15 @@ export async function uploadToCloudflareR2({
 
     await r2.send(command)
 
-    // Format public CDN URL
+    // Format public URL:
+    // If a custom public domain is configured (e.g. https://cdn.buildwithmelwin.com), use it.
+    // Otherwise, route through the secure Next.js media proxy (/api/bmf/media/...)
     let publicUrl = ''
-    if (publicDomain) {
+    if (publicDomain && publicDomain.trim().length > 0) {
       const cleanDomain = publicDomain.replace(/\/$/, '')
       publicUrl = `${cleanDomain}/${key}`
     } else {
-      publicUrl = `https://${bucketName}.r2.dev/${key}`
+      publicUrl = `/api/bmf/media/${key}`
     }
 
     return {

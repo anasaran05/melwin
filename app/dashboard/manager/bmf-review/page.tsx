@@ -16,7 +16,14 @@ import {
   deleteBmfEvent,
   fetchEventRegistrations
 } from '@/lib/supabase/bmf-events'
+import {
+  BmfCard,
+  CardTier,
+  CARD_TIERS,
+  fetchAllCardsForAdmin
+} from '@/lib/supabase/bmf-cards'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
+import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { 
   CheckCircle2, 
   XCircle, 
@@ -38,12 +45,18 @@ import {
   Flame,
   Check,
   Layers,
-  Ticket
+  Ticket,
+  CreditCard,
+  Lock,
+  Zap,
+  Eye,
+  Award,
+  ShieldAlert
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export default function BmfAdminReviewPage() {
-  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations'>('showcases')
+  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards'>('showcases')
 
   // Showcase Members State
   const [members, setMembers] = useState<BmfMember[]>(INITIAL_BMF_MEMBERS)
@@ -55,6 +68,15 @@ export default function BmfAdminReviewPage() {
   const [rejectModalMember, setRejectModalMember] = useState<BmfMember | null>(null)
   const [feedbackText, setFeedbackText] = useState('')
   const [isSendingFeedback, setIsSendingFeedback] = useState(false)
+
+  // Executive Pass Cards State
+  const [cards, setCards] = useState<BmfCard[]>([])
+  const [cardFilter, setCardFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all')
+  const [cardSearch, setCardSearch] = useState('')
+  const [activeCardActionId, setActiveCardActionId] = useState<string | null>(null)
+  const [previewCard, setPreviewCard] = useState<BmfCard | null>(null)
+  const [rejectModalCard, setRejectModalCard] = useState<BmfCard | null>(null)
+  const [cardRejectFeedback, setCardRejectFeedback] = useState('')
 
   // Events State
   const [events, setEvents] = useState<BmfEvent[]>(INITIAL_BMF_EVENTS)
@@ -90,14 +112,16 @@ export default function BmfAdminReviewPage() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [membersData, eventsData, regData] = await Promise.all([
+      const [membersData, eventsData, regData, cardsData] = await Promise.all([
         fetchAllMembersForAdmin(),
         fetchAllEventsForAdmin(),
         fetchEventRegistrations(),
+        fetchAllCardsForAdmin(),
       ])
       setMembers(membersData)
       setEvents(eventsData)
       setRegistrations(regData)
+      setCards(cardsData)
     } catch (err) {
       console.error(err)
     } finally {
@@ -141,6 +165,48 @@ export default function BmfAdminReviewPage() {
       setRejectModalMember(null)
       setFeedbackText('')
       setIsSendingFeedback(false)
+    }
+  }
+
+  // Pass Card actions
+  const handleCardAction = async (cardId: string, action: 'approve' | 'reject' | 'set_tier' | 'toggle_active', feedback?: string, tier?: CardTier) => {
+    setActiveCardActionId(cardId)
+    try {
+      const res = await fetch('/api/bmf/admin-card-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cardId, action, feedback, tier }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setCards((prev) =>
+          prev.map((c) => {
+            if (c.id !== cardId) return c
+            if (action === 'approve') return { ...c, approval_status: 'approved', is_active: true, admin_feedback: undefined }
+            if (action === 'reject') return { ...c, approval_status: 'rejected', is_active: false, admin_feedback: feedback }
+            if (action === 'set_tier' && tier) return { ...c, card_tier: tier, tier_perks: CARD_TIERS[tier].perks }
+            if (action === 'toggle_active') return { ...c, is_active: !c.is_active }
+            return c
+          })
+        )
+        if (previewCard && previewCard.id === cardId) {
+          setPreviewCard((prev) => prev ? {
+            ...prev,
+            approval_status: action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : prev.approval_status,
+            is_active: action === 'approve' ? true : action === 'reject' ? false : prev.is_active,
+            card_tier: (action === 'set_tier' && tier) ? tier : prev.card_tier,
+          } : null)
+        }
+      } else {
+        alert(data.error || 'Card action failed.')
+      }
+    } catch (err: any) {
+      alert(err.message || 'Card action error.')
+    } finally {
+      setActiveCardActionId(null)
+      setRejectModalCard(null)
+      setCardRejectFeedback('')
     }
   }
 
@@ -230,9 +296,22 @@ export default function BmfAdminReviewPage() {
     )
   })
 
+  const filteredCards = cards.filter((c) => {
+    const status = c.approval_status || (c.is_active ? 'approved' : 'pending')
+    const matchesFilter = cardFilter === 'all' || status === cardFilter
+    const q = cardSearch.toLowerCase()
+    return matchesFilter && (
+      c.card_holder_name.toLowerCase().includes(q) ||
+      c.company_name.toLowerCase().includes(q) ||
+      c.card_tier.toLowerCase().includes(q)
+    )
+  })
+
   const filteredRegistrations = registrations.filter((r) => {
     return selectedEventId === 'all' || r.event_id === selectedEventId
   })
+
+  const pendingCardCount = cards.filter((c) => c.approval_status === 'pending').length
 
   return (
     <div className="min-h-screen bg-[#0d0d10] text-white p-4 sm:p-8 space-y-8 font-sans">
@@ -252,7 +331,7 @@ export default function BmfAdminReviewPage() {
             BMF Admissions & Events Control Deck
           </h1>
           <p className="text-xs sm:text-sm text-neutral-400">
-            Moderate showcase directory cards, publish private events with custom CTA routing, and approve RSVP passes.
+            Moderate showcase directory cards, approve bespoke metal passes, publish private dinners, and manage RSVP passes.
           </p>
         </div>
 
@@ -280,7 +359,7 @@ export default function BmfAdminReviewPage() {
       <div className="flex items-center gap-2 border-b border-neutral-800 pb-3 overflow-x-auto">
         <button
           onClick={() => setMainTab('showcases')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
             mainTab === 'showcases'
               ? 'bg-white text-black shadow-md'
               : 'text-neutral-400 hover:text-white bg-neutral-900/60'
@@ -291,8 +370,25 @@ export default function BmfAdminReviewPage() {
         </button>
 
         <button
+          onClick={() => setMainTab('cards')}
+          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            mainTab === 'cards'
+              ? 'bg-white text-black shadow-md'
+              : 'text-neutral-400 hover:text-white bg-neutral-900/60'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Executive Pass Cards ({cards.length})</span>
+          {pendingCardCount > 0 && (
+            <span className="bg-amber-500 text-black text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+              {pendingCardCount} new
+            </span>
+          )}
+        </button>
+
+        <button
           onClick={() => setMainTab('events')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
             mainTab === 'events'
               ? 'bg-white text-black shadow-md'
               : 'text-neutral-400 hover:text-white bg-neutral-900/60'
@@ -304,7 +400,7 @@ export default function BmfAdminReviewPage() {
 
         <button
           onClick={() => setMainTab('registrations')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
             mainTab === 'registrations'
               ? 'bg-white text-black shadow-md'
               : 'text-neutral-400 hover:text-white bg-neutral-900/60'
@@ -352,125 +448,143 @@ export default function BmfAdminReviewPage() {
                   memberFilter === 'rejected' ? 'bg-rose-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
                 }`}
               >
-                Revision Needed ({members.filter((m) => m.review_status === 'rejected').length})
+                Needs Revisions ({members.filter((m) => (m.review_status || (m.is_approved ? 'approved' : 'pending')) === 'rejected').length})
               </button>
             </div>
 
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
-                placeholder="Search founders, ventures..."
+                placeholder="Search by founder, company, email..."
                 value={memberSearch}
                 onChange={(e) => setMemberSearch(e.target.value)}
-                className="w-full bg-neutral-900 border border-neutral-800 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white transition-colors"
+                className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          {/* Members Showcase Queue Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMembers.map((member) => {
               const status = member.review_status || (member.is_approved ? 'approved' : 'pending')
-              const isProcessing = activeMemberActionId === member.id
+              const isActionRunning = activeMemberActionId === member.id
 
               return (
                 <div
                   key={member.id}
-                  className="bg-[#141417] rounded-3xl p-6 border border-neutral-800 shadow-xl flex flex-col md:flex-row gap-6 text-left"
+                  className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-lg relative overflow-hidden"
                 >
-                  <div className="w-full md:w-[240px] shrink-0 mx-auto">
-                    <div className="transform scale-[0.85] origin-top md:origin-top-left -mb-10">
-                      <MemberFlipCard member={member} />
-                    </div>
-                  </div>
+                  <div className="space-y-4">
+                    {/* Header with status badge */}
+                    <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                        status === 'approved'
+                          ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                          : status === 'rejected'
+                          ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
+                          : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                      }`}>
+                        {status === 'approved' ? 'Live on Directory' : status === 'rejected' ? 'Revision Requested' : 'Pending Review'}
+                      </span>
 
-                  <div className="flex-1 flex flex-col justify-between space-y-4 min-w-0">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-mono font-bold bg-neutral-800 text-neutral-300 px-2.5 py-0.5 rounded-full border border-neutral-700">
-                          {member.category}
-                        </span>
-                        {status === 'approved' ? (
-                          <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/80 border border-emerald-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            <Check className="w-3 h-3" /> Live
+                      <div className="flex items-center gap-1.5">
+                        {member.is_verified && (
+                          <span className="text-[10px] font-mono text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded-full border border-sky-800/50">
+                            Verified
                           </span>
-                        ) : status === 'rejected' ? (
-                          <span className="text-[10px] font-mono font-bold text-rose-400 bg-rose-950/80 border border-rose-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            <XCircle className="w-3 h-3" /> Revision
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-mono font-bold text-amber-400 bg-amber-950/80 border border-amber-800 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> Pending
+                        )}
+                        {member.is_featured && (
+                          <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800/50">
+                            Featured
                           </span>
                         )}
                       </div>
-
-                      <h3 className="text-xl font-black text-white">{member.full_name}</h3>
-                      <p className="text-xs text-neutral-400 font-mono">
-                        {member.role} &bull; <strong className="text-white">{member.company_name}</strong>
-                      </p>
-
-                      <p className="text-xs text-neutral-300 leading-relaxed line-clamp-2">
-                        "{member.tagline}"
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-400 pt-1">
-                        <div>🚀 {member.stage}</div>
-                        <div>💰 {member.metrics || 'N/A'}</div>
-                        <div>📍 {member.location || 'N/A'}</div>
-                        <div>👥 {member.team_size || 'N/A'}</div>
-                      </div>
-
-                      {member.email && (
-                        <p className="text-[11px] font-mono text-neutral-500 truncate">
-                          ✉️ {member.email}
-                        </p>
-                      )}
                     </div>
 
-                    <div className="pt-3 border-t border-neutral-800 flex flex-wrap items-center gap-2">
-                      {status !== 'approved' && (
-                        <Button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => handleMemberAction(member.id, 'approve')}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 transition-all cursor-pointer"
-                        >
-                          {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          <span>Approve & Send Email</span>
-                        </Button>
-                      )}
+                    {/* Member Details */}
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/10 shrink-0">
+                        <img
+                          src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'}
+                          alt={member.full_name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="overflow-hidden">
+                        <h3 className="text-sm font-bold text-white truncate">{member.full_name}</h3>
+                        <p className="text-xs text-neutral-400 truncate">{member.role} @ <strong className="text-neutral-200">{member.company_name}</strong></p>
+                        <span className="text-[10px] font-mono text-neutral-500">{member.category}</span>
+                      </div>
+                    </div>
 
-                      {status !== 'rejected' && (
+                    {/* Tagline / Pitch */}
+                    <p className="text-xs text-neutral-300 bg-black/40 p-3 rounded-xl border border-neutral-800/80 line-clamp-2">
+                      &ldquo;{member.tagline}&rdquo;
+                    </p>
+
+                    {/* Metrics / Stage */}
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-400">
+                      <div>Stage: <strong className="text-neutral-200">{member.stage || 'N/A'}</strong></div>
+                      <div>Traction: <strong className="text-emerald-400">{member.metrics || 'Active'}</strong></div>
+                    </div>
+                  </div>
+
+                  {/* Action Controls */}
+                  <div className="pt-4 border-t border-neutral-800/80 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      {status !== 'approved' ? (
                         <Button
                           type="button"
-                          disabled={isProcessing}
-                          onClick={() => {
-                            setRejectModalMember(member)
-                            setFeedbackText(
-                              member.admin_feedback ||
-                              `Dear ${member.full_name},\n\nThank you for submitting ${member.company_name} to the BMF Club Showcase. Before we can publish your card live to the directory, please update:\n1. Provide a higher resolution vertical portrait image.\n2. Clarify your current annual revenue / pilot contracts in the traction metrics section.\n\nYou can log back into your Founder Studio to edit and re-submit for expedited review.`
-                            )
-                          }}
-                          className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 font-bold text-xs px-4 py-2 rounded-full border border-rose-500/30 inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                          disabled={isActionRunning}
+                          onClick={() => handleMemberAction(member.id, 'approve')}
+                          className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                         >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Request Revision</span>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Approve & Go Live</span>
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          disabled={isActionRunning}
+                          onClick={() => handleMemberAction(member.id, 'reject', 'Showcase paused by administrator.')}
+                          className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Pause / Unpublish</span>
                         </Button>
                       )}
 
                       <Button
                         type="button"
-                        disabled={isProcessing}
-                        onClick={() => handleMemberAction(member.id, 'toggle_verify')}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
-                          member.is_verified
-                            ? 'bg-sky-950/60 border-sky-700 text-sky-300'
-                            : 'bg-neutral-900 border-neutral-700 text-neutral-400'
-                        }`}
+                        disabled={isActionRunning}
+                        onClick={() => {
+                          setRejectModalMember(member)
+                          setFeedbackText(member.admin_feedback || 'Please update your metrics and high-res portrait.')
+                        }}
+                        className="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <span>Verified: {member.is_verified ? 'Yes' : 'No'}</span>
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Send Feedback</span>
                       </Button>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px] font-mono">
+                      <button
+                        type="button"
+                        onClick={() => handleMemberAction(member.id, 'toggle_verify')}
+                        className={`hover:underline cursor-pointer ${member.is_verified ? 'text-sky-400' : 'text-neutral-500'}`}
+                      >
+                        {member.is_verified ? '✓ Verified Badge' : '+ Verify Founder'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleMemberAction(member.id, 'toggle_featured')}
+                        className={`hover:underline cursor-pointer ${member.is_featured ? 'text-amber-400' : 'text-neutral-500'}`}
+                      >
+                        {member.is_featured ? '★ Featured Spotlight' : '+ Spotlight'}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -481,315 +595,488 @@ export default function BmfAdminReviewPage() {
       )}
 
       {/* ========================================================= */}
-      {/* TAB 2: EVENTS & RETREATS MANAGER */}
+      {/* TAB 2: EXECUTIVE PASS CARD APPLICATIONS */}
       {/* ========================================================= */}
-      {mainTab === 'events' && (
-        <div className="space-y-6 text-left">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
-            <div>
-              <h2 className="text-xl font-bold text-white">Private Events & Masterminds</h2>
-              <p className="text-xs text-neutral-400">
-                Configure calendar dates, seat limits, and internal forms vs external registration links.
+      {mainTab === 'cards' && (
+        <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
+          
+          {/* Sub Header & Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="p-4 rounded-2xl bg-[#141418] border border-neutral-800">
+              <span className="text-[10px] font-mono uppercase text-neutral-500">Total Pass Records</span>
+              <p className="text-xl font-bold text-white mt-1">{cards.length}</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141418] border border-amber-500/30">
+              <span className="text-[10px] font-mono uppercase text-amber-400">Pending Review</span>
+              <p className="text-xl font-bold text-amber-300 mt-1">{pendingCardCount}</p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#141418] border border-emerald-500/30">
+              <span className="text-[10px] font-mono uppercase text-emerald-400">Active Live Passes</span>
+              <p className="text-xl font-bold text-emerald-300 mt-1">
+                {cards.filter((c) => c.approval_status === 'approved' || c.is_active).length}
               </p>
             </div>
 
+            <div className="p-4 rounded-2xl bg-[#141418] border border-rose-500/30">
+              <span className="text-[10px] font-mono uppercase text-rose-400">Rejected / Revisions</span>
+              <p className="text-xl font-bold text-rose-300 mt-1">
+                {cards.filter((c) => c.approval_status === 'rejected').length}
+              </p>
+            </div>
+          </div>
+
+          {/* Filter Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800 rounded-full w-full sm:w-auto overflow-x-auto">
+              <button
+                onClick={() => setCardFilter('all')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  cardFilter === 'all' ? 'bg-white text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                All ({cards.length})
+              </button>
+              <button
+                onClick={() => setCardFilter('pending')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  cardFilter === 'pending' ? 'bg-amber-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Pending Review ({cards.filter((c) => c.approval_status === 'pending').length})
+              </button>
+              <button
+                onClick={() => setCardFilter('approved')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  cardFilter === 'approved' ? 'bg-emerald-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Live & Unlocked ({cards.filter((c) => c.approval_status === 'approved' || c.is_active).length})
+              </button>
+              <button
+                onClick={() => setCardFilter('rejected')}
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  cardFilter === 'rejected' ? 'bg-rose-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Rejected ({cards.filter((c) => c.approval_status === 'rejected').length})
+              </button>
+            </div>
+
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search cardholders, tiers, ventures..."
+                value={cardSearch}
+                onChange={(e) => setCardSearch(e.target.value)}
+                className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
+              />
+            </div>
+          </div>
+
+          {/* Card Applications List */}
+          {filteredCards.length === 0 ? (
+            <div className="p-12 rounded-3xl bg-[#141418] border border-neutral-800 text-center space-y-3">
+              <CreditCard className="w-10 h-10 text-neutral-600 mx-auto" />
+              <h3 className="text-base font-bold text-white">No Pass Card Applications Found</h3>
+              <p className="text-xs text-neutral-400">
+                Applications submitted by founders from their studio dashboard will appear here for review.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredCards.map((c) => {
+                const status = c.approval_status || (c.is_active ? 'approved' : 'pending')
+                const isActionRunning = activeCardActionId === c.id
+                const meta = CARD_TIERS[c.card_tier] || CARD_TIERS.obsidian
+
+                return (
+                  <div
+                    key={c.id}
+                    className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-lg relative overflow-hidden text-left"
+                  >
+                    <div className="space-y-4">
+                      {/* Header with status badge */}
+                      <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                        <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                          status === 'approved'
+                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                            : status === 'rejected'
+                            ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
+                            : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                        }`}>
+                          {status === 'approved' ? 'Live & Unlocked' : status === 'rejected' ? 'Rejected' : 'Pending Review'}
+                        </span>
+
+                        <span className={`text-[10px] font-mono uppercase font-bold px-2 py-0.5 rounded-full border ${meta.colorBadge}`}>
+                          {meta.name}
+                        </span>
+                      </div>
+
+                      {/* Cardholder & Company */}
+                      <div>
+                        <h3 className="text-sm font-bold text-white truncate">{c.card_holder_name}</h3>
+                        <p className="text-xs text-neutral-400 truncate">{c.company_name}</p>
+                        <p className="text-[10px] font-mono text-neutral-500 mt-0.5">UID: {c.nfc_uid}</p>
+                      </div>
+
+                      {/* Application Data if Available */}
+                      {c.application_data && (
+                        <div className="p-3 bg-black/50 rounded-xl border border-neutral-800/80 space-y-1.5 text-xs">
+                          {c.application_data.traction_metric && (
+                            <div className="text-neutral-300">
+                              <span className="text-[10px] font-mono text-neutral-500 uppercase block">Traction:</span>
+                              <strong className="text-emerald-400">{c.application_data.traction_metric}</strong>
+                            </div>
+                          )}
+                          {c.application_data.pitch_tagline && (
+                            <div className="text-neutral-300 line-clamp-2 italic">
+                              &ldquo;{c.application_data.pitch_tagline}&rdquo;
+                            </div>
+                          )}
+                          {c.application_data.why_join && (
+                            <div className="text-neutral-400 text-[11px] line-clamp-2 pt-1 border-t border-neutral-800">
+                              <span className="text-[9px] font-mono uppercase text-neutral-500 block">Why Join:</span>
+                              {c.application_data.why_join}
+                            </div>
+                          )}
+                          {c.application_data.portfolio_or_linkedin && (
+                            <a
+                              href={c.application_data.portfolio_or_linkedin}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] text-sky-400 hover:underline pt-1"
+                            >
+                              <span>Founder Profile</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Rejection feedback if existing */}
+                      {c.admin_feedback && (
+                        <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/50 text-[11px] text-rose-300">
+                          <strong>Feedback:</strong> {c.admin_feedback}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Controls */}
+                    <div className="pt-4 border-t border-neutral-800/80 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        {status !== 'approved' ? (
+                          <Button
+                            type="button"
+                            disabled={isActionRunning}
+                            onClick={() => handleCardAction(c.id, 'approve')}
+                            className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Approve & Unlock</span>
+                          </Button>
+                        ) : (
+                          <Button
+                            type="button"
+                            disabled={isActionRunning}
+                            onClick={() => handleCardAction(c.id, 'reject', 'Pass locked by administrator.')}
+                            className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-neutral-400" />
+                            <span>Lock / Revoke</span>
+                          </Button>
+                        )}
+
+                        <Button
+                          type="button"
+                          disabled={isActionRunning}
+                          onClick={() => {
+                            setRejectModalCard(c)
+                            setCardRejectFeedback(c.admin_feedback || 'Your venture traction does not currently meet syndicate thresholds.')
+                          }}
+                          className="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5" />
+                          <span>Reject / Notes</span>
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewCard(c)}
+                          className="inline-flex items-center gap-1 text-[11px] font-mono text-neutral-400 hover:text-white cursor-pointer"
+                        >
+                          <Eye className="w-3 h-3 text-sky-400" />
+                          <span>3D Card Preview</span>
+                        </button>
+
+                        <select
+                          value={c.card_tier}
+                          onChange={(e) => handleCardAction(c.id, 'set_tier', undefined, e.target.value as CardTier)}
+                          className="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-0.5 text-[10px] font-mono text-neutral-300"
+                        >
+                          {(Object.keys(CARD_TIERS) as CardTier[]).map((t) => (
+                            <option key={t} value={t}>{t.toUpperCase()}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 3: EVENTS & RETREATS MANAGER */}
+      {/* ========================================================= */}
+      {mainTab === 'events' && (
+        <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+            <div>
+              <h2 className="text-xl font-bold text-white">Curated Founder Gatherings & Dinners</h2>
+              <p className="text-xs text-neutral-400">Publish closed-door masterminds and route CTAs internally or externally.</p>
+            </div>
+
             <Button
-              type="button"
-              onClick={() => {
-                setEventForm({
-                  title: '',
-                  tagline: '',
-                  description: '',
-                  event_date: '',
-                  event_time: '6:30 PM - 9:30 PM IST',
-                  location_type: 'in_person',
-                  location_venue: '',
-                  location_city: 'Bangalore',
-                  category: 'Closed-Door Dinner',
-                  total_capacity: 18,
-                  registered_count: 0,
-                  is_published: true,
-                  status: 'upcoming',
-                  cta_type: 'internal_form',
-                  external_cta_url: '',
-                  external_cta_text: 'Request Invitation',
-                  pricing_type: 'members_only',
-                  price_inr: 0,
-                  requirements: '',
-                })
-                setIsEventModalOpen(true)
-              }}
-              className="bg-white hover:bg-neutral-200 text-black px-5 py-2.5 rounded-full font-bold text-xs inline-flex items-center gap-2 cursor-pointer"
+              onClick={() => setIsEventModalOpen(true)}
+              className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
-              <span>Create New Gathering</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Publish Gathering</span>
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((event) => {
-              const isFull = event.total_capacity > 0 && event.registered_count >= event.total_capacity
-
-              return (
-                <div
-                  key={event.id}
-                  className="bg-[#141417] rounded-3xl p-6 border border-neutral-800 shadow-xl flex flex-col justify-between space-y-4 hover:border-neutral-700 transition-colors"
-                >
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono font-bold bg-neutral-800 text-sky-300 px-2.5 py-0.5 rounded-full border border-neutral-700">
-                        {event.category}
-                      </span>
-                      <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                        event.is_published
-                          ? 'bg-emerald-950/80 border-emerald-800 text-emerald-400'
-                          : 'bg-neutral-900 border-neutral-700 text-neutral-500'
-                      }`}>
-                        {event.is_published ? 'Published' : 'Draft'}
-                      </span>
-                    </div>
-
-                    <h3 className="text-lg font-bold text-white line-clamp-2">{event.title}</h3>
-                    {event.tagline && (
-                      <p className="text-xs text-neutral-400 line-clamp-2">{event.tagline}</p>
-                    )}
-
-                    <div className="space-y-1.5 text-xs font-mono text-neutral-400 pt-1">
-                      <div className="flex items-center gap-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-neutral-500" />
-                        <span>{event.event_date}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-neutral-500" />
-                        <span>{event.location_venue || event.location_city}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
-                        <Users className="w-3.5 h-3.5" />
-                        <span>{event.registered_count} / {event.total_capacity || 'Unlimited'} Seats Filled</span>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-neutral-900/80 rounded-xl border border-neutral-800 text-[11px] font-mono space-y-1">
-                      <div className="text-neutral-400">CTA Routing: <strong className="text-white">{event.cta_type === 'external_link' ? 'External Link' : 'Internal RSVP Form'}</strong></div>
-                      {event.cta_type === 'external_link' && event.external_cta_url && (
-                        <div className="text-sky-400 truncate">{event.external_cta_url}</div>
-                      )}
-                    </div>
+            {events.map((event) => (
+              <div key={event.id} className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase bg-sky-950/80 text-sky-400 px-2.5 py-0.5 rounded-full border border-sky-800/60 font-bold">
+                      {event.category}
+                    </span>
+                    <span className="text-xs font-mono text-neutral-400">{event.event_date}</span>
                   </div>
 
-                  <div className="pt-3 border-t border-neutral-800 flex items-center justify-between gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEventForm(event)
-                        setIsEventModalOpen(true)
-                      }}
-                      className="text-xs text-neutral-300 hover:text-white px-3 py-1.5 rounded-full bg-neutral-900 border border-neutral-700 hover:border-neutral-500 flex items-center gap-1 cursor-pointer"
-                    >
-                      <Edit className="w-3 h-3" />
-                      <span>Edit</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="text-xs text-rose-400 hover:text-rose-300 p-2 transition-colors cursor-pointer"
-                      title="Delete Event"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                  <h3 className="text-base font-bold text-white">{event.title}</h3>
+                  <p className="text-xs text-neutral-400 line-clamp-2">{event.tagline || event.description}</p>
+                  
+                  <div className="pt-2 text-xs font-mono text-neutral-400 space-y-1">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>{event.location_city} ({event.location_venue || 'Private Venue'})</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Users className="w-3.5 h-3.5 text-neutral-500" />
+                      <span>Capacity: {event.total_capacity || 18} Founders &bull; {event.registered_count || 0} Registered</span>
+                    </div>
                   </div>
                 </div>
-              )
-            })}
+
+                <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-neutral-500">CTA: {event.cta_type}</span>
+                  <button
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="text-neutral-500 hover:text-rose-400 p-1.5 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
 
       {/* ========================================================= */}
-      {/* TAB 3: EVENT ATTENDEE RSVPs */}
+      {/* TAB 4: RSVP ATTENDEES */}
       {/* ========================================================= */}
       {mainTab === 'registrations' && (
-        <div className="space-y-6 text-left">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-4">
+        <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
+          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Attendee RSVP Applications</h2>
+              <h2 className="text-xl font-bold text-white">Attendee RSVP Approvals</h2>
+              <p className="text-xs text-neutral-400">Review and approve admission passes for closed-door mastermind dinners.</p>
+            </div>
+
+            <select
+              value={selectedEventId}
+              onChange={(e) => setSelectedEventId(e.target.value)}
+              className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-white"
+            >
+              <option value="all">All Events ({registrations.length})</option>
+              {events.map((ev) => (
+                <option key={ev.id} value={ev.id}>{ev.title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-3">
+            {filteredRegistrations.map((reg) => (
+              <div key={reg.id} className="p-4 rounded-2xl bg-[#141418] border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-white">{reg.full_name}</h4>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300">
+                      {reg.company_name || 'Founder'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 font-mono">
+                    {reg.email} &bull; {reg.phone || 'No phone'}
+                  </p>
+                  {reg.guest_notes && (
+                    <p className="text-xs text-neutral-300 italic pt-1">
+                      &ldquo;{reg.guest_notes}&rdquo;
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => handleRegistrationAction(reg.id, 'approve')}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-4 py-1.5 rounded-full cursor-pointer"
+                  >
+                    Approve Pass
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => handleRegistrationAction(reg.id, 'reject')}
+                    className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs px-4 py-1.5 rounded-full cursor-pointer"
+                  >
+                    Decline
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* 3D METAL CARD PREVIEW MODAL */}
+      {/* ========================================================= */}
+      {previewCard && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#121216] border border-neutral-700 rounded-3xl p-6 sm:p-10 max-w-2xl w-full space-y-6 shadow-2xl text-center animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-neutral-800 pb-4 text-left">
+              <div>
+                <h3 className="text-lg font-bold text-white">{previewCard.card_holder_name}</h3>
+                <p className="text-xs text-neutral-400">{previewCard.company_name} &bull; {previewCard.card_tier.toUpperCase()} TIER</p>
+              </div>
+              <button onClick={() => setPreviewCard(null)} className="p-2 text-neutral-400 hover:text-white">
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex justify-center py-4">
+              <ExecutiveMetalCard card={previewCard} />
+            </div>
+
+            <div className="flex items-center justify-between border-t border-neutral-800 pt-4">
+              <div className="text-left text-xs font-mono text-neutral-400">
+                Status: <strong className="text-white uppercase">{previewCard.approval_status || 'pending'}</strong>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPreviewCard(null)}
+                  className="text-xs text-neutral-400 hover:text-white px-4 py-2"
+                >
+                  Close
+                </button>
+                <Button
+                  type="button"
+                  onClick={() => handleCardAction(previewCard.id, 'approve')}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-6 py-2 rounded-full cursor-pointer"
+                >
+                  Approve & Go Live
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* CARD REJECTION / FEEDBACK MODAL */}
+      {/* ========================================================= */}
+      {rejectModalCard && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#141418] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left animate-in zoom-in-95 duration-200">
+            <div className="space-y-1">
+              <h3 className="text-lg font-bold text-white">
+                Reject / Request Revisions for {rejectModalCard.card_holder_name}
+              </h3>
               <p className="text-xs text-neutral-400">
-                Review registrations, confirm seat passes, or manage waitlists with automated email tickets.
+                Provide constructive feedback explaining why this pass is not currently approved.
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-neutral-400">Filter Event:</span>
-              <select
-                value={selectedEventId}
-                onChange={(e) => setSelectedEventId(e.target.value)}
-                className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-white"
+            <textarea
+              rows={5}
+              value={cardRejectFeedback}
+              onChange={(e) => setCardRejectFeedback(e.target.value)}
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white font-mono"
+              placeholder="Explain required traction or syndicate alignment..."
+            />
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectModalCard(null)}
+                className="px-4 py-2 text-xs text-neutral-400 hover:text-white"
               >
-                <option value="all">All Events ({registrations.length})</option>
-                {events.map((e) => (
-                  <option key={e.id} value={e.id}>{e.title}</option>
-                ))}
-              </select>
+                Cancel
+              </button>
+              <Button
+                type="button"
+                onClick={() => handleCardAction(rejectModalCard.id, 'reject', cardRejectFeedback)}
+                className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-5 py-2.5 rounded-full cursor-pointer"
+              >
+                Send Rejection Feedback
+              </Button>
             </div>
-          </div>
-
-          <div className="space-y-4">
-            {filteredRegistrations.length === 0 ? (
-              <div className="bg-[#141417] rounded-3xl p-12 border border-neutral-800 text-center space-y-3">
-                <Ticket className="w-10 h-10 text-neutral-600 mx-auto" />
-                <h3 className="text-lg font-bold text-white">No Registrations Yet</h3>
-                <p className="text-xs text-neutral-400">
-                  Applications will show up here as soon as founders RSVP from the events section.
-                </p>
-              </div>
-            ) : (
-              filteredRegistrations.map((reg) => {
-                const isProcessing = activeRegActionId === reg.id
-                return (
-                  <div
-                    key={reg.id}
-                    className="bg-[#141417] rounded-3xl p-6 border border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-6 hover:border-neutral-700 transition-colors text-left"
-                  >
-                    <div className="space-y-2 max-w-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-bold text-sky-400">
-                          {reg.event?.title || 'Private Event'}
-                        </span>
-                        <span className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full border ${
-                          reg.status === 'approved'
-                            ? 'bg-emerald-950/80 border-emerald-700 text-emerald-400'
-                            : reg.status === 'waitlisted'
-                            ? 'bg-amber-950/80 border-amber-700 text-amber-400'
-                            : reg.status === 'rejected'
-                            ? 'bg-rose-950/80 border-rose-700 text-rose-400'
-                            : 'bg-neutral-800 border-neutral-700 text-neutral-300'
-                        }`}>
-                          {reg.status.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <h3 className="text-lg font-black text-white">{reg.full_name}</h3>
-                      <p className="text-xs text-neutral-400 font-mono">
-                        {reg.role} &bull; <strong className="text-white">{reg.company_name}</strong>
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-4 text-xs font-mono text-neutral-400 pt-1">
-                        <span>✉️ {reg.email}</span>
-                        {reg.phone && <span>📱 {reg.phone}</span>}
-                        {reg.ticket_code && <span className="text-sky-300 font-bold">🎟️ Pass: {reg.ticket_code}</span>}
-                      </div>
-
-                      {reg.notes && (
-                        <p className="text-xs text-neutral-300 bg-neutral-900 p-2.5 rounded-xl border border-neutral-800">
-                          "{reg.notes}"
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      {reg.status !== 'approved' && (
-                        <Button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => handleRegistrationAction(reg.id, 'approve')}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer"
-                        >
-                          {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                          <span>Confirm Seat Pass</span>
-                        </Button>
-                      )}
-
-                      {reg.status !== 'waitlisted' && (
-                        <Button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => handleRegistrationAction(reg.id, 'waitlist')}
-                          className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs px-3.5 py-2 rounded-full border border-amber-500/30 cursor-pointer"
-                        >
-                          <span>Move to Waitlist</span>
-                        </Button>
-                      )}
-
-                      {reg.status !== 'rejected' && (
-                        <Button
-                          type="button"
-                          disabled={isProcessing}
-                          onClick={() => handleRegistrationAction(reg.id, 'reject')}
-                          className="text-neutral-500 hover:text-rose-400 text-xs px-3 py-2 cursor-pointer"
-                        >
-                          <span>Decline</span>
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                )
-              })
-            )}
           </div>
         </div>
       )}
 
-      {/* Modal: Create/Edit Event */}
+      {/* ========================================================= */}
+      {/* CREATE EVENT MODAL */}
+      {/* ========================================================= */}
       {isEventModalOpen && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#161619] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl text-left my-8">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-[#121216] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl text-left my-8 animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-              <h3 className="text-xl font-bold text-white">
-                {eventForm.id ? 'Edit Event Gathering' : 'Create New Event Gathering'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setIsEventModalOpen(false)}
-                className="text-xs text-neutral-400 hover:text-white"
-              >
-                Cancel
+              <h3 className="text-lg font-bold text-white">Publish New Founder Gathering</h3>
+              <button onClick={() => setIsEventModalOpen(false)} className="text-neutral-400 hover:text-white">
+                <XCircle className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleSaveEvent} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-300">Event Title *</label>
+                  <label className="text-xs font-semibold text-neutral-300">Gathering Title *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Bangalore Elite Founders Dinner"
+                    placeholder="e.g. AI Infra Closed-Door Dinner"
                     value={eventForm.title}
                     onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
                     className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
                   />
                 </div>
 
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-300">1-Line Hook / Tagline</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Private 18-seat founder dinner with venture partners"
-                    value={eventForm.tagline}
-                    onChange={(e) => setEventForm({ ...eventForm, tagline: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                  />
-                </div>
-
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">Event Category</label>
-                  <select
-                    value={eventForm.category}
-                    onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                  >
-                    <option value="Closed-Door Dinner">Closed-Door Dinner</option>
-                    <option value="Mastermind">Mastermind</option>
-                    <option value="Private Retreat">Private Retreat</option>
-                    <option value="Virtual Syndicate">Virtual Syndicate</option>
-                    <option value="Demo Day">Demo Day</option>
-                    <option value="Workshop">Workshop</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">Date String *</label>
+                  <label className="text-xs font-semibold text-neutral-300">Event Date *</label>
                   <input
                     type="text"
                     required
@@ -801,90 +1088,27 @@ export default function BmfAdminReviewPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">Time Range</label>
+                  <label className="text-xs font-semibold text-neutral-300">City / Location *</label>
                   <input
                     type="text"
-                    placeholder="e.g. 6:30 PM - 9:30 PM IST"
-                    value={eventForm.event_time}
-                    onChange={(e) => setEventForm({ ...eventForm, event_time: e.target.value })}
+                    required
+                    placeholder="e.g. Bangalore (Indiranagar)"
+                    value={eventForm.location_city}
+                    onChange={(e) => setEventForm({ ...eventForm, location_city: e.target.value })}
                     className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
                   />
                 </div>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">Seat Capacity Limit</label>
-                  <input
-                    type="number"
-                    placeholder="e.g. 18"
-                    value={eventForm.total_capacity || ''}
-                    onChange={(e) => setEventForm({ ...eventForm, total_capacity: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                  />
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-300">Venue & City</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. The Leela Palace, Indiranagar, Bangalore"
-                    value={eventForm.location_venue}
-                    onChange={(e) => setEventForm({ ...eventForm, location_venue: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                  />
-                </div>
-
-                {/* CTA Routing Settings */}
-                <div className="space-y-1 sm:col-span-2 p-4 bg-neutral-900/90 rounded-2xl border border-neutral-800">
-                  <label className="text-xs font-bold text-white block mb-2">Registration Flow & CTA Routing</label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] text-neutral-400">CTA Flow Type</label>
-                      <select
-                        value={eventForm.cta_type}
-                        onChange={(e) => setEventForm({ ...eventForm, cta_type: e.target.value as any })}
-                        className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white mt-1"
-                      >
-                        <option value="internal_form">Internal RSVP Form (Platform Database)</option>
-                        <option value="external_link">External Link / Form (Luma, Google Form, etc.)</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="text-[11px] text-neutral-400">Button Label</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. Request Invitation or Apply via Lu.ma"
-                        value={eventForm.external_cta_text}
-                        onChange={(e) => setEventForm({ ...eventForm, external_cta_text: e.target.value })}
-                        className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white mt-1"
-                      />
-                    </div>
-                  </div>
-
-                  {eventForm.cta_type === 'external_link' && (
-                    <div className="pt-2">
-                      <label className="text-[11px] text-neutral-400">External URL Link *</label>
-                      <input
-                        type="url"
-                        placeholder="https://lu.ma/your-event or https://forms.google.com/..."
-                        value={eventForm.external_cta_url}
-                        onChange={(e) => setEventForm({ ...eventForm, external_cta_url: e.target.value })}
-                        className="w-full bg-black border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white mt-1"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-300">Admission Criteria / Requirements</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Post-Revenue Founders ($200k+ ARR or $1M+ Raised)"
-                    value={eventForm.requirements}
-                    onChange={(e) => setEventForm({ ...eventForm, requirements: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-neutral-300">Event Description</label>
+                <textarea
+                  rows={3}
+                  placeholder="Describe the format, focus areas, and attendees..."
+                  value={eventForm.description}
+                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white resize-none"
+                />
               </div>
 
               <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-3">
@@ -901,7 +1125,7 @@ export default function BmfAdminReviewPage() {
                   className="bg-white hover:bg-neutral-200 text-black font-bold text-xs px-6 py-2.5 rounded-full cursor-pointer"
                 >
                   {isSavingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                  <span>Save Event Gathering</span>
+                  <span>Publish Gathering</span>
                 </Button>
               </div>
             </form>
@@ -909,24 +1133,26 @@ export default function BmfAdminReviewPage() {
         </div>
       )}
 
-      {/* Modal: Showcase Rejection / Revision */}
+      {/* ========================================================= */}
+      {/* SHOWCASE REJECTION MODAL */}
+      {/* ========================================================= */}
       {rejectModalMember && (
-        <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-[#161619] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left">
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-white">
                 Request Revisions for {rejectModalMember.company_name}
               </h3>
               <p className="text-xs text-neutral-400">
-                This message will be dispatched directly to <strong>{rejectModalMember.email || rejectModalMember.full_name}</strong> via Resend.
+                This message will be dispatched directly to <strong>{rejectModalMember.email || rejectModalMember.full_name}</strong>.
               </p>
             </div>
 
             <textarea
-              rows={6}
+              rows={5}
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white font-mono leading-relaxed"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white font-mono"
               placeholder="Provide specific instructions..."
             />
 

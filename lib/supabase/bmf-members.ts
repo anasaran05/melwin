@@ -225,27 +225,144 @@ export function getSupabaseBrowserClient() {
   return createBrowserClient(supabaseUrl, supabaseKey)
 }
 
-export async function fetchBmfMembers(): Promise<BmfMember[]> {
+export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
+  const defaultFallback = INITIAL_BMF_MEMBERS[0]
+  if (!user) return defaultFallback
+
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Verified Founder'
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'
+  const email = user.email || ''
+
   try {
     const supabase = getSupabaseBrowserClient()
-    if (!supabase) return INITIAL_BMF_MEMBERS
+    if (!supabase) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('bmf_current_member')
+        if (stored) {
+          const parsed = JSON.parse(stored)
+          return { ...parsed, email: email || parsed.email, full_name: parsed.full_name || fullName, avatar_url: parsed.avatar_url || avatarUrl }
+        }
+      }
+      return {
+        ...defaultFallback,
+        id: user.id || 'demo-user',
+        user_id: user.id || null,
+        full_name: fullName,
+        email,
+        avatar_url: avatarUrl,
+      }
+    }
 
-    const { data, error } = await supabase
+    // Check if member profile exists by user_id or email
+    const { data: existingMember } = await supabase
       .from('bmf_members')
       .select('*')
-      .eq('is_approved', true)
-      .order('is_featured', { ascending: false })
-      .order('created_at', { ascending: false })
+      .or(`user_id.eq.${user.id},email.eq.${email}`)
+      .limit(1)
+      .maybeSingle()
 
-    if (error || !data || data.length === 0) {
+    if (existingMember) {
+      if (!existingMember.user_id && user.id) {
+        await supabase
+              .from('bmf_members')
+          .update({ user_id: user.id, updated_at: new Date().toISOString() })
+          .eq('id', existingMember.id)
+      }
+      return existingMember as BmfMember
+    }
+
+    // Create new founder profile from authenticated user metadata
+    const newProfile: Partial<BmfMember> = {
+      user_id: user.id,
+      email,
+      full_name: fullName,
+      role: 'Founder & CEO',
+      company_name: `${fullName.split(' ')[0]}'s Venture`,
+      company_logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=150&auto=format&fit=crop',
+      avatar_url: avatarUrl,
+      category: 'AI & SaaS',
+      tagline: 'Building high-impact technology solutions for global markets.',
+      description: 'Founder bio and company mission statement.',
+      stage: 'Early Traction / Seed',
+      metrics: 'Active Product & Pilots',
+      location: 'Global',
+      team_size: '5-10 Builders',
+      is_verified: true,
+      is_approved: true,
+      is_featured: false,
+      review_status: 'approved',
+    }
+
+    const { data: inserted, error: insertError } = await supabase
+      .from('bmf_members')
+      .insert([newProfile])
+      .select()
+      .single()
+
+    if (inserted && !insertError) {
+      return inserted as BmfMember
+    }
+
+    return {
+      ...defaultFallback,
+      ...newProfile,
+      id: user.id,
+    } as BmfMember
+  } catch (err) {
+    console.error('Error ensuring member profile:', err)
+    return {
+      ...defaultFallback,
+      id: user.id || 'demo-user',
+      user_id: user.id || null,
+      full_name: fullName,
+      email,
+      avatar_url: avatarUrl,
+    }
+  }
+}
+
+export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?: number }): Promise<BmfMember[]> {
+  try {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      if (options?.onlyFeatured) {
+        return INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options.limit || 5)
+      }
       return INITIAL_BMF_MEMBERS
     }
 
-    // Merge database results with initial fallback
+    let query = supabase
+      .from('bmf_members')
+      .select('*')
+      .eq('is_approved', true)
+
+    if (options?.onlyFeatured) {
+      query = query.eq('is_featured', true).order('created_at', { ascending: false })
+      if (options.limit) {
+        query = query.limit(options.limit)
+      }
+    } else {
+      query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
+      if (options?.limit) {
+        query = query.limit(options.limit)
+      }
+    }
+
+    const { data, error } = await query
+
+    if (error || !data || data.length === 0) {
+      if (options?.onlyFeatured) {
+        return INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options?.limit || 5)
+      }
+      return INITIAL_BMF_MEMBERS
+    }
+
     return data as BmfMember[]
   } catch (err) {
     console.error('Error fetching BMF members:', err)
-    return INITIAL_BMF_MEMBERS
+    return options?.onlyFeatured 
+      ? INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options?.limit || 5)
+      : INITIAL_BMF_MEMBERS
   }
 }
 
@@ -269,17 +386,41 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       return { success: false, error: 'User must be authenticated to update profile' }
     }
 
-    const { error } = await supabase
+    // Check if profile exists by user_id or id
+    const { data: existing } = await supabase
       .from('bmf_members')
-      .upsert({
-        user_id: user.id,
-        email: user.email,
-        ...member,
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' })
+      .select('id')
+      .or(`user_id.eq.${user.id},id.eq.${member.id || user.id}`)
+      .limit(1)
+      .maybeSingle()
 
-    if (error) {
-      return { success: false, error: error.message }
+    let saveErr
+    if (existing) {
+      const { error } = await supabase
+        .from('bmf_members')
+        .update({
+          ...member,
+          user_id: user.id,
+          email: user.email || member.email,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+      saveErr = error
+    } else {
+      const { error } = await supabase
+        .from('bmf_members')
+        .insert({
+          id: member.id || user.id,
+          user_id: user.id,
+          email: user.email || member.email,
+          ...member,
+          updated_at: new Date().toISOString(),
+        })
+      saveErr = error
+    }
+
+    if (saveErr) {
+      return { success: false, error: saveErr.message }
     }
 
     return { success: true }
@@ -338,16 +479,38 @@ export async function submitShowcaseApplication(
       return { success: false, error: 'You must be logged in to submit a showcase application.' }
     }
 
-    const { error } = await supabase
+    const { data: existing } = await supabase
       .from('bmf_members')
-      .upsert({
-        user_id: user.id,
-        email: user.email,
-        ...payload,
-      }, { onConflict: 'user_id' })
+      .select('id')
+      .or(`user_id.eq.${user.id},id.eq.${member.id || user.id}`)
+      .limit(1)
+      .maybeSingle()
 
-    if (error) {
-      return { success: false, error: error.message }
+    let appErr
+    if (existing) {
+      const { error } = await supabase
+        .from('bmf_members')
+        .update({
+          ...payload,
+          user_id: user.id,
+          email: user.email || member.email,
+        })
+        .eq('id', existing.id)
+      appErr = error
+    } else {
+      const { error } = await supabase
+        .from('bmf_members')
+        .insert({
+          id: member.id || user.id,
+          user_id: user.id,
+          email: user.email || member.email,
+          ...payload,
+        })
+      appErr = error
+    }
+
+    if (appErr) {
+      return { success: false, error: appErr.message }
     }
 
     return { success: true }
