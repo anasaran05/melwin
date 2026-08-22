@@ -169,9 +169,13 @@ export default function BmfMemberLoginPage() {
             setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
           }
         } else if (data.user) {
+          if (typeof window !== 'undefined' && data.user.email) {
+            localStorage.setItem('bmf_current_user_email', data.user.email)
+          }
           setStatus('success')
-          setMessage('Signed in successfully!')
+          setMessage('Signed in successfully! Redirecting...')
           router.push('/bmf-club/dashboard')
+          router.refresh()
         }
       } else {
         const { error: otpError } = await supabase.auth.signInWithOtp({

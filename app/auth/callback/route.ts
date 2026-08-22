@@ -12,16 +12,20 @@ export async function GET(request: Request) {
     if (!error) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
+      
+      let destination = '/bmf-club/dashboard'
+      if (next) {
+        if (next.startsWith('http://') || next.startsWith('https://')) {
+          return NextResponse.redirect(next)
+        }
+        destination = next.startsWith('/') ? next : `/${next}`
       }
+
+      const baseHost = (forwardedHost && !isLocalEnv) ? `https://${forwardedHost}` : origin
+      return NextResponse.redirect(`${baseHost}${destination}`)
     }
   }
 
-  // Return the user to an error page or login with instructions
+  // Return the user to login page with error param if code exchange failed
   return NextResponse.redirect(`${origin}/bmf-club/login?error=auth_failed`)
 }

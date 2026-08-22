@@ -57,18 +57,16 @@ import {
 } from 'lucide-react'
 
 const CATEGORIES = [
-  'Healthcare AI',
-  'BioTech',
-  'MedTech',
-  'FinTech',
-  'Developer Tools',
-  'AI Infrastructure',
-  'Logistics Tech',
-  'Creative Tech',
-  'Enterprise SaaS',
-  'CleanTech / Energy',
-  'D2C Consumer',
-  'EdTech'
+  'Technology & Software',
+  'Healthcare & Life Sciences',
+  'Finance & FinTech',
+  'E-commerce & Consumer Brands',
+  'Manufacturing & Industrial',
+  'Education & EdTech',
+  'Real Estate & Construction',
+  'Food, Agriculture & Hospitality',
+  'Professional & Business Services',
+  'Media, Entertainment & Creative',
 ]
 
 const STAGES = [
@@ -125,6 +123,8 @@ export default function BmfMemberDashboardPage() {
 
   // Profile Form Save State
   const [profileForm, setProfileForm] = useState<Partial<BmfMember>>(INITIAL_BMF_MEMBERS[0])
+  const [isCustomCategory, setIsCustomCategory] = useState(false)
+  const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
@@ -179,6 +179,13 @@ export default function BmfMemberDashboardPage() {
           const memberProfile = await ensureOrFetchUserProfile(authedUser)
           setProfile(memberProfile)
           setProfileForm(memberProfile)
+          if (memberProfile.category && !CATEGORIES.includes(memberProfile.category)) {
+            setIsCustomCategory(true)
+            setCustomCategoryInput(memberProfile.category)
+          } else {
+            setIsCustomCategory(false)
+            setCustomCategoryInput('')
+          }
 
           // Fetch or generate membership card
           const memberCard = await fetchMemberCard(authedUser.id)
@@ -208,6 +215,13 @@ export default function BmfMemberDashboardPage() {
                 const parsed = JSON.parse(stored)
                 setProfile(parsed)
                 setProfileForm(parsed)
+                if (parsed.category && !CATEGORIES.includes(parsed.category)) {
+                  setIsCustomCategory(true)
+                  setCustomCategoryInput(parsed.category)
+                } else {
+                  setIsCustomCategory(false)
+                  setCustomCategoryInput('')
+                }
                 const fallbackCard = generateDefaultCard(parsed)
                 setCard(fallbackCard)
               } else {
@@ -218,6 +232,8 @@ export default function BmfMemberDashboardPage() {
                 }
                 setProfile(demoProfile)
                 setProfileForm(demoProfile)
+                setIsCustomCategory(false)
+                setCustomCategoryInput('')
                 const fallbackCard = generateDefaultCard(demoProfile)
                 setCard(fallbackCard)
               }
@@ -1162,19 +1178,53 @@ export default function BmfMemberDashboardPage() {
                     />
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <label className="text-xs font-semibold text-neutral-300">
                       Industry Category <span className="text-emerald-400">*</span>
                     </label>
                     <select
-                      value={profileForm.category || 'Healthcare AI'}
-                      onChange={(e) => setProfileForm({ ...profileForm, category: e.target.value })}
+                      value={
+                        isCustomCategory 
+                          ? 'Other (Specify)' 
+                          : (CATEGORIES.includes(profileForm.category || '') ? profileForm.category : 'Other (Specify)')
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === 'Other (Specify)') {
+                          setIsCustomCategory(true)
+                          setProfileForm({ ...profileForm, category: customCategoryInput || '' })
+                        } else {
+                          setIsCustomCategory(false)
+                          setProfileForm({ ...profileForm, category: val })
+                        }
+                      }}
                       className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
                     >
                       {CATEGORIES.map((cat) => (
                         <option key={cat} value={cat}>{cat}</option>
                       ))}
+                      <option value="Other (Specify)">Other (Specify / Custom)</option>
                     </select>
+
+                    {isCustomCategory && (
+                      <div className="pt-1 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                        <label className="text-[11px] font-medium text-neutral-400 block mb-1">
+                          Specify Custom Industry <span className="text-emerald-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. AgriTech, Aerospace, Cybersecurity, Web3..."
+                          value={customCategoryInput}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setCustomCategoryInput(val)
+                            setProfileForm({ ...profileForm, category: val })
+                          }}
+                          className="w-full bg-neutral-900 border border-emerald-500/60 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
