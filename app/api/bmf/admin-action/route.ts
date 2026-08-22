@@ -52,6 +52,11 @@ export async function POST(request: NextRequest) {
         updatePayload.is_verified = !member.is_verified
       } else if (action === 'toggle_featured') {
         updatePayload.is_featured = !member.is_featured
+      } else if (action === 'set_priority') {
+        updatePayload.priority_order = body.priority_order !== undefined ? Number(body.priority_order) : 100
+        if (body.badge_title !== undefined) updatePayload.badge_title = body.badge_title
+      } else if (action === 'pin_to_top') {
+        updatePayload.priority_order = 1
       }
 
       const { error: updateErr } = await supabase

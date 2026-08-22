@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BmfMember, fetchBmfMembers } from '@/lib/supabase/bmf-members'
+import { BmfMember, fetchBmfMembers, sortBmfMembers } from '@/lib/supabase/bmf-members'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { SkeletonFounderCard } from '@/components/bmf-club/skeleton-founder-card'
 import { Footer } from '@/components/footer'
@@ -70,9 +70,9 @@ export default function BmfFounderDirectoryPage() {
     return matchesCategory && matchesSearch
   })
 
-  // Split into Premium & Regular groups
-  const premiumMembers = filteredMembers.filter((m) => m.is_featured)
-  const regularMembers = filteredMembers.filter((m) => !m.is_featured)
+  // Split into Premium & Regular groups (both strictly ordered by priority_order)
+  const premiumMembers = sortBmfMembers(filteredMembers.filter((m) => m.is_featured))
+  const regularMembers = sortBmfMembers(filteredMembers.filter((m) => !m.is_featured))
 
   // Overall counts (unfiltered by search/category for tab badges)
   const totalPremiumCount = members.filter((m) => m.is_featured).length

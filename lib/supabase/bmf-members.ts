@@ -22,6 +22,8 @@ export interface BmfMember {
   is_verified: boolean
   is_approved: boolean
   is_featured?: boolean
+  priority_order?: number
+  badge_title?: string | null
   review_status?: 'pending' | 'approved' | 'rejected'
   admin_feedback?: string | null
   created_at?: string
@@ -329,6 +331,34 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
   }
 }
 
+export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
+  return [...members].sort((a, b) => {
+    // 1. Explicit priority_order (1 is highest priority e.g. President)
+    const pA = a.priority_order !== undefined && a.priority_order !== null 
+      ? a.priority_order 
+      : (a.full_name?.toLowerCase().includes('melwin') || a.role?.toLowerCase().includes('president') ? 1 : 100)
+    const pB = b.priority_order !== undefined && b.priority_order !== null 
+      ? b.priority_order 
+      : (b.full_name?.toLowerCase().includes('melwin') || b.role?.toLowerCase().includes('president') ? 1 : 100)
+
+    if (pA !== pB) {
+      return pA - pB
+    }
+
+    // 2. Featured status
+    const featA = a.is_featured ? 1 : 0
+    const featB = b.is_featured ? 1 : 0
+    if (featA !== featB) {
+      return featB - featA
+    }
+
+    // 3. Most recent first
+    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
+    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+    return dateB - dateA
+  })
+}
+
 export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?: number }): Promise<BmfMember[]> {
   try {
     const supabase = getSupabaseBrowserClient()
@@ -342,10 +372,13 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
       .eq('is_approved', true)
 
     if (options?.onlyFeatured) {
-      query = query.eq('is_featured', true).order('created_at', { ascending: false })
-    } else {
-      query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
+      query = query.eq('is_featured', true)
     }
+
+    query = query
+      .order('priority_order', { ascending: true, nullsFirst: false })
+      .order('is_featured', { ascending: false })
+      .order('created_at', { ascending: false })
 
     if (options?.limit) {
       query = query.limit(options.limit)
@@ -358,7 +391,7 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
       return []
     }
 
-    return data as BmfMember[]
+    return sortBmfMembers(data as BmfMember[])
   } catch (err) {
     console.error('Error fetching BMF members:', err)
     return []

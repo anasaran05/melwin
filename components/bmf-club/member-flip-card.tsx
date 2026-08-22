@@ -78,8 +78,23 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
           {/* Top & Bottom Vignette Gradient */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
 
-          {/* Bottom Inside Text: Member Name & Role */}
+          {/* Top-Right Corner: Company Logo (Original Aspect Ratio, No Placeholder Box) */}
+          {logoUrl && (
+            <div className="absolute top-2.5 right-2.5 sm:top-3.5 sm:right-3.5 z-20 pointer-events-none flex items-center justify-end">
+              <img
+                src={logoUrl}
+                alt={member.company_name || 'Company Logo'}
+                className="max-h-7 sm:max-h-9 max-w-[60px] sm:max-w-[80px] w-auto h-auto object-contain drop-shadow-md rounded-xs"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                }}
+              />
+            </div>
+          )}
+
+          {/* Bottom Inside Text: Member Name, Role, and Company Name (3 lines) */}
           <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3.5 z-10 flex flex-col justify-end space-y-0.5 text-left">
+            {/* Line 1: Full Name & Verified Badge */}
             <div className="flex items-center gap-1 sm:gap-1.5">
               <h3 className="text-xs sm:text-lg font-black tracking-tight text-white drop-shadow-md leading-tight truncate">
                 {member.full_name}
@@ -93,11 +108,21 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
               )}
             </div>
 
+            {/* Line 2: Role */}
             <div className="pt-0.2 sm:pt-0.5">
               <span className="text-[8.5px] sm:text-[10px] text-neutral-300 font-mono tracking-wide block truncate">
                 {member.role}
               </span>
             </div>
+
+            {/* Line 3: Company Name */}
+            {member.company_name?.trim() && (
+              <div>
+                <span className="text-[8.5px] sm:text-[10px] text-neutral-400 font-mono tracking-wide block truncate drop-shadow-xs">
+                  {member.company_name}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

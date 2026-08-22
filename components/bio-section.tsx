@@ -17,7 +17,7 @@ export function BioSection() {
         </div>
 
         {/* Center Column: Image Placeholder (Hero image will scroll down into this space) */}
-        <div className="relative w-full aspect-square md:aspect-[4/5] rounded-[2rem] mx-auto max-w-md hidden md:block opacity-0">
+        <div className="relative w-full h-[280px] sm:h-[320px] md:h-auto md:aspect-[4/5] rounded-[2rem] mx-auto max-w-md block opacity-0 pointer-events-none">
           {/* This empty space ensures the 3-column grid stays balanced while the Hero image animates into this spot */}
         </div>
 

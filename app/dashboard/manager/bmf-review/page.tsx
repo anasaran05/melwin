@@ -134,27 +134,34 @@ export default function BmfAdminReviewPage() {
   }, [])
 
   // Showcase member actions
-  const handleMemberAction = async (memberId: string, action: 'approve' | 'reject' | 'toggle_verify' | 'toggle_featured', feedback?: string) => {
+  const handleMemberAction = async (
+    memberId: string, 
+    action: 'approve' | 'reject' | 'toggle_verify' | 'toggle_featured' | 'set_priority', 
+    feedback?: string,
+    priorityOrder?: number
+  ) => {
     setActiveMemberActionId(memberId)
     try {
       const res = await fetch('/api/bmf/admin-action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ memberId, action, feedback }),
+        body: JSON.stringify({ memberId, action, feedback, priority_order: priorityOrder }),
       })
 
       const data = await res.json()
       if (res.ok && data.success) {
-        setMembers((prev) =>
-          prev.map((m) => {
+        setMembers((prev) => {
+          const updated = prev.map((m) => {
             if (m.id !== memberId) return m
-            if (action === 'approve') return { ...m, is_approved: true, review_status: 'approved', admin_feedback: null }
-            if (action === 'reject') return { ...m, is_approved: false, review_status: 'rejected', admin_feedback: feedback || null }
+            if (action === 'approve') return { ...m, is_approved: true, review_status: 'approved' as const, admin_feedback: null }
+            if (action === 'reject') return { ...m, is_approved: false, review_status: 'rejected' as const, admin_feedback: feedback || null }
             if (action === 'toggle_verify') return { ...m, is_verified: !m.is_verified }
             if (action === 'toggle_featured') return { ...m, is_featured: !m.is_featured }
+            if (action === 'set_priority') return { ...m, priority_order: priorityOrder }
             return m
           })
-        )
+          return updated.sort((a, b) => (a.priority_order ?? 100) - (b.priority_order ?? 100))
+        })
       } else {
         alert(data.error || 'Action failed.')
       }
@@ -585,6 +592,33 @@ export default function BmfAdminReviewPage() {
                       >
                         {member.is_featured ? '★ Featured Spotlight' : '+ Spotlight'}
                       </button>
+                    </div>
+
+                    {/* Priority & Top Lineup Controls */}
+                    <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800/60 text-[11px] font-mono">
+                      <button
+                        type="button"
+                        onClick={() => handleMemberAction(member.id, 'set_priority', undefined, member.priority_order === 1 ? 100 : 1)}
+                        className={`hover:underline cursor-pointer flex items-center gap-1 ${member.priority_order === 1 ? 'text-amber-300 font-bold' : 'text-neutral-400'}`}
+                      >
+                        <span>{member.priority_order === 1 ? '👑 Pinned #1 (Top)' : '📌 Pin to #1'}</span>
+                      </button>
+
+                      <div className="flex items-center gap-1.5 text-neutral-400">
+                        <span className="text-[10px]">Rank:</span>
+                        <select
+                          value={member.priority_order ?? 100}
+                          onChange={(e) => handleMemberAction(member.id, 'set_priority', undefined, Number(e.target.value))}
+                          className="bg-neutral-900 border border-neutral-700 text-white rounded px-2 py-0.5 text-[10px] cursor-pointer"
+                        >
+                          <option value={1}>#1 (President / Top)</option>
+                          <option value={2}>#2</option>
+                          <option value={3}>#3</option>
+                          <option value={4}>#4</option>
+                          <option value={5}>#5</option>
+                          <option value={100}>Default (100)</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 </div>
