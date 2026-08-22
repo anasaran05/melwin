@@ -333,10 +333,7 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
   try {
     const supabase = getSupabaseBrowserClient()
     if (!supabase) {
-      if (options?.onlyFeatured) {
-        return INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options.limit || 5)
-      }
-      return INITIAL_BMF_MEMBERS
+      return []
     }
 
     let query = supabase
@@ -346,31 +343,25 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
 
     if (options?.onlyFeatured) {
       query = query.eq('is_featured', true).order('created_at', { ascending: false })
-      if (options.limit) {
-        query = query.limit(options.limit)
-      }
     } else {
       query = query.order('is_featured', { ascending: false }).order('created_at', { ascending: false })
-      if (options?.limit) {
-        query = query.limit(options.limit)
-      }
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit)
     }
 
     const { data, error } = await query
 
-    if (error || !data || data.length === 0) {
-      if (options?.onlyFeatured) {
-        return INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options?.limit || 5)
-      }
-      return INITIAL_BMF_MEMBERS
+    if (error || !data) {
+      console.warn('Could not fetch members from bmf_members:', error?.message)
+      return []
     }
 
     return data as BmfMember[]
   } catch (err) {
     console.error('Error fetching BMF members:', err)
-    return options?.onlyFeatured 
-      ? INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, options?.limit || 5)
-      : INITIAL_BMF_MEMBERS
+    return []
   }
 }
 

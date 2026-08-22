@@ -3,14 +3,13 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BmfMember, INITIAL_BMF_MEMBERS, fetchBmfMembers } from '@/lib/supabase/bmf-members'
+import { BmfMember, fetchBmfMembers } from '@/lib/supabase/bmf-members'
 import { MemberFlipCard } from './member-flip-card'
+import { SkeletonFounderCard } from './skeleton-founder-card'
 import { Search, UserCheck, Sparkles, ArrowRight, Compass } from 'lucide-react'
 
 export function MemberDirectory() {
-  const [featuredMembers, setFeaturedMembers] = useState<BmfMember[]>(
-    INITIAL_BMF_MEMBERS.filter((m) => m.is_featured).slice(0, 5)
-  )
+  const [featuredMembers, setFeaturedMembers] = useState<BmfMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -41,7 +40,7 @@ export function MemberDirectory() {
               <span>Vetted Community Directory</span>
               <span className="text-neutral-400">•</span>
               <span className="text-amber-700 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-600" /> Top {featuredMembers.length} Featured
+                <Sparkles className="w-3 h-3 text-amber-600" /> Spotlighted Founders
               </span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#111111]">
@@ -64,27 +63,43 @@ export function MemberDirectory() {
           </div>
         </div>
 
-        {/* Top 5 Featured Members Grid */}
-        <motion.div 
-          layout
-          className="grid grid-cols-2 sm:flex sm:flex-wrap items-start justify-center sm:justify-start gap-3 sm:gap-5"
-        >
-          <AnimatePresence>
-            {featuredMembers.map((member) => (
-              <motion.div
-                key={member.id}
-                layout
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.4 }}
-                className="w-full sm:w-[210px] md:w-[220px] shrink-0"
-              >
-                <MemberFlipCard member={member} />
-              </motion.div>
+        {/* Top Featured Members Grid or Skeleton */}
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap items-start justify-center sm:justify-start gap-3 sm:gap-5">
+            {[...Array(4)].map((_, i) => (
+              <SkeletonFounderCard key={`feat-skel-${i}`} />
             ))}
-          </AnimatePresence>
-        </motion.div>
+          </div>
+        ) : featuredMembers.length === 0 ? (
+          <div className="p-8 rounded-3xl bg-white border border-black/10 text-center space-y-3">
+            <Sparkles className="w-8 h-8 text-amber-500 mx-auto" />
+            <h3 className="text-base font-bold text-neutral-800">Founder Directory is Live</h3>
+            <p className="text-xs text-neutral-500 max-w-md mx-auto">
+              Spotlighted founding members will appear here as profiles are published.
+            </p>
+          </div>
+        ) : (
+          <motion.div 
+            layout
+            className="grid grid-cols-2 sm:flex sm:flex-wrap items-start justify-center sm:justify-start gap-3 sm:gap-5"
+          >
+            <AnimatePresence>
+              {featuredMembers.map((member) => (
+                <motion.div
+                  key={member.id}
+                  layout
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.4 }}
+                  className="w-full sm:w-[210px] md:w-[220px] shrink-0"
+                >
+                  <MemberFlipCard member={member} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
 
         {/* Action Link to Full Directory */}
         <div className="flex justify-center pt-2">

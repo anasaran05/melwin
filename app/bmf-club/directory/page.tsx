@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BmfMember, INITIAL_BMF_MEMBERS, fetchBmfMembers } from '@/lib/supabase/bmf-members'
+import { BmfMember, fetchBmfMembers } from '@/lib/supabase/bmf-members'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
+import { SkeletonFounderCard } from '@/components/bmf-club/skeleton-founder-card'
 import { Footer } from '@/components/footer'
 import { 
   Search, 
@@ -18,7 +19,7 @@ import {
 type MembershipTierTab = 'all' | 'premium' | 'regular'
 
 export default function BmfFounderDirectoryPage() {
-  const [members, setMembers] = useState<BmfMember[]>(INITIAL_BMF_MEMBERS)
+  const [members, setMembers] = useState<BmfMember[]>([])
   const [tierTab, setTierTab] = useState<MembershipTierTab>('all')
   const [selectedCategory, setSelectedCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
@@ -210,8 +211,36 @@ export default function BmfFounderDirectoryPage() {
 
         </div>
 
-        {/* Empty State */}
-        {filteredMembers.length === 0 ? (
+        {/* Loading Skeleton State */}
+        {isLoading ? (
+          <div className="space-y-10 sm:space-y-12 animate-in fade-in-0 duration-300 text-left">
+            {/* Premium Section Skeleton */}
+            <section className="space-y-4 sm:space-y-5">
+              <div className="flex items-center gap-3 pb-2 border-b border-black/10">
+                <div className="h-6 bg-black/10 rounded-lg w-52 animate-pulse" />
+                <div className="h-5 bg-amber-100 rounded-full w-10 animate-pulse" />
+              </div>
+              <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap items-start gap-3 sm:gap-5 pb-2 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+                {[...Array(4)].map((_, i) => (
+                  <SkeletonFounderCard key={`skel-prem-${i}`} />
+                ))}
+              </div>
+            </section>
+
+            {/* Regular Section Skeleton */}
+            <section className="space-y-4 sm:space-y-5">
+              <div className="flex items-center gap-3 pb-2 border-b border-black/10">
+                <div className="h-6 bg-black/10 rounded-lg w-44 animate-pulse" />
+                <div className="h-5 bg-black/10 rounded-full w-10 animate-pulse" />
+              </div>
+              <div className="flex overflow-x-auto no-scrollbar sm:flex-wrap items-start gap-3 sm:gap-5 pb-2 -mx-3.5 px-3.5 sm:mx-0 sm:px-0">
+                {[...Array(4)].map((_, i) => (
+                  <SkeletonFounderCard key={`skel-reg-${i}`} />
+                ))}
+              </div>
+            </section>
+          </div>
+        ) : filteredMembers.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-black/10 p-8 space-y-3">
             <UserCheck className="w-10 h-10 text-neutral-400 mx-auto" />
             <h3 className="text-lg font-bold text-neutral-800">No founders found</h3>
