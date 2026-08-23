@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BmfMember } from '@/lib/supabase/bmf-members'
-import { normalizeR2Url, DEFAULT_FOUNDER_AVATAR } from '@/lib/image-utils'
+import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { 
   Linkedin, 
   Twitter, 
@@ -33,7 +33,8 @@ function formatMemberSince(dateStr?: string) {
 
 export function MemberFlipCard({ member }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
-  const avatarUrl = normalizeR2Url(member.avatar_url)
+  const avatarFallback = getFounderFallbackAvatar(member.full_name)
+  const avatarUrl = normalizeR2Url(member.avatar_url, member.full_name)
   const logoUrl = member.company_logo ? normalizeR2Url(member.company_logo) : ''
 
   return (
@@ -71,7 +72,7 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
             className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
             onError={(e) => {
-              e.currentTarget.src = DEFAULT_FOUNDER_AVATAR
+              e.currentTarget.src = avatarFallback
             }}
           />
 

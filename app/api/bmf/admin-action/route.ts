@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendShowcaseApprovedEmail, sendShowcaseRevisionEmail } from '@/lib/email/resend'
+import { clearMembersServerCache } from '@/app/api/bmf/members/route'
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,6 +99,9 @@ export async function POST(request: NextRequest) {
         })
       }
     }
+
+    // Invalidate directory cache
+    clearMembersServerCache()
 
     return NextResponse.json({
       success: true,

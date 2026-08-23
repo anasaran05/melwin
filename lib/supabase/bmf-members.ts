@@ -1,4 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { getFounderFallbackAvatar } from '@/lib/image-utils'
 
 export interface BmfMember {
   id: string
@@ -47,6 +48,55 @@ export interface BmfJob {
   status?: 'active' | 'paused' | 'closed'
   created_at?: string
   updated_at?: string
+}
+
+export const BMF_STANDARD_CATEGORIES = [
+  'AI & SaaS',
+  'Technology & Software',
+  'Healthcare & Life Sciences',
+  'Finance & FinTech',
+  'E-commerce & Consumer Brands',
+  'Manufacturing & Industrial',
+  'Education & EdTech',
+  'Real Estate & Construction',
+  'Food, Agriculture & Hospitality',
+  'Professional & Business Services',
+  'Media, Entertainment & Creative',
+  'Green Tech',
+  'BioTech',
+] as const
+
+export function normalizeCategory(rawCategory?: string | null): string {
+  if (!rawCategory) return 'Others'
+  const trimmed = rawCategory.trim()
+  if (!trimmed || trimmed.toLowerCase() === 'other' || trimmed.toLowerCase() === 'others' || trimmed.toLowerCase() === 'other (specify)') {
+    return 'Others'
+  }
+
+  // Exact standard match (case-insensitive)
+  const exact = BMF_STANDARD_CATEGORIES.find(
+    (c) => c.toLowerCase() === trimmed.toLowerCase()
+  )
+  if (exact) return exact
+
+  // Smart canonical aliases to prevent fragmented custom categories
+  const lower = trimmed.toLowerCase()
+  if (lower.includes('ai') || lower.includes('saas')) return 'AI & SaaS'
+  if (lower.includes('fintech') || lower.includes('finance') || lower.includes('ledger') || lower.includes('escrow')) return 'Finance & FinTech'
+  if (lower.includes('edtech') || lower.includes('education') || lower.includes('learning')) return 'Education & EdTech'
+  if (lower.includes('green') || lower.includes('clean') || lower.includes('wind') || lower.includes('solar') || lower.includes('climate')) return 'Green Tech'
+  if (lower.includes('biotech') || lower.includes('biology') || lower.includes('gene')) return 'BioTech'
+  if (lower.includes('health') || lower.includes('pharma') || lower.includes('medical') || lower.includes('medtech')) return 'Healthcare & Life Sciences'
+  if (lower.includes('software') || lower.includes('tech') || lower.includes('developer')) return 'Technology & Software'
+  if (lower.includes('e-commerce') || lower.includes('ecommerce') || lower.includes('d2c') || lower.includes('retail')) return 'E-commerce & Consumer Brands'
+  if (lower.includes('manufactur') || lower.includes('industrial') || lower.includes('hardware')) return 'Manufacturing & Industrial'
+  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('property')) return 'Real Estate & Construction'
+  if (lower.includes('food') || lower.includes('agri') || lower.includes('hospitality')) return 'Food, Agriculture & Hospitality'
+  if (lower.includes('consulting') || lower.includes('business service') || lower.includes('professional') || lower.includes('legal') || lower.includes('agency')) return 'Professional & Business Services'
+  if (lower.includes('media') || lower.includes('entertainment') || lower.includes('creative') || lower.includes('design') || lower.includes('studio') || lower.includes('video')) return 'Media, Entertainment & Creative'
+
+  // Everything else is grouped into a single "Others" bucket
+  return 'Others'
 }
 
 export const INITIAL_BMF_MEMBERS: BmfMember[] = [
@@ -240,7 +290,7 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
   if (!user) return defaultFallback
 
   const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Verified Founder'
-  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || getFounderFallbackAvatar(fullName)
   const email = user.email || ''
 
   try {
@@ -359,11 +409,201 @@ export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
   })
 }
 
+export interface PaginatedMembersResponse {
+  members: BmfMember[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasMore: boolean
+  }
+  meta: {
+    categories: string[]
+    totalMembers: number
+    totalPremium: number
+    totalRegular: number
+  }
+}
+
+// Client-side Memory Cache with 5-minute TTL
+const CLIENT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
+const clientMemoryCache = new Map<string, { data: any; timestamp: number }>()
+
+export function clearClientMembersCache() {
+  clientMemoryCache.clear()
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const keysToRemove: string[] = []
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i)
+        if (key && key.startsWith('bmf_members_cache_')) {
+          keysToRemove.push(key)
+        }
+      }
+      keysToRemove.forEach((k) => sessionStorage.removeItem(k))
+    } catch {}
+  }
+}
+
+function getFromClientCache<T>(cacheKey: string): T | null {
+  const now = Date.now()
+  // 1. Check in-memory Map
+  const inMemory = clientMemoryCache.get(cacheKey)
+  if (inMemory && (now - inMemory.timestamp < CLIENT_CACHE_TTL_MS)) {
+    return inMemory.data as T
+  }
+
+  // 2. Check SessionStorage
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      const stored = sessionStorage.getItem(`bmf_members_cache_${cacheKey}`)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (parsed && (now - parsed.timestamp < CLIENT_CACHE_TTL_MS)) {
+          // Re-populate in-memory map
+          clientMemoryCache.set(cacheKey, parsed)
+          return parsed.data as T
+        }
+      }
+    } catch {}
+  }
+
+  return null
+}
+
+function saveToClientCache<T>(cacheKey: string, data: T): void {
+  const payload = { data, timestamp: Date.now() }
+  clientMemoryCache.set(cacheKey, payload)
+  if (typeof window !== 'undefined' && window.sessionStorage) {
+    try {
+      sessionStorage.setItem(`bmf_members_cache_${cacheKey}`, JSON.stringify(payload))
+    } catch {}
+  }
+}
+
+export async function fetchPaginatedMembers(params: {
+  page?: number
+  limit?: number
+  tier?: 'all' | 'premium' | 'regular'
+  category?: string
+  search?: string
+  forceFresh?: boolean
+}): Promise<PaginatedMembersResponse> {
+  const page = params.page || 1
+  const limit = params.limit || 12
+  const tier = params.tier || 'all'
+  const category = params.category || 'All'
+  const search = params.search || ''
+  const forceFresh = params.forceFresh || false
+
+  const cacheKey = `p_${page}_l_${limit}_t_${tier}_c_${category}_s_${search}`
+
+  if (!forceFresh) {
+    const cached = getFromClientCache<PaginatedMembersResponse>(cacheKey)
+    if (cached) {
+      return cached
+    }
+  }
+
+  try {
+    const query = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+      tier,
+      category,
+      search,
+      ...(forceFresh ? { fresh: 'true' } : {}),
+    })
+
+    const res = await fetch(`/api/bmf/members?${query.toString()}`, {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' },
+    })
+
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`)
+    }
+
+    const data: PaginatedMembersResponse = await res.json()
+    if (data && data.members) {
+      saveToClientCache(cacheKey, data)
+      return data
+    }
+    throw new Error('Invalid response structure from members API')
+  } catch (err) {
+    console.warn('[fetchPaginatedMembers API fallback]:', err)
+
+    // Fallback: local processing from INITIAL_BMF_MEMBERS or direct Supabase
+    const fallbackAll = INITIAL_BMF_MEMBERS
+    const filtered = fallbackAll.filter((m) => {
+      if (tier === 'premium' && !m.is_featured) return false
+      if (tier === 'regular' && m.is_featured) return false
+      if (category !== 'All') {
+        const norm = normalizeCategory(m.category)
+        if (category === 'Others') {
+          if (norm !== 'Others') return false
+        } else {
+          if (norm !== category && m.category !== category) return false
+        }
+      }
+      if (search) {
+        const s = search.toLowerCase()
+        const match =
+          m.full_name.toLowerCase().includes(s) ||
+          m.company_name.toLowerCase().includes(s) ||
+          m.role.toLowerCase().includes(s)
+        if (!match) return false
+      }
+      return true
+    })
+
+    const total = filtered.length
+    const startIndex = (page - 1) * limit
+    const paginated = filtered.slice(startIndex, startIndex + limit)
+
+    const fallbackCatCounts = new Map<string, number>()
+    fallbackAll.forEach((m) => {
+      const norm = normalizeCategory(m.category)
+      fallbackCatCounts.set(norm, (fallbackCatCounts.get(norm) || 0) + 1)
+    })
+    const availCats = Array.from(fallbackCatCounts.keys()).filter((c) => c !== 'Others')
+    availCats.sort()
+    const hasOthersFallback = (fallbackCatCounts.get('Others') || 0) > 0
+
+    return {
+      members: paginated,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: startIndex + limit < total,
+      },
+      meta: {
+        categories: ['All', ...availCats, ...(hasOthersFallback ? ['Others'] : [])],
+        totalMembers: fallbackAll.length,
+        totalPremium: fallbackAll.filter((m) => m.is_featured).length,
+        totalRegular: fallbackAll.filter((m) => !m.is_featured).length,
+      },
+    }
+  }
+}
+
 export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?: number }): Promise<BmfMember[]> {
   try {
+    const cacheKey = `featured_${options?.onlyFeatured || false}_limit_${options?.limit || 0}`
+    const cached = getFromClientCache<BmfMember[]>(cacheKey)
+    if (cached) {
+      return cached
+    }
+
     const supabase = getSupabaseBrowserClient()
     if (!supabase) {
-      return []
+      let data = INITIAL_BMF_MEMBERS
+      if (options?.onlyFeatured) data = data.filter((m) => m.is_featured)
+      if (options?.limit) data = data.slice(0, options.limit)
+      return sortBmfMembers(data)
     }
 
     let query = supabase
@@ -391,7 +631,9 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
       return []
     }
 
-    return sortBmfMembers(data as BmfMember[])
+    const sorted = sortBmfMembers(data as BmfMember[])
+    saveToClientCache(cacheKey, sorted)
+    return sorted
   } catch (err) {
     console.error('Error fetching BMF members:', err)
     return []

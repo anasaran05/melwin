@@ -14,8 +14,17 @@ export function Footer() {
             Start-ups<br />
             for Growth.
           </h2>
-          <div className="mt-12 text-gray-400 text-sm font-medium">
-            © 2026 Dr. Melwin Vincent
+          <div className="mt-12 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-gray-400 text-sm font-medium">
+            <span>© 2026 Dr. Melwin Vincent</span>
+            <div className="flex items-center gap-3 text-xs text-neutral-500">
+              <Link href="/privacy" className="hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <span>•</span>
+              <Link href="/terms" className="hover:text-white transition-colors">
+                Terms of Service
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -29,6 +38,7 @@ export function Footer() {
                 { name: 'Home', href: '/' },
                 { name: 'About Me', href: '/about' },
                 { name: 'BMF Club', href: '/bmf-club' },
+                { name: 'Directory', href: '/bmf-club/directory' },
                 { name: 'Atom SE (Tech)', href: '#', isLocked: true },
                 { name: 'Contact', href: '/#consultation' }
               ].map((link) => (

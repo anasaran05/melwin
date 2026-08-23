@@ -14,16 +14,31 @@ export interface CompressedImageResult {
 }
 
 export const CANONICAL_MEDIA_DOMAIN = 'https://media.buildwithmelwin.com'
-export const DEFAULT_FOUNDER_AVATAR = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'
 
-export function normalizeR2Url(url?: string | null): string {
-  if (!url || typeof url !== 'string' || url.trim() === '') {
-    return DEFAULT_FOUNDER_AVATAR
+/**
+ * Generates a clean, modern executive avatar illustration
+ * instead of arbitrary stock photos when a user hasn't uploaded their portrait.
+ */
+export function getFounderFallbackAvatar(name?: string | null): string {
+  const cleanName = (name || 'Founder').trim()
+  return `https://api.dicebear.com/7.x/personas/svg?seed=${encodeURIComponent(cleanName)}&backgroundColor=121214`
+}
+
+export const DEFAULT_FOUNDER_AVATAR = 'https://api.dicebear.com/7.x/personas/svg?seed=ExecutiveFounder&backgroundColor=121214'
+
+export function normalizeR2Url(url?: string | null, fallbackName?: string | null): string {
+  if (
+    !url || 
+    typeof url !== 'string' || 
+    url.trim() === '' || 
+    url.includes('unsplash.com/photo-1534528741775-53994a69daeb')
+  ) {
+    return getFounderFallbackAvatar(fallbackName)
   }
 
   const cleanUrl = url.trim()
 
-  // Rewrite any development/old domain variations to the custom custom media.buildwithmelwin.com domain
+  // Rewrite any development/old domain variations to the custom media.buildwithmelwin.com domain
   if (
     cleanUrl.includes('buildwithmelwin.r2.dev') ||
     cleanUrl.includes('.r2.dev')

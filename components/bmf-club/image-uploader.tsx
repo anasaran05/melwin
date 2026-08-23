@@ -24,7 +24,7 @@ export function ImageUploader({
   onFileSelect,
 }: ImageUploaderProps) {
   const [isCompressing, setIsCompressing] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string>(normalizeR2Url(currentUrl) || '')
+  const [previewUrl, setPreviewUrl] = useState<string>(currentUrl ? normalizeR2Url(currentUrl) : '')
   const [compressionStats, setCompressionStats] = useState<string>('')
   const [error, setError] = useState<string>('')
   const [isDragOver, setIsDragOver] = useState(false)
@@ -33,7 +33,7 @@ export function ImageUploader({
   // Sync with currentUrl prop when it changes and we're not staging a new file
   useEffect(() => {
     if (!isPendingSave) {
-      setPreviewUrl(normalizeR2Url(currentUrl) || '')
+      setPreviewUrl(currentUrl ? normalizeR2Url(currentUrl) : '')
     }
   }, [currentUrl, isPendingSave])
 

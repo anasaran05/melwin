@@ -25,7 +25,7 @@ import {
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { ImageUploader } from '@/components/bmf-club/image-uploader'
-import { normalizeR2Url, DEFAULT_FOUNDER_AVATAR } from '@/lib/image-utils'
+import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
 import { 
@@ -876,11 +876,11 @@ export default function BmfMemberDashboardPage() {
           >
             <div className="w-10 h-10 rounded-xl overflow-hidden bg-neutral-800 border border-white/10 shrink-0 shadow-inner">
               <img
-                src={normalizeR2Url(profile.avatar_url)}
+                src={normalizeR2Url(profile.avatar_url, profile.full_name)}
                 alt={profile.full_name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.currentTarget.src = DEFAULT_FOUNDER_AVATAR
+                  e.currentTarget.src = getFounderFallbackAvatar(profile.full_name)
                 }}
               />
             </div>
@@ -2076,7 +2076,7 @@ export default function BmfMemberDashboardPage() {
               }}
               className="w-full bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-black py-3 rounded-full font-bold text-xs transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
             >
-              Join Priority Waitlist
+              Will Be Notified
             </Button>
 
           </div>
