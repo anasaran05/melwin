@@ -46,6 +46,9 @@ export async function login(formData: FormData) {
   // Clear rate limit on successful login
   rateLimitMap.delete(ip)
 
+  const next = formData.get('next') as string
+  const destination = (next && next.startsWith('/')) ? next : '/dashboard/manager'
+
   revalidatePath('/', 'layout')
-  redirect('/dashboard/manager')
+  redirect(destination)
 }

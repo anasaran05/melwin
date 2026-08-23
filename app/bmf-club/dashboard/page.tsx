@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   BmfMember, 
   BmfJob, 
@@ -25,6 +25,7 @@ import {
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { ImageUploader } from '@/components/bmf-club/image-uploader'
+import { AvatarPickerModal } from '@/components/bmf-club/avatar-picker-modal'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
@@ -93,8 +94,13 @@ const IconMail = (props: React.SVGProps<SVGSVGElement>) => (
 
 const BMF_LOGO_URL = "https://img.icons8.com/stickers/500/verified-badge.png"
 
-export default function BmfMemberDashboardPage() {
+function BmfMemberDashboardContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const rawNext = searchParams.get('next') || searchParams.get('redirectTo') || searchParams.get('redirect')
+  const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
+
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
   const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'jobs' | 'events' | 'settings'>('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -127,6 +133,7 @@ export default function BmfMemberDashboardPage() {
   const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
@@ -175,6 +182,10 @@ export default function BmfMemberDashboardPage() {
         }
 
         if (authedUser) {
+          if (destination && destination !== '/bmf-club/dashboard' && destination !== '/bmf-club/login') {
+            router.replace(destination)
+            return
+          }
           setIsAuthenticated(true)
           const memberProfile = await ensureOrFetchUserProfile(authedUser)
           setProfile(memberProfile)
@@ -209,6 +220,10 @@ export default function BmfMemberDashboardPage() {
           if (typeof window !== 'undefined') {
             const demoEmail = localStorage.getItem('bmf_current_user_email')
             if (demoEmail) {
+              if (destination && destination !== '/bmf-club/dashboard' && destination !== '/bmf-club/login') {
+                router.replace(destination)
+                return
+              }
               setIsAuthenticated(true)
               const stored = localStorage.getItem('bmf_current_member')
               if (stored) {
@@ -257,7 +272,7 @@ export default function BmfMemberDashboardPage() {
     }
 
     checkAuthAndLoadData()
-  }, [])
+  }, [router, destination])
 
   // Universal Auth Handlers
   const handleGoogleSignIn = async () => {
@@ -269,7 +284,7 @@ export default function BmfMemberDashboardPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
         if (error) {
@@ -280,7 +295,11 @@ export default function BmfMemberDashboardPage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('bmf_current_user_email', 'google.founder@bmf.club')
         }
-        setIsAuthenticated(true)
+        if (destination && destination !== '/bmf-club/dashboard') {
+          router.push(destination)
+        } else {
+          setIsAuthenticated(true)
+        }
       }
     } catch (err: any) {
       setAuthStatus('error')
@@ -297,7 +316,7 @@ export default function BmfMemberDashboardPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
         if (error) {
@@ -308,7 +327,11 @@ export default function BmfMemberDashboardPage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('bmf_current_user_email', 'github.founder@bmf.club')
         }
-        setIsAuthenticated(true)
+        if (destination && destination !== '/bmf-club/dashboard') {
+          router.push(destination)
+        } else {
+          setIsAuthenticated(true)
+        }
       }
     } catch (err: any) {
       setAuthStatus('error')
@@ -332,7 +355,11 @@ export default function BmfMemberDashboardPage() {
         if (typeof window !== 'undefined') {
           localStorage.setItem('bmf_current_user_email', authEmail)
         }
-        setIsAuthenticated(true)
+        if (destination && destination !== '/bmf-club/dashboard') {
+          router.push(destination)
+        } else {
+          setIsAuthenticated(true)
+        }
         return
       }
 
@@ -345,7 +372,7 @@ export default function BmfMemberDashboardPage() {
           const { error: otpError } = await supabase.auth.signInWithOtp({
             email: authEmail,
             options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
             },
           })
           if (otpError) {
@@ -356,16 +383,23 @@ export default function BmfMemberDashboardPage() {
             setAuthMessage('Magic login link sent to your email! Click the link to access your dashboard.')
           }
         } else if (data.user) {
-          setIsAuthenticated(true)
-          const memberProfile = await ensureOrFetchUserProfile(data.user)
-          setProfile(memberProfile)
-          setProfileForm(memberProfile)
+          if (typeof window !== 'undefined' && data.user.email) {
+            localStorage.setItem('bmf_current_user_email', data.user.email)
+          }
+          if (destination && destination !== '/bmf-club/dashboard') {
+            router.push(destination)
+          } else {
+            setIsAuthenticated(true)
+            const memberProfile = await ensureOrFetchUserProfile(data.user)
+            setProfile(memberProfile)
+            setProfileForm(memberProfile)
+          }
         }
       } else {
         const { error } = await supabase.auth.signInWithOtp({
           email: authEmail,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
         if (error) {
@@ -386,7 +420,11 @@ export default function BmfMemberDashboardPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bmf_current_user_email', 'founder@bmf.club')
     }
-    setIsAuthenticated(true)
+    if (destination && destination !== '/bmf-club/dashboard') {
+      router.push(destination)
+    } else {
+      setIsAuthenticated(true)
+    }
   }
 
   // Profile Save / Update Handler with Deferred Cloudflare Upload & Supabase Update
@@ -650,9 +688,9 @@ export default function BmfMemberDashboardPage() {
             footerContent={
               <>
                 By logging in, you agree to the{" "}
-                <Link href="/about" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Terms of Service</Link>{" "}
+                <Link href="/terms" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Terms of Service</Link>{" "}
                 and{" "}
-                <Link href="/about" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Privacy Policy</Link>.
+                <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Privacy Policy</Link>.
               </>
             }
           >
@@ -1111,6 +1149,7 @@ export default function BmfMemberDashboardPage() {
                     aspectRatio="portrait"
                     isPendingSave={Boolean(pendingAvatarFile)}
                     isUploading={isSavingProfile}
+                    onChooseAvatar={() => setIsAvatarModalOpen(true)}
                     onFileSelect={(file, previewUrl) => {
                       setPendingAvatarFile(file)
                       setProfileForm((prev) => ({ ...prev, avatar_url: previewUrl }))
@@ -2083,6 +2122,36 @@ export default function BmfMemberDashboardPage() {
         </div>
       )}
 
+      {/* ======================================================================= */}
+      {/* FOUNDER AVATAR PICKER MODAL */}
+      {/* ======================================================================= */}
+      <AvatarPickerModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        currentAvatarUrl={profileForm.avatar_url}
+        onSelectAvatar={(avatarUrl) => {
+          setPendingAvatarFile(null)
+          setProfileForm((prev) => ({ ...prev, avatar_url: avatarUrl }))
+        }}
+      />
+
     </div>
+  )
+}
+
+export default function BmfMemberDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center space-y-4 font-sans">
+        <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shadow-xl">
+          <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
+        </div>
+        <p className="text-xs font-mono text-neutral-400 tracking-wider uppercase">
+          Initializing Founder Studio...
+        </p>
+      </div>
+    }>
+      <BmfMemberDashboardContent />
+    </Suspense>
   )
 }

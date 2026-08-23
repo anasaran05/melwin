@@ -3,7 +3,6 @@ import { BioSection } from '@/components/bio-section'
 import { QuoteSection } from '@/components/quote-section'
 import { ServicesGrid } from '@/components/services-grid'
 import { ExpertiseStrip } from '@/components/expertise-strip'
-import { FAQ } from '@/components/faq'
 import { Footer } from '@/components/footer'
 
 export default function Home() {
@@ -15,7 +14,6 @@ export default function Home() {
       <QuoteSection />
       <ExpertiseStrip />
       <ServicesGrid />
-      <FAQ />
       <Footer />
     </main>
   )

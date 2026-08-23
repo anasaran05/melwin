@@ -57,18 +57,18 @@ const servicesData: ServiceItem[] = [
       'Exclusive startup perks, credits & partner discounts'
     ]
   },
-  // 2. Atom SE (Open)
+  // 2. Atom SE (Locked)
   {
     id: 'atom-se',
     title: 'Atom SE (Tech Arm)',
     subtitle: 'Custom Software Engineering & AI Solutions',
     category: 'Technology & AI',
     description: 'Enterprise-grade software engineering, bespoke modern web apps, high-throughput mobile platforms, and custom AI automations built for high performance and scale.',
-    isOpen: true,
-    tag: 'ACCEPTING PROJECTS',
-    statusBadge: 'OPEN FOR CLIENTS',
+    isOpen: false,
+    tag: 'AVAILABLE SOON',
+    statusBadge: 'LOCKED',
     icon: Code2,
-    href: '/atom-se',
+    lockedReason: 'Atom SE (Tech Arm) is currently locked and undergoing platform scaling. It will be available soon!',
     highlights: [
       'Full-stack Next.js, React & Cloud infrastructure',
       'Tailored AI workflows & custom LLM integrations',
@@ -264,10 +264,7 @@ export default function ServicesPage() {
 
       {/* Hero Header */}
       <section className="pt-12 pb-12 sm:pt-16 sm:pb-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto text-center space-y-6">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-black/10 text-[#111111] text-xs font-mono font-bold uppercase tracking-wider shadow-xs">
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-          <span>DR. MELWIN ECOSYSTEM & SERVICES DIRECTORY</span>
-        </div>
+       
 
         <motion.h1 
           initial={{ opacity: 0, y: 20 }}
@@ -310,7 +307,7 @@ export default function ServicesPage() {
             }`}
           >
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>Available Now (3)</span>
+            <span>Available Now ({servicesData.filter((s) => s.isOpen).length})</span>
           </button>
           <button
             onClick={() => setSelectedFilter('locked')}
@@ -321,7 +318,7 @@ export default function ServicesPage() {
             }`}
           >
             <Lock className="w-3 h-3 text-neutral-500" />
-            <span>Locked • Available Soon (7)</span>
+            <span>Locked • Available Soon ({servicesData.filter((s) => !s.isOpen).length})</span>
           </button>
         </div>
       </section>

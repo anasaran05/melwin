@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { Upload, Loader2, CheckCircle2, Trash2 } from 'lucide-react'
+import { Upload, Loader2, CheckCircle2, Trash2, Sparkles } from 'lucide-react'
 import { compressImageToWebP, normalizeR2Url } from '@/lib/image-utils'
 
 interface ImageUploaderProps {
@@ -11,6 +11,7 @@ interface ImageUploaderProps {
   aspectRatio?: 'square' | 'portrait' | 'landscape'
   isUploading?: boolean
   isPendingSave?: boolean
+  onChooseAvatar?: () => void
   onFileSelect: (file: File | null, previewUrl: string) => void
 }
 
@@ -21,6 +22,7 @@ export function ImageUploader({
   aspectRatio = 'portrait',
   isUploading = false,
   isPendingSave = false,
+  onChooseAvatar,
   onFileSelect,
 }: ImageUploaderProps) {
   const [isCompressing, setIsCompressing] = useState(false)
@@ -172,7 +174,7 @@ export function ImageUploader({
                   Image active
                 </p>
               </div>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <button
                   type="button"
                   disabled={isCompressing || isUploading}
@@ -184,6 +186,19 @@ export function ImageUploader({
                 >
                   Change Image
                 </button>
+                {onChooseAvatar && (
+                  <button
+                    type="button"
+                    disabled={isCompressing || isUploading}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onChooseAvatar()
+                    }}
+                    className="text-xs font-medium bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    <Sparkles className="w-3 h-3" /> Choose Avatar
+                  </button>
+                )}
                 <button
                   type="button"
                   disabled={isCompressing || isUploading}
@@ -197,7 +212,7 @@ export function ImageUploader({
             </div>
           </div>
         ) : (
-          <div className="py-6 space-y-2 flex flex-col items-center justify-center text-center">
+          <div className="py-6 space-y-3 flex flex-col items-center justify-center text-center">
             <div className="w-10 h-10 rounded-full bg-neutral-800 text-neutral-300 flex items-center justify-center group-hover:scale-105 transition-transform">
               {isCompressing || isUploading ? (
                 <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
@@ -213,6 +228,18 @@ export function ImageUploader({
                 PNG, JPG, or WEBP up to 10MB
               </p>
             </div>
+            {onChooseAvatar && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onChooseAvatar()
+                }}
+                className="mt-1 text-xs font-medium bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 border border-sky-500/30 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+              >
+                <Sparkles className="w-3.5 h-3.5" /> Or Choose from Preset Avatars
+              </button>
+            )}
           </div>
         )}
       </div>

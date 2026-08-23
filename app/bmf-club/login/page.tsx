@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
@@ -22,8 +22,13 @@ const IconMail = (props: React.SVGProps<SVGSVGElement>) => (
 
 const BMF_LOGO_URL = "https://img.icons8.com/stickers/500/verified-badge.png"
 
-export default function BmfMemberLoginPage() {
+function BmfMemberLoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const rawNext = searchParams.get('next') || searchParams.get('redirectTo') || searchParams.get('redirect')
+  const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showEmailForm, setShowEmailForm] = useState(false)
@@ -39,14 +44,14 @@ export default function BmfMemberLoginPage() {
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user && isSubscribed) {
-            router.replace('/bmf-club/dashboard')
+            router.replace(destination)
             return
           }
         }
         if (typeof window !== 'undefined') {
           const storedEmail = localStorage.getItem('bmf_current_user_email')
           if (storedEmail && isSubscribed) {
-            router.replace('/bmf-club/dashboard')
+            router.replace(destination)
             return
           }
         }
@@ -62,7 +67,7 @@ export default function BmfMemberLoginPage() {
     return () => {
       isSubscribed = false
     }
-  }, [router])
+  }, [router, destination])
 
   const handleGoogleSignIn = async () => {
     setStatus('loading')
@@ -73,7 +78,7 @@ export default function BmfMemberLoginPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
         if (error) {
@@ -85,7 +90,7 @@ export default function BmfMemberLoginPage() {
           localStorage.setItem('bmf_current_user_email', 'google.founder@bmf.club')
         }
         setStatus('success')
-        router.push('/bmf-club/dashboard')
+        router.push(destination)
       }
     } catch (err: any) {
       setStatus('error')
@@ -102,7 +107,7 @@ export default function BmfMemberLoginPage() {
         const { error } = await supabase.auth.signInWithOAuth({
           provider: 'github',
           options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
         if (error) {
@@ -114,7 +119,7 @@ export default function BmfMemberLoginPage() {
           localStorage.setItem('bmf_current_user_email', 'github.founder@bmf.club')
         }
         setStatus('success')
-        router.push('/bmf-club/dashboard')
+        router.push(destination)
       }
     } catch (err: any) {
       setStatus('error')
@@ -142,7 +147,7 @@ export default function BmfMemberLoginPage() {
         setStatus('success')
         setMessage('Demo login successful! Redirecting...')
         setTimeout(() => {
-          router.push('/bmf-club/dashboard')
+          router.push(destination)
         }, 600)
         return
       }
@@ -157,7 +162,7 @@ export default function BmfMemberLoginPage() {
           const { error: otpError } = await supabase.auth.signInWithOtp({
             email,
             options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
             },
           })
 
@@ -174,14 +179,14 @@ export default function BmfMemberLoginPage() {
           }
           setStatus('success')
           setMessage('Signed in successfully! Redirecting...')
-          router.push('/bmf-club/dashboard')
+          router.push(destination)
           router.refresh()
         }
       } else {
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=/bmf-club/dashboard`,
+            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
           },
         })
 
@@ -203,7 +208,7 @@ export default function BmfMemberLoginPage() {
     if (typeof window !== 'undefined') {
       localStorage.setItem('bmf_current_user_email', 'kishore@pharmpulse.ai')
     }
-    router.push('/bmf-club/dashboard')
+    router.push(destination)
   }
 
   return (
@@ -217,7 +222,6 @@ export default function BmfMemberLoginPage() {
           href="/bmf-club"
           className="inline-flex items-center gap-2 text-xs font-mono text-neutral-400 hover:text-white transition-colors"
         >
-          
           <span>&larr; Back to BMF Club Directory</span>
         </Link>
       </div>
@@ -254,10 +258,10 @@ export default function BmfMemberLoginPage() {
           }}
           footerContent={
             <>
-              Explore the ecosystem{" "}
-              <Link href="/bmf-club" className="text-white hover:underline font-semibold">
-                View BMF Club Showcase &rarr;
-              </Link>
+              By logging in, you agree to the{" "}
+              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Terms of Service</Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Privacy Policy</Link>.
             </>
           }
         >
@@ -317,5 +321,17 @@ export default function BmfMemberLoginPage() {
         </AuthForm>
       </div>
     </div>
+  )
+}
+
+export default function BmfMemberLoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0d0d0d] text-white flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
+      </div>
+    }>
+      <BmfMemberLoginContent />
+    </Suspense>
   )
 }

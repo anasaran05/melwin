@@ -17,7 +17,9 @@ import {
   Sparkles,
   CheckCircle2,
   Clock,
-  SendHorizontal
+  SendHorizontal,
+  ChevronDown,
+  Check
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -94,6 +96,8 @@ const servicesList: ServiceMeta[] = [
 
 export function ServicesGrid() {
   const [activeService, setActiveService] = useState<ServiceId>('strategy')
+  const [mobileDropdownOpen, setMobileDropdownOpen] = useState(false)
+  const dropdownRef = React.useRef<HTMLDivElement>(null)
   const [loading, setLoading] = useState(false)
 
   // Form states for each service
@@ -146,6 +150,21 @@ export function ServicesGrid() {
     institution_event: '',
     message: '',
   })
+
+  // Handle clicking outside mobile dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setMobileDropdownOpen(false)
+      }
+    }
+    if (mobileDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [mobileDropdownOpen])
 
   // Handle URL hash changes & custom events
   useEffect(() => {
@@ -424,11 +443,7 @@ export function ServicesGrid() {
             initial={{ y: 20, opacity: 0 }}
             whileInView={{ y: 0, opacity: 1 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-black/5 border border-black/10 text-xs font-mono font-bold uppercase tracking-wider text-neutral-800 mb-4"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>DIRECT ENGAGEMENT & SERVICES</span>
+            transition={{ duration: 0.6 }}>
           </motion.div>
 
           <motion.h2
@@ -453,55 +468,87 @@ export function ServicesGrid() {
         </div>
 
         {/* Mobile Service Selector Dropdown (< lg) */}
-        <div className="lg:hidden w-full mb-8">
+        <div ref={dropdownRef} className="lg:hidden w-full mb-8 relative">
           <label className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-600 block mb-2.5 pl-1">
             Select a Service
           </label>
-          <Select
-            value={activeService}
-            onValueChange={(val) => setActiveService(val as ServiceId)}
+          
+          <button
+            type="button"
+            onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
+            className="w-full text-left min-h-[74px] sm:min-h-[80px] bg-[#111111] hover:bg-black text-white rounded-2xl sm:rounded-3xl border border-black/10 px-4 sm:px-5 py-4 shadow-xl transition-all flex items-center justify-between gap-3 cursor-pointer focus:outline-none focus:ring-2 focus:ring-black"
           >
-            <SelectTrigger className="w-full !h-auto min-h-[74px] sm:min-h-[80px] bg-[#111111] hover:bg-black text-white rounded-2xl sm:rounded-3xl border border-black/10 px-4 sm:px-5 py-4 shadow-xl focus:ring-2 focus:ring-black [&_svg:not([class*='text-'])]:text-neutral-400 [&_svg:not([class*='size-'])]:size-5">
-              <div className="flex items-center gap-3.5 text-left w-full pr-2">
-                <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
-                  {React.createElement(currentMeta.icon, { className: "w-5 h-5 text-emerald-400 shrink-0" })}
-                </div>
-                <div className="flex flex-col min-w-0 justify-center">
-                  <span className="font-bold text-base text-white tracking-tight truncate leading-tight">
-                    {currentMeta.title}
-                  </span>
-                  <span className="text-xs text-neutral-400 font-medium truncate mt-1 leading-tight">
-                    {currentMeta.highlight || currentMeta.badge}
-                  </span>
-                </div>
+            <div className="flex items-center gap-3.5 min-w-0 flex-1">
+              <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/10">
+                {React.createElement(currentMeta.icon, { className: "w-5 h-5 text-emerald-400 shrink-0" })}
               </div>
-            </SelectTrigger>
-            <SelectContent className="bg-[#1a1a1a] text-white border border-white/10 rounded-2xl sm:rounded-3xl p-2 shadow-2xl">
-              {servicesList.map((service) => {
-                const Icon = service.icon
-                const isSelected = activeService === service.id
-                return (
-                  <SelectItem
-                    key={service.id}
-                    value={service.id}
-                    className={`cursor-pointer rounded-xl sm:rounded-2xl py-3.5 px-4 my-1 text-white hover:bg-white/10 focus:bg-white/15 focus:text-white transition-all ${
-                      isSelected ? 'bg-white/15 font-bold ring-1 ring-white/20' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3.5">
-                      <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
-                        <Icon className="w-5 h-5 text-emerald-400" />
-                      </div>
-                      <div className="flex flex-col text-left min-w-0">
-                        <span className="text-sm sm:text-base font-semibold leading-snug">{service.title}</span>
-                        <span className="text-xs text-neutral-400 leading-snug mt-0.5">{service.subtitle}</span>
-                      </div>
-                    </div>
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
+              <div className="flex flex-col min-w-0 justify-center flex-1">
+                <span className="font-bold text-base text-white tracking-tight truncate leading-tight">
+                  {currentMeta.title}
+                </span>
+                <span className="text-xs text-neutral-400 font-medium truncate mt-1 leading-tight">
+                  {currentMeta.highlight || currentMeta.badge}
+                </span>
+              </div>
+            </div>
+
+            <div className="shrink-0 pl-2">
+              <ChevronDown className={`w-5 h-5 text-neutral-400 transition-transform duration-200 ${mobileDropdownOpen ? 'rotate-180 text-white' : ''}`} />
+            </div>
+          </button>
+
+          <AnimatePresence>
+            {mobileDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -6, scale: 0.99 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -6, scale: 0.99 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="absolute top-full left-0 right-0 mt-2 z-50 bg-[#161618] border border-white/10 rounded-2xl sm:rounded-3xl p-1.5 sm:p-2 shadow-2xl overflow-hidden backdrop-blur-xl"
+              >
+                <div className="flex flex-col gap-1 max-h-[340px] overflow-y-auto pr-0.5">
+                  {servicesList.map((service) => {
+                    const Icon = service.icon
+                    const isSelected = activeService === service.id
+                    return (
+                      <button
+                        key={service.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveService(service.id)
+                          setMobileDropdownOpen(false)
+                        }}
+                        className={`w-full text-left rounded-xl sm:rounded-2xl p-3 sm:p-3.5 transition-all flex items-center justify-between gap-3 cursor-pointer ${
+                          isSelected 
+                            ? 'bg-white/15 text-white ring-1 ring-white/20' 
+                            : 'text-neutral-300 hover:bg-white/10 hover:text-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/5">
+                            <Icon className="w-5 h-5 text-emerald-400 shrink-0" />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="text-sm sm:text-base font-semibold leading-tight truncate text-white">
+                              {service.title}
+                            </span>
+                            <span className="text-xs text-neutral-400 leading-tight truncate mt-0.5">
+                              {service.subtitle}
+                            </span>
+                          </div>
+                        </div>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* 2-Column Split: Service Pills on Left, Dynamic Form on Right */}

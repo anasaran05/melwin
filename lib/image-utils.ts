@@ -15,6 +15,88 @@ export interface CompressedImageResult {
 
 export const CANONICAL_MEDIA_DOMAIN = 'https://media.buildwithmelwin.com'
 
+export interface FounderAvatarPreset {
+  id: string
+  name: string
+  category: string
+  url: string
+}
+
+export const FOUNDER_AVATAR_PRESETS: FounderAvatarPreset[] = [
+  {
+    id: 'avatar-1',
+    name: 'Avatar 01',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_bec9fd0f15f84599ab0e08763bfb20d2~mv2.jpg',
+  },
+  {
+    id: 'avatar-2',
+    name: 'Avatar 02',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_050ee469f0a343a889fb6293c57f5501~mv2.jpg',
+  },
+  {
+    id: 'avatar-3',
+    name: 'Avatar 03',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_73b2fbb451704a62a2ec8031d743c7f6~mv2.jpg',
+  },
+  {
+    id: 'avatar-4',
+    name: 'Avatar 04',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_982d5b43b0df44b78f5dd563e56cacd1~mv2.jpg',
+  },
+  {
+    id: 'avatar-5',
+    name: 'Avatar 05',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_dcb02580e49647f290f2125993c39043~mv2.jpg',
+  },
+  {
+    id: 'avatar-6',
+    name: 'Avatar 06',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_8a1a294a663c49d9b0b2936349e0b4b9~mv2.jpg',
+  },
+  {
+    id: 'avatar-7',
+    name: 'Avatar 07',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_2ba2e72c3f4b4bee920c044ac733f81e~mv2.jpg',
+  },
+  {
+    id: 'avatar-8',
+    name: 'Avatar 08',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_cc75ba9a7a5548178e20c681e74e1adb~mv2.jpg',
+  },
+  {
+    id: 'avatar-9',
+    name: 'Avatar 09',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_8fb48110bd4344c785df1f3171d7747d~mv2.jpg',
+  },
+  {
+    id: 'avatar-10',
+    name: 'Avatar 10',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_e73157142e61495bafcbe6858868bba8~mv2.jpg',
+  },
+  {
+    id: 'avatar-11',
+    name: 'Avatar 11',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_80f61a3b12b146d3a25870b2261872b0~mv2.jpg',
+  },
+  {
+    id: 'avatar-12',
+    name: 'Avatar 12',
+    category: 'Avatar',
+    url: 'https://static.wixstatic.com/media/6abdd9_f02762fcf4e84524932e8188c3072b40~mv2.jpg',
+  },
+]
+
 /**
  * Generates a clean, modern executive avatar illustration
  * instead of arbitrary stock photos when a user hasn't uploaded their portrait.
@@ -27,12 +109,7 @@ export function getFounderFallbackAvatar(name?: string | null): string {
 export const DEFAULT_FOUNDER_AVATAR = 'https://api.dicebear.com/7.x/personas/svg?seed=ExecutiveFounder&backgroundColor=121214'
 
 export function normalizeR2Url(url?: string | null, fallbackName?: string | null): string {
-  if (
-    !url || 
-    typeof url !== 'string' || 
-    url.trim() === '' || 
-    url.includes('unsplash.com/photo-1534528741775-53994a69daeb')
-  ) {
+  if (!url || typeof url !== 'string' || url.trim() === '') {
     return getFounderFallbackAvatar(fallbackName)
   }
 

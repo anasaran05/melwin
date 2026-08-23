@@ -42,7 +42,7 @@ async function generateNonce(): Promise<{ rawNonce: string; hashedNonce: string 
 }
 
 export function GoogleOneTap({ 
-  redirectTo = '/bmf-club/dashboard',
+  redirectTo,
   autoPrompt = true,
   onSuccess
 }: GoogleOneTapProps) {
@@ -104,10 +104,8 @@ export function GoogleOneTap({
                 if (typeof window !== 'undefined') {
                   localStorage.setItem('bmf_current_user_email', data.user.email || '')
                 }
-                if (onSuccess) {
-                  onSuccess(data.user)
-                }
-                router.push(redirectTo)
+                const destination = redirectTo || (typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/bmf-club/dashboard')
+                router.push(destination)
                 router.refresh()
               }
             } catch (authErr) {

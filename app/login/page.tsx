@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 
-export default async function LoginPage(props: { searchParams: Promise<{ message: string }> }) {
+export default async function LoginPage(props: { searchParams: Promise<{ message?: string; next?: string }> }) {
   const searchParams = await props.searchParams
+  const nextParam = searchParams?.next || '/dashboard/manager'
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-4 select-none">
       <Card className="w-full max-w-md bg-neutral-900 border-neutral-800 text-neutral-100 shadow-xl">
@@ -19,6 +21,7 @@ export default async function LoginPage(props: { searchParams: Promise<{ message
         </CardHeader>
         <CardContent>
           <form className="space-y-4">
+            <input type="hidden" name="next" value={nextParam} />
             <div className="space-y-2">
               <Label htmlFor="email" className="text-neutral-300">Email</Label>
               <Input 

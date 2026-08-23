@@ -14,12 +14,36 @@ const dmMono = DM_Mono({ weight: '400', subsets: ['latin'], variable: '--font-dm
 const geist = Geist({ subsets: ['latin'], variable: '--font-geist' })
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://buildwithmelwin.com'),
   title: 'Dr. Melwin Vincent | Strategy. Infrastructure. Execution.',
   description: 'Startup strategist, consultant, and builder. Global markets expertise, zero-capital execution, pitch deck architecture.',
   generator: 'v0.app',
   icons: {
     icon: '/logo.png',
-  }
+    apple: '/apple-icon.png',
+  },
+  openGraph: {
+    title: 'Dr. Melwin Vincent | Strategy. Infrastructure. Execution.',
+    description: 'Startup strategist, consultant, and builder. Global markets expertise, zero-capital execution, pitch deck architecture.',
+    url: 'https://buildwithmelwin.com',
+    siteName: 'Dr. Melwin Vincent',
+    images: [
+      {
+        url: '/melwin-og-image.webp',
+        width: 1200,
+        height: 630,
+        alt: 'Dr. Melwin Vincent - Strategy. Infrastructure. Execution.',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Dr. Melwin Vincent | Strategy. Infrastructure. Execution.',
+    description: 'Startup strategist, consultant, and builder. Global markets expertise, zero-capital execution, pitch deck architecture.',
+    images: ['/melwin-og-image.webp'],
+  },
 }
 
 export default function RootLayout({
@@ -30,7 +54,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${dmSerif.variable} ${dmMono.variable} ${geist.variable}`}>
       <body className="font-geist antialiased">
-        <GoogleOneTap redirectTo="/bmf-club/dashboard" />
+        <GoogleOneTap />
         <Suspense fallback={null}>
           <ScrollToTop />
         </Suspense>

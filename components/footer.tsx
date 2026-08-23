@@ -39,6 +39,7 @@ export function Footer() {
                 { name: 'About Me', href: '/about' },
                 { name: 'BMF Club', href: '/bmf-club' },
                 { name: 'Directory', href: '/bmf-club/directory' },
+                { name: 'FAQ', href: '/faq' },
                 { name: 'Atom SE (Tech)', href: '#', isLocked: true },
                 { name: 'Contact', href: '/#consultation' }
               ].map((link) => (
