@@ -40,8 +40,8 @@ export function Footer() {
                 { name: 'BMF Club', href: '/bmf-club' },
                 { name: 'Directory', href: '/bmf-club/directory' },
                 { name: 'FAQ', href: '/faq' },
-                { name: 'Atom SE (Tech)', href: '#', isLocked: true },
-                { name: 'Contact', href: '/#consultation' }
+                { name: 'Atom SE (Tech)', href: '#', isLocked: true }
+               
               ].map((link) => (
                 link.isLocked ? (
                   <span

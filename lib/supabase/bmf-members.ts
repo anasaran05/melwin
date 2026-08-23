@@ -338,7 +338,7 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
       full_name: fullName,
       role: 'Founder & CEO',
       company_name: `${fullName.split(' ')[0]}'s Venture`,
-      company_logo: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=150&auto=format&fit=crop',
+      company_logo: '',
       avatar_url: avatarUrl,
       category: 'AI & SaaS',
       tagline: 'Building high-impact technology solutions for global markets.',

@@ -35,7 +35,14 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const avatarFallback = getFounderFallbackAvatar(member.full_name)
   const avatarUrl = normalizeR2Url(member.avatar_url, member.full_name)
-  const logoUrl = member.company_logo ? normalizeR2Url(member.company_logo) : ''
+  const isCustomLogo = Boolean(
+    member.company_logo &&
+    typeof member.company_logo === 'string' &&
+    member.company_logo.trim() !== '' &&
+    !member.company_logo.includes('images.unsplash.com') &&
+    !member.company_logo.includes('api.dicebear.com')
+  )
+  const logoUrl = isCustomLogo ? normalizeR2Url(member.company_logo) : ''
 
   return (
     <div

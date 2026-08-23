@@ -35,14 +35,6 @@ export function MemberDirectory() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2">
           <div className="space-y-2 text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 text-[#111111] text-[11px] font-mono font-semibold uppercase tracking-wider">
-              <UserCheck className="w-3 h-3 text-emerald-600" />
-              <span>Vetted Community Directory</span>
-              <span className="text-neutral-400">•</span>
-              <span className="text-amber-700 flex items-center gap-1">
-                <Sparkles className="w-3 h-3 text-amber-600" /> Spotlighted Founders
-              </span>
-            </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-[#111111]">
               Featured Founder Spotlight
             </h2>
@@ -51,16 +43,7 @@ export function MemberDirectory() {
             </p>
           </div>
 
-          {/* Right Action: Link to All Members */}
-          <div className="flex items-center gap-3">
-            <Link
-              href="/bmf-club/directory"
-              className="inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-50 text-neutral-900 border border-black/10 px-5 py-2.5 rounded-full text-xs font-bold transition-all shadow-xs hover:border-black shrink-0"
-            >
-              <Compass className="w-3.5 h-3.5 text-neutral-600" />
-              <span>Explore All Founders &rarr;</span>
-            </Link>
-          </div>
+        
         </div>
 
         {/* Top Featured Members Grid or Skeleton */}

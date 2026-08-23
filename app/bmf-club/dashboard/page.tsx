@@ -54,7 +54,15 @@ import {
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
-  Edit3
+  Edit3,
+  Upload,
+  Camera,
+  Building2,
+  Globe,
+  Eye,
+  EyeOff,
+  Check,
+  Link as LinkIcon
 } from 'lucide-react'
 
 const CATEGORIES = [
@@ -137,6 +145,7 @@ function BmfMemberDashboardContent() {
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
+  const [showMobilePreview, setShowMobilePreview] = useState(false)
 
   // Job Form state
   const [isCreatingJob, setIsCreatingJob] = useState(false)
@@ -1109,314 +1118,598 @@ function BmfMemberDashboardContent() {
         )}
 
         {/* ======================================================================= */}
-        {/* TAB 2: FOUNDER PROFILE EDITOR */}
         {/* ======================================================================= */}
-        {activeTab === 'profile' && (
-          <div className="py-8 animate-in fade-in-0 duration-300 max-w-4xl text-left space-y-8">
-            <div className="space-y-1 border-b border-neutral-800 pb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                Edit Founder Profile
-              </h2>
-              <p className="text-xs sm:text-sm text-neutral-400">
-                Update your photos, company information, and links.
-              </p>
-            </div>
+        {/* TAB 2: FOUNDER PROFILE EDITOR (Tally / Notion Inspired) */}
+        {/* ======================================================================= */}
+        {activeTab === 'profile' && (() => {
+          const previewMember: BmfMember = {
+            id: profile.id || 'preview-user',
+            user_id: profile.user_id || 'preview-user',
+            full_name: profileForm.full_name || profile.full_name || 'Founder Name',
+            role: profileForm.role || profile.role || 'Founder & CEO',
+            company_name: profileForm.company_name || profile.company_name || 'My Venture',
+            company_logo: profileForm.company_logo ?? profile.company_logo ?? '',
+            avatar_url: profileForm.avatar_url || profile.avatar_url || '',
+            category: profileForm.category || profile.category || 'AI & SaaS',
+            tagline: profileForm.tagline || profile.tagline || 'Building high-impact technology for the future.',
+            description: profileForm.description || profile.description || '',
+            stage: profileForm.stage || profile.stage || 'Seed Stage',
+            metrics: profileForm.metrics || profile.metrics || '$250k ARR',
+            location: profileForm.location || profile.location || 'Global',
+            team_size: profileForm.team_size || profile.team_size || '10+ Team',
+            linkedin_url: profileForm.linkedin_url || profile.linkedin_url,
+            twitter_url: profileForm.twitter_url || profile.twitter_url,
+            website_url: profileForm.website_url || profile.website_url,
+            is_verified: true,
+            is_approved: true,
+            is_featured: profile.is_featured ?? true,
+            created_at: profile.created_at || new Date().toISOString(),
+          }
 
-            {saveStatus === 'success' && (
-              <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-700/60 text-emerald-300 text-xs leading-relaxed flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                <span className="font-semibold">{saveMessage}</span>
-              </div>
-            )}
+          const CURATED_CATEGORIES = [
+            'AI & SaaS',
+            'Healthcare & MedTech',
+            'Finance & FinTech',
+            'BioTech & Life Sciences',
+            'E-Commerce & Brands',
+            'DevTools & Infra',
+            'EdTech',
+            'Robotics & Hardware',
+            'CleanTech & Climate',
+            'Media & Creative',
+          ]
 
-            {saveStatus === 'error' && (
-              <div className="p-4 rounded-2xl bg-rose-950/50 border border-rose-700/60 text-rose-300 text-xs leading-relaxed flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
-                <span className="font-semibold">{saveMessage}</span>
-              </div>
-            )}
+          const CURATED_STAGES = [
+            'Idea / Pre-Seed',
+            'Seed ($1M - $3M)',
+            'Series A ($3M - $10M)',
+            'Series B+ Growth',
+            'Bootstrapped & Profitable',
+            'Academic & Lab',
+          ]
 
-            <form onSubmit={handleSaveProfile} className="space-y-6">
+          return (
+            <div className="py-6 sm:py-8 animate-in fade-in-0 duration-300 max-w-6xl text-left space-y-8">
               
-              {/* Section 1: Photos */}
-              <div className="bg-[#121216] p-6 rounded-3xl border border-neutral-800 space-y-4">
-                <h3 className="text-sm font-bold text-white">Photos & Logos</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <ImageUploader
-                    label="Founder Portrait"
-                    description="Vertical portrait photo"
-                    currentUrl={profileForm.avatar_url}
-                    aspectRatio="portrait"
-                    isPendingSave={Boolean(pendingAvatarFile)}
-                    isUploading={isSavingProfile}
-                    onChooseAvatar={() => setIsAvatarModalOpen(true)}
-                    onFileSelect={(file, previewUrl) => {
-                      setPendingAvatarFile(file)
-                      setProfileForm((prev) => ({ ...prev, avatar_url: previewUrl }))
-                    }}
-                  />
-
-                  <ImageUploader
-                    label="Company Logo"
-                    description="Square company logo icon"
-                    currentUrl={profileForm.company_logo}
-                    aspectRatio="square"
-                    isPendingSave={Boolean(pendingLogoFile)}
-                    isUploading={isSavingProfile}
-                    onFileSelect={(file, previewUrl) => {
-                      setPendingLogoFile(file)
-                      setProfileForm((prev) => ({ ...prev, company_logo: previewUrl }))
-                    }}
-                  />
+              {/* Header & Mobile Preview Toggle */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800/80 pb-5">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      Founder Profile
+                    </h2>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-mono font-semibold uppercase tracking-wider border border-emerald-500/20">
+                      Live Sync
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-neutral-400">
+                    Fill out your profile effortlessly. Your showcase card updates automatically.
+                  </p>
                 </div>
+
+                {/* Mobile Preview Toggle Button */}
+                <button
+                  type="button"
+                  onClick={() => setShowMobilePreview(!showMobilePreview)}
+                  className="lg:hidden inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-neutral-200 border border-neutral-700 text-xs font-semibold transition-all shadow-xs active:scale-95"
+                >
+                  {showMobilePreview ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5 text-emerald-400" />}
+                  <span>{showMobilePreview ? 'Hide Card Preview' : 'Preview Live Card'}</span>
+                </button>
               </div>
 
-              {/* Section 2: Basic Identity */}
-              <div className="bg-[#121216] p-6 rounded-3xl border border-neutral-800 space-y-4">
-                <h3 className="text-sm font-bold text-white">Basic Information</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      Full Name <span className="text-emerald-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Zane ProEd"
-                      value={profileForm.full_name || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
+              {/* Mobile Real-Time Preview (when toggled on) */}
+              {showMobilePreview && (
+                <div className="lg:hidden p-5 rounded-3xl bg-neutral-950/80 border border-neutral-800 space-y-3 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-400 font-mono flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Live Card Preview
+                    </span>
+                    <span className="text-[11px] text-neutral-500">Tap card to flip</span>
+                  </div>
+                  <div className="flex justify-center py-2">
+                    <div className="w-[220px]">
+                      <MemberFlipCard member={previewMember} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Save Status Banners */}
+              {saveStatus === 'success' && (
+                <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-700/50 text-emerald-300 text-xs leading-relaxed flex items-center justify-between gap-3 shadow-lg shadow-emerald-950/20">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+                    <span className="font-semibold">{saveMessage}</span>
+                  </div>
+                  <Link
+                    href="/bmf-club/directory"
+                    className="px-3 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 text-xs font-bold transition-colors shrink-0"
+                  >
+                    View in Showcase &rarr;
+                  </Link>
+                </div>
+              )}
+
+              {saveStatus === 'error' && (
+                <div className="p-4 rounded-2xl bg-rose-950/50 border border-rose-700/60 text-rose-300 text-xs leading-relaxed flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+                  <span className="font-semibold">{saveMessage}</span>
+                </div>
+              )}
+
+              {/* Main Two-Column Layout (Form on Left, Live Sticky Card on Right) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
+                
+                {/* LEFT: TALLY-STYLE STREAMLINED FORM */}
+                <form onSubmit={handleSaveProfile} className="lg:col-span-7 xl:col-span-8 space-y-8">
+                  
+                  {/* 1. VISUALS ROW (Compact Avatar & Logo) */}
+                  <div className="space-y-3 pb-6 border-b border-neutral-800/80">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-semibold">
+                        01. Photos & Identity Assets
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      
+                      {/* Founder Portrait Tile */}
+                      <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800 flex items-center gap-3.5 hover:border-neutral-700 transition-colors">
+                        <div className="w-16 h-20 rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shrink-0 relative">
+                          <img
+                            src={profileForm.avatar_url || getFounderFallbackAvatar(profileForm.full_name || 'Founder')}
+                            alt="Portrait"
+                            className="w-full h-full object-cover"
+                          />
+                          {pendingAvatarFile && (
+                            <span className="absolute bottom-0 inset-x-0 bg-amber-500 text-black text-[9px] font-bold text-center py-0.5">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white truncate block">
+                              Portrait Photo
+                            </span>
+                            {profileForm.avatar_url && (
+                              <span className="text-[10px] text-emerald-400 font-mono font-semibold">● Active</span>
+                            )}
+                          </div>
+                          
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 active:scale-95">
+                              <Upload className="w-3 h-3" />
+                              <span>Upload</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    setPendingAvatarFile(file)
+                                    setProfileForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                  }
+                                }}
+                              />
+                            </label>
+
+                            <button
+                              type="button"
+                              onClick={() => setIsAvatarModalOpen(true)}
+                              className="px-2.5 py-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] font-medium transition-all inline-flex items-center gap-1 active:scale-95"
+                            >
+                              <Sparkles className="w-3 h-3 text-amber-400" />
+                              <span>Preset</span>
+                            </button>
+
+                            {profileForm.avatar_url && (
+                              <button
+                                type="button"
+                                title="Remove custom avatar"
+                                onClick={() => {
+                                  setPendingAvatarFile(null)
+                                  setProfileForm((prev) => ({ ...prev, avatar_url: '' }))
+                                }}
+                                className="p-1 rounded-lg hover:bg-rose-500/20 text-neutral-500 hover:text-rose-400 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Company Logo Tile */}
+                      <div className="p-3.5 rounded-2xl bg-neutral-900/60 border border-neutral-800 flex items-center gap-3.5 hover:border-neutral-700 transition-colors">
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shrink-0 flex items-center justify-center relative">
+                          {profileForm.company_logo ? (
+                            <img
+                              src={profileForm.company_logo}
+                              alt="Company Logo"
+                              className="w-full h-full object-contain p-2"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <Building2 className="w-6 h-6 text-neutral-600" />
+                          )}
+                          {pendingLogoFile && (
+                            <span className="absolute bottom-0 inset-x-0 bg-amber-500 text-black text-[9px] font-bold text-center py-0.5">
+                              Pending
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="space-y-1.5 min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-white truncate block">
+                              Company Logo
+                            </span>
+                            <span className="text-[10px] text-neutral-400 font-mono">
+                              {profileForm.company_logo ? '● Uploaded' : 'Optional'}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1 active:scale-95">
+                              <Upload className="w-3 h-3" />
+                              <span>{profileForm.company_logo ? 'Change' : 'Add Logo'}</span>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) {
+                                    setPendingLogoFile(file)
+                                    setProfileForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                  }
+                                }}
+                              />
+                            </label>
+
+                            {profileForm.company_logo && (
+                              <button
+                                type="button"
+                                title="Remove logo"
+                                onClick={() => {
+                                  setPendingLogoFile(null)
+                                  setProfileForm((prev) => ({ ...prev, company_logo: '' }))
+                                }}
+                                className="p-1 rounded-lg hover:bg-rose-500/20 text-neutral-500 hover:text-rose-400 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      Role / Title <span className="text-emerald-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Founder & CEO"
-                      value={profileForm.role || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, role: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
+                  {/* 2. BASIC IDENTITY */}
+                  <div className="space-y-4 pb-6 border-b border-neutral-800/80">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-semibold block">
+                      02. Name & Role
+                    </span>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      Company Name <span className="text-emerald-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. PharmPulse Health"
-                      value={profileForm.company_name || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, company_name: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      Industry Category <span className="text-emerald-400">*</span>
-                    </label>
-                    <select
-                      value={
-                        isCustomCategory 
-                          ? 'Other (Specify)' 
-                          : (CATEGORIES.includes(profileForm.category || '') ? profileForm.category : 'Other (Specify)')
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value
-                        if (val === 'Other (Specify)') {
-                          setIsCustomCategory(true)
-                          setProfileForm({ ...profileForm, category: customCategoryInput || '' })
-                        } else {
-                          setIsCustomCategory(false)
-                          setProfileForm({ ...profileForm, category: val })
-                        }
-                      }}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
-                    >
-                      {CATEGORIES.map((cat) => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                      <option value="Other (Specify)">Other (Specify / Custom)</option>
-                    </select>
-
-                    {isCustomCategory && (
-                      <div className="pt-1 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                        <label className="text-[11px] font-medium text-neutral-400 block mb-1">
-                          Specify Custom Industry <span className="text-emerald-400">*</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                          <span>Full Name</span>
+                          <span className="text-emerald-400 font-mono text-[10px]">Required</span>
                         </label>
                         <input
                           type="text"
                           required
-                          placeholder="e.g. AgriTech, Aerospace, Cybersecurity, Web3..."
-                          value={customCategoryInput}
-                          onChange={(e) => {
-                            const val = e.target.value
-                            setCustomCategoryInput(val)
-                            setProfileForm({ ...profileForm, category: val })
-                          }}
-                          className="w-full bg-neutral-900 border border-emerald-500/60 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40"
+                          placeholder="e.g. Dr. Melvin Vincent"
+                          value={profileForm.full_name || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, full_name: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors"
                         />
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
 
-              {/* Section 3: Pitch & Bio */}
-              <div className="bg-[#121216] p-6 rounded-3xl border border-neutral-800 space-y-4">
-                <h3 className="text-sm font-bold text-white">About & Pitch</h3>
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      1-Line Pitch / Tagline <span className="text-emerald-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Autonomous AI tools accelerating clinical trials."
-                      value={profileForm.tagline || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, tagline: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                          <span>Role / Title</span>
+                          <span className="text-emerald-400 font-mono text-[10px]">Required</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. Founder & President"
+                          value={profileForm.role || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, role: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2 space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                          <span>Company / Venture Name</span>
+                          <span className="text-emerald-400 font-mono text-[10px]">Required</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. PharmPulse AI"
+                          value={profileForm.company_name || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, company_name: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">
-                      Founder Bio & Background
-                    </label>
-                    <textarea
-                      rows={3}
-                      placeholder="Describe what you are building and your experience..."
-                      value={profileForm.description || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
+                  {/* 3. PITCH & INDUSTRY (Tally Pill Selector) */}
+                  <div className="space-y-5 pb-6 border-b border-neutral-800/80">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-semibold block">
+                      03. Pitch & Category
+                    </span>
 
-              {/* Section 4: Stage & Metrics */}
-              <div className="bg-[#121216] p-6 rounded-3xl border border-neutral-800 space-y-4">
-                <h3 className="text-sm font-bold text-white">Stage & Traction</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Stage</label>
-                    <select
-                      value={profileForm.stage || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, stage: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-white"
+                    {/* 1-Line Pitch */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-neutral-300">
+                          1-Line Pitch / Tagline <span className="text-emerald-400">*</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-neutral-500">
+                          {(profileForm.tagline || '').length} / 120 chars
+                        </span>
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        maxLength={140}
+                        placeholder="e.g. Autonomous AI tools accelerating preclinical biotech trials."
+                        value={profileForm.tagline || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, tagline: e.target.value })}
+                        className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    {/* Industry Category Dropdown */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-neutral-300 flex items-center justify-between">
+                        <span>Industry Category</span>
+                        <span className="text-emerald-400 font-mono text-[10px]">Required</span>
+                      </label>
+                      <select
+                        value={
+                          isCustomCategory 
+                            ? 'Other (Specify)' 
+                            : (CATEGORIES.includes(profileForm.category || '') ? profileForm.category : 'Other (Specify)')
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value
+                          if (val === 'Other (Specify)') {
+                            setIsCustomCategory(true)
+                            setProfileForm({ ...profileForm, category: customCategoryInput || '' })
+                          } else {
+                            setIsCustomCategory(false)
+                            setProfileForm({ ...profileForm, category: val })
+                          }
+                        }}
+                        className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors cursor-pointer"
+                      >
+                        {CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat} className="bg-neutral-900 text-white">
+                            {cat}
+                          </option>
+                        ))}
+                        <option value="Other (Specify)" className="bg-neutral-900 text-white">Other (Specify / Custom)</option>
+                      </select>
+
+                      {isCustomCategory && (
+                        <div className="pt-2 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                          <label className="text-[11px] font-medium text-neutral-400 block mb-1">
+                            Specify Custom Industry <span className="text-emerald-400">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            placeholder="e.g. AgriTech, Aerospace, Cybersecurity, Web3..."
+                            value={customCategoryInput}
+                            onChange={(e) => {
+                              const val = e.target.value
+                              setCustomCategoryInput(val)
+                              setProfileForm({ ...profileForm, category: val })
+                            }}
+                            className="w-full bg-neutral-900 border border-emerald-500/60 focus:border-emerald-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Funding / Company Stage Dropdown */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-semibold text-neutral-300 block">
+                        Funding / Company Stage
+                      </label>
+                      <select
+                        value={profileForm.stage || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, stage: e.target.value })}
+                        className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-sm text-white focus:outline-none transition-colors cursor-pointer"
+                      >
+                        <option value="" className="bg-neutral-900 text-neutral-400">None / Not Specified</option>
+                        {STAGES.map((s) => (
+                          <option key={s} value={s} className="bg-neutral-900 text-white">
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Bio & Background */}
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-xs font-semibold text-neutral-300 block">
+                        Founder Bio & Background <span className="text-neutral-500 font-normal">(Optional)</span>
+                      </label>
+                      <textarea
+                        rows={3}
+                        placeholder="Tell other founders what you are building, your background, or what collaboration you're seeking..."
+                        value={profileForm.description || ''}
+                        onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })}
+                        className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-4 py-3 text-xs text-white placeholder-neutral-500 focus:outline-none resize-none transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 4. METRICS & LOCATION */}
+                  <div className="space-y-4 pb-6 border-b border-neutral-800/80">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-semibold block">
+                      04. Traction & Team
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300">Key Metric</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. $500k ARR"
+                          value={profileForm.metrics || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, metrics: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300">Location</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. SF & Bangalore"
+                          value={profileForm.location || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300">Team Size</label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 10 Engineers"
+                          value={profileForm.team_size || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, team_size: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 5. SOCIAL & WEB LINKS */}
+                  <div className="space-y-4 pb-4">
+                    <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-semibold block">
+                      05. Web & Social Links
+                    </span>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                          <Globe className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Website</span>
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://company.com"
+                          value={profileForm.website_url || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, website_url: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                          <LinkIcon className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>LinkedIn</span>
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://linkedin.com/in/..."
+                          value={profileForm.linkedin_url || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, linkedin_url: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                          <LinkIcon className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Twitter / X</span>
+                        </label>
+                        <input
+                          type="url"
+                          placeholder="https://x.com/..."
+                          value={profileForm.twitter_url || ''}
+                          onChange={(e) => setProfileForm({ ...profileForm, twitter_url: e.target.value })}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SUBMIT BUTTON */}
+                  <div className="pt-4 flex items-center justify-between border-t border-neutral-800/80">
+                    <span className="text-xs text-neutral-500 hidden sm:inline">
+                      Press Save Profile to update the founder directory.
+                    </span>
+
+                    <Button
+                      type="submit"
+                      disabled={isSavingProfile}
+                      className="bg-white hover:bg-neutral-200 text-black px-8 py-3 rounded-xl font-bold text-xs transition-all shadow-md shadow-white/10 inline-flex items-center gap-2 cursor-pointer active:scale-95"
                     >
-                      <option value="">None / Not Specified</option>
-                      {STAGES.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
+                      {isSavingProfile ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Changes...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Save Profile</span>
+                        </>
+                      )}
+                    </Button>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Key Metric / ARR</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. $250k ARR"
-                      value={profileForm.metrics || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, metrics: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
+                </form>
+
+                {/* RIGHT: DESKTOP STICKY LIVE 3D CARD PREVIEW */}
+                <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 sticky top-6 flex-col items-center gap-3.5 p-6 rounded-3xl bg-neutral-950/60 border border-neutral-800/80 shadow-2xl backdrop-blur-md">
+                  <div className="w-full flex items-center justify-between border-b border-neutral-800 pb-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-300 font-mono flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      Live Card Preview
+                    </span>
+                    <span className="text-[11px] text-neutral-500 font-mono">
+                      Interactive
+                    </span>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Location</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Bangalore & SF"
-                      value={profileForm.location || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, location: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
+                  {/* Live Flip Card */}
+                  <div className="py-3 flex justify-center w-full">
+                    <div className="w-[210px] md:w-[220px]">
+                      <MemberFlipCard member={previewMember} />
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Team Size</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. 12 Engineers"
-                      value={profileForm.team_size || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, team_size: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
+                  <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
+                    💡 Hover or click to flip the card. Updates in real-time as you fill out your information.
+                  </p>
                 </div>
+
               </div>
 
-              {/* Section 5: Links */}
-              <div className="bg-[#121216] p-6 rounded-3xl border border-neutral-800 space-y-4">
-                <h3 className="text-sm font-bold text-white">Social & Web Links</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">LinkedIn URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://linkedin.com/in/..."
-                      value={profileForm.linkedin_url || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, linkedin_url: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Twitter / X URL</label>
-                    <input
-                      type="url"
-                      placeholder="https://x.com/..."
-                      value={profileForm.twitter_url || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, twitter_url: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-neutral-300">Company Website</label>
-                    <input
-                      type="url"
-                      placeholder="https://yourcompany.com"
-                      value={profileForm.website_url || ''}
-                      onChange={(e) => setProfileForm({ ...profileForm, website_url: e.target.value })}
-                      className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Buttons */}
-              <div className="pt-2 flex items-center justify-end">
-                <Button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="bg-white hover:bg-neutral-200 text-black px-8 py-3 rounded-full font-bold text-xs transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Saving Changes...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Save Profile</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-
-            </form>
-          </div>
-        )}
+            </div>
+          )
+        })()}
 
         {/* ======================================================================= */}
         {/* TAB 3: STARTUP JOBS MANAGER */}

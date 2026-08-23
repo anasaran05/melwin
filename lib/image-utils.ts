@@ -110,10 +110,15 @@ export const DEFAULT_FOUNDER_AVATAR = 'https://api.dicebear.com/7.x/personas/svg
 
 export function normalizeR2Url(url?: string | null, fallbackName?: string | null): string {
   if (!url || typeof url !== 'string' || url.trim() === '') {
-    return getFounderFallbackAvatar(fallbackName)
+    return fallbackName ? getFounderFallbackAvatar(fallbackName) : ''
   }
 
   const cleanUrl = url.trim()
+
+  // Ignore unsplash placeholder images for company logos
+  if (cleanUrl.includes('images.unsplash.com') && !fallbackName) {
+    return ''
+  }
 
   // Rewrite any development/old domain variations to the custom media.buildwithmelwin.com domain
   if (

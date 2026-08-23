@@ -118,10 +118,7 @@ export function UpcomingEventsSection() {
         
         {/* Section Header */}
         <div className="text-center space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-black/[0.04] border border-black/5 text-[#666666] text-xs font-mono font-bold uppercase tracking-wider">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>CALENDAR OF ACTIVITIES</span>
-          </div>
+         
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#111111] tracking-tight">
             Upcoming Private Events & Retreats
           </h2>
