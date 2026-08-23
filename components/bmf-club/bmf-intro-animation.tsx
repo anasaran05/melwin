@@ -8,23 +8,23 @@ interface BmfIntroAnimationProps {
 }
 
 export function BmfIntroAnimation({ onComplete }: BmfIntroAnimationProps) {
-  const [isVisible, setIsVisible] = useState(false)
+  // Start as true so the overlay covers the screen on initial paint with zero flash of underlying content
+  const [isVisible, setIsVisible] = useState(true)
 
   useEffect(() => {
     // Check if animation has already been shown in this browser session
     try {
       const hasSeenIntro = sessionStorage.getItem('bmf_intro_seen')
       if (hasSeenIntro === 'true') {
+        setIsVisible(false)
         if (onComplete) onComplete()
         return
       }
       
       // Mark as seen for this session immediately
       sessionStorage.setItem('bmf_intro_seen', 'true')
-      setIsVisible(true)
     } catch {
       // Fallback if sessionStorage is not accessible
-      setIsVisible(true)
     }
 
     // Overall animation finishes and fades into hero section at 2.9s
@@ -61,7 +61,7 @@ export function BmfIntroAnimation({ onComplete }: BmfIntroAnimationProps) {
             filter: 'blur(6px)',
             transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const } 
           }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-white select-none overflow-hidden"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-white select-none overflow-hidden"
         >
           {/* Main Logo Lockup Container */}
           <div className="relative flex flex-col items-center justify-center px-4">
