@@ -319,11 +319,7 @@ export default function BmfFounderDirectoryPage() {
             )}
           </div>
 
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-neutral-400">
-            <span>Progressive Loading</span>
-            <span>•</span>
-            <span>Instant Client Cache</span>
-          </div>
+        
         </div>
 
         {/* Initial Loading Skeleton State */}

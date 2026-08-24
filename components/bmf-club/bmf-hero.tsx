@@ -72,7 +72,8 @@ export function BmfHeroSection() {
   const rotateY = useTransform(smoothMouseX, [-0.5, 0.5], [-6, 6])
 
   const numCards = streamImages.length
-  const [progress, setProgress] = useState(0)
+  const [desktopProgress, setDesktopProgress] = useState(0)
+  const [mobileProgress, setMobileProgress] = useState(0)
 
   // Mobile Card Cycling State (cycles images one by one across the 3 cards)
   const [mobileCardIndex, setMobileCardIndex] = useState(5)
@@ -130,8 +131,16 @@ export function BmfHeroSection() {
     const step = (now: number) => {
       const delta = (now - lastTime) / 1000
       lastTime = now
-      const speed = (numCards / 22) * delta
-      setProgress((prev) => (prev + speed) % numCards)
+
+      // Independent speed controllers:
+      // Desktop: 30s period (smooth, dynamic flow)
+      // Mobile: 60s period (calm, elegant glide)
+      const desktopSpeed = (numCards / 30) * delta
+      const mobileSpeed = (numCards / 60) * delta
+
+      setDesktopProgress((prev) => (prev + desktopSpeed) % numCards)
+      setMobileProgress((prev) => (prev + mobileSpeed) % numCards)
+
       animationFrameId = requestAnimationFrame(step)
     }
 
@@ -155,6 +164,10 @@ export function BmfHeroSection() {
 
   if (!isMounted) return null
 
+  // 14-item loop for snug, tight mobile card gap
+  const mobileCardsList = [...streamImages, ...streamImages.slice(0, 5)]
+  const totalMobile = mobileCardsList.length
+
   return (
     <section
       id="top"
@@ -168,15 +181,15 @@ export function BmfHeroSection() {
       </div>
 
       {/* ========================================================================= */}
-      {/* 1. MOBILE VIEWPORT LAYOUT (sm:hidden) - Title -> Subtitle -> Fan -> Buttons */}
+      {/* 1. MOBILE VIEWPORT LAYOUT (sm:hidden) - Title -> Subtitle -> Buttons -> Rotating Cards */}
       {/* ========================================================================= */}
-      <div className="flex flex-col items-center w-full px-4 text-center sm:hidden space-y-4">
+      <div className="flex flex-col items-center w-full text-center sm:hidden space-y-4 pt-2">
         {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="text-5xl font-black tracking-tight text-[#111111] inline-flex items-center justify-center gap-2"
+          className="text-5xl font-black tracking-tight text-[#111111] inline-flex items-center justify-center gap-2 px-4"
         >
           <span>BMF Club</span>
           <img
@@ -191,71 +204,17 @@ export function BmfHeroSection() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="text-2xl font-extrabold tracking-tight text-[#777777] max-w-xs mx-auto leading-tight"
+          className="text-2xl font-extrabold tracking-tight text-[#777777] max-w-xs mx-auto leading-tight px-4"
         >
           Where High-Conviction <br /> Builders Connect.
         </motion.h2>
 
-        {/* Hero10 Fanned Image Cards in the Middle (Animated Cycling One by One) */}
-        <div className="relative flex w-full max-w-[340px] items-center justify-center py-4">
-          {/* Card 1: Left Card */}
-          <div className="relative w-[38%] -mr-6 z-10 shrink-0 aspect-4/5 overflow-hidden rounded-2xl shadow-xl outline outline-black/10 bg-neutral-900 translate-y-3 -rotate-6 transition-all duration-300">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.img
-                key={`left-${leftImage.id}-${leftImage.src}`}
-                src={leftImage.src}
-                alt={leftImage.alt}
-                initial={{ opacity: 0, x: 20, scale: 0.94 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -20, scale: 0.94 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full object-cover select-none pointer-events-none"
-                loading="eager"
-              />
-            </AnimatePresence>
-          </div>
-
-          {/* Card 2: Center Card */}
-          <div className="relative w-[44%] z-20 shrink-0 aspect-4/5 overflow-hidden rounded-2xl shadow-2xl outline outline-black/15 bg-neutral-900 -translate-y-1 transition-all duration-300 ring-2 ring-white/10">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.img
-                key={`center-${centerImage.id}-${centerImage.src}`}
-                src={centerImage.src}
-                alt={centerImage.alt}
-                initial={{ opacity: 0, x: 24, scale: 0.94 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -24, scale: 0.94 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full object-cover select-none pointer-events-none"
-                loading="eager"
-              />
-            </AnimatePresence>
-          </div>
-
-          {/* Card 3: Right Card */}
-          <div className="relative w-[38%] -ml-6 z-10 shrink-0 aspect-4/5 overflow-hidden rounded-2xl shadow-xl outline outline-black/10 bg-neutral-900 translate-y-3 rotate-6 transition-all duration-300">
-            <AnimatePresence mode="popLayout" initial={false}>
-              <motion.img
-                key={`right-${rightImage.id}-${rightImage.src}`}
-                src={rightImage.src}
-                alt={rightImage.alt}
-                initial={{ opacity: 0, x: 20, scale: 0.94 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -20, scale: 0.94 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full h-full object-cover select-none pointer-events-none"
-                loading="eager"
-              />
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* CTA Buttons (Placed at bottom on mobile) */}
+        {/* CTA Buttons (Moved UP above cards on mobile) */}
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.28, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col w-full max-w-xs items-center justify-center gap-2.5 pt-1"
+          transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col w-full max-w-xs items-center justify-center gap-2.5 px-4 pt-1 pb-3"
         >
           <Link
             href="/bmf-club/dashboard"
@@ -271,6 +230,62 @@ export function BmfHeroSection() {
           >
             <span>Explore Founder Showcase</span>
           </Link>
+        </motion.div>
+
+        {/* Bottom 3D Concave Inside-Curve Carousel on Mobile (Big on sides, smaller in center) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="relative w-full h-[270px] overflow-hidden pt-4 pb-2 flex items-center justify-center [perspective:850px]"
+        >
+          {/* Subtle edge gradient fades */}
+          <div className="absolute left-0 inset-y-0 w-8 bg-gradient-to-r from-[#f2f2f2] to-transparent z-30 pointer-events-none" />
+          <div className="absolute right-0 inset-y-0 w-8 bg-gradient-to-l from-[#f2f2f2] to-transparent z-30 pointer-events-none" />
+
+          {/* 3D Concave Amphitheatre Ring Stage */}
+          <div
+            style={{
+              transform: `translateZ(315px) rotateX(0deg) rotateY(${((mobileProgress / numCards) * 360).toFixed(2)}deg)`,
+              transformStyle: 'preserve-3d',
+            }}
+            className="relative w-[155px] h-[212px] flex items-center justify-center pointer-events-none will-change-transform"
+          >
+            {mobileCardsList.map((item, idx) => {
+              const cardAngle = (idx / totalMobile) * 360
+              // Calculate angular offset from center (0 deg)
+              const curAngle = (((cardAngle + (mobileProgress / numCards) * 360) % 360) + 360) % 360
+              const diffFromCenter = curAngle > 180 ? 360 - curAngle : curAngle
+              const centerCos = Math.cos((diffFromCenter * Math.PI) / 180)
+              // Smooth dynamic scale: reduced in center (~0.92), expanded at sides (~1.03)
+              const scale = 1.03 - 0.11 * Math.max(0, centerCos)
+
+              return (
+                <div
+                  key={`mobile-concave-card-${item.id}-${idx}`}
+                  style={{
+                    transform: `rotateY(${cardAngle}deg) translateZ(-315px) scale(${scale.toFixed(3)})`,
+                    transformStyle: 'preserve-3d',
+                    backfaceVisibility: 'hidden',
+                  }}
+                  className="absolute inset-0 w-[155px] h-[212px] rounded-xl overflow-hidden shadow-lg will-change-transform"
+                >
+                  <img
+                    src={item.src}
+                    alt={item.alt}
+                    className="w-full h-full object-cover select-none pointer-events-none rounded-xl"
+                    loading="eager"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      if (e.currentTarget.parentElement) {
+                        e.currentTarget.parentElement.style.background = item.fallbackBg
+                      }
+                    }}
+                  />
+                </div>
+              )
+            })}
+          </div>
         </motion.div>
       </div>
 
@@ -303,7 +318,7 @@ export function BmfHeroSection() {
           >
             <div className="absolute left-1/2 top-1/2 -translate-y-1/2 flex items-center justify-end pointer-events-none">
               {streamImages.map((item, idx) => {
-                const pos = ((idx + progress) % numCards + numCards) % numCards
+                const pos = ((idx + desktopProgress) % numCards + numCards) % numCards
                 const t = pos / numCards
                 const curve = Math.pow(t, 1.25)
                 const scale = 0.28 + t * 0.88
@@ -341,7 +356,7 @@ export function BmfHeroSection() {
 
             <div className="absolute left-1/2 top-1/2 -translate-y-1/2 flex items-center justify-start pointer-events-none">
               {streamImages.map((item, idx) => {
-                const pos = ((idx + progress) % numCards + numCards) % numCards
+                const pos = ((idx + desktopProgress) % numCards + numCards) % numCards
                 const t = pos / numCards
                 const curve = Math.pow(t, 1.25)
                 const scale = 0.28 + t * 0.88
