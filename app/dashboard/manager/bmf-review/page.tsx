@@ -51,7 +51,11 @@ import {
   Zap,
   Eye,
   Award,
-  ShieldAlert
+  ShieldAlert,
+  Download,
+  Phone,
+  MessageSquare,
+  Mail
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -291,6 +295,66 @@ export default function BmfAdminReviewPage() {
     }
   }
 
+  // Export Founders Confidential Roster to CSV
+  const handleExportFoundersCsv = () => {
+    const headers = [
+      'Member ID',
+      'Full Name',
+      'Email',
+      'Phone Number',
+      'WhatsApp Number',
+      'Telegram Handle',
+      'Preferred Contact Channel',
+      'Role',
+      'Company Name',
+      'Category',
+      'Stage',
+      'Traction Metrics',
+      'Location',
+      'Team Size',
+      'LinkedIn',
+      'Twitter',
+      'Website',
+      'Review Status',
+      'Verified',
+      'Featured',
+      'Created At'
+    ]
+
+    const rows = members.map((m) => [
+      `"${m.id || ''}"`,
+      `"${(m.full_name || '').replace(/"/g, '""')}"`,
+      `"${(m.email || '').replace(/"/g, '""')}"`,
+      `"${(m.phone_number || '').replace(/"/g, '""')}"`,
+      `"${(m.whatsapp_number || '').replace(/"/g, '""')}"`,
+      `"${(m.telegram_handle || '').replace(/"/g, '""')}"`,
+      `"${(m.preferred_contact_method || 'whatsapp').replace(/"/g, '""')}"`,
+      `"${(m.role || '').replace(/"/g, '""')}"`,
+      `"${(m.company_name || '').replace(/"/g, '""')}"`,
+      `"${(m.category || '').replace(/"/g, '""')}"`,
+      `"${(m.stage || '').replace(/"/g, '""')}"`,
+      `"${(m.metrics || '').replace(/"/g, '""')}"`,
+      `"${(m.location || '').replace(/"/g, '""')}"`,
+      `"${(m.team_size || '').replace(/"/g, '""')}"`,
+      `"${(m.linkedin_url || '').replace(/"/g, '""')}"`,
+      `"${(m.twitter_url || '').replace(/"/g, '""')}"`,
+      `"${(m.website_url || '').replace(/"/g, '""')}"`,
+      `"${(m.review_status || (m.is_approved ? 'approved' : 'pending'))}"`,
+      `"${m.is_verified ? 'Yes' : 'No'}"`,
+      `"${m.is_featured ? 'Yes' : 'No'}"`,
+      `"${m.created_at || ''}"`
+    ])
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `bmf_founders_roster_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const filteredMembers = members.filter((m) => {
     const status = m.review_status || (m.is_approved ? 'approved' : 'pending')
     const matchesFilter = memberFilter === 'all' || status === memberFilter
@@ -299,7 +363,10 @@ export default function BmfAdminReviewPage() {
       m.full_name.toLowerCase().includes(q) ||
       m.company_name.toLowerCase().includes(q) ||
       m.category.toLowerCase().includes(q) ||
-      (m.email && m.email.toLowerCase().includes(q))
+      (m.email && m.email.toLowerCase().includes(q)) ||
+      (m.phone_number && m.phone_number.toLowerCase().includes(q)) ||
+      (m.whatsapp_number && m.whatsapp_number.toLowerCase().includes(q)) ||
+      (m.telegram_handle && m.telegram_handle.toLowerCase().includes(q))
     )
   })
 
@@ -459,15 +526,28 @@ export default function BmfAdminReviewPage() {
               </button>
             </div>
 
-            <div className="relative w-full sm:w-72">
-              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search by founder, company, email..."
-                value={memberSearch}
-                onChange={(e) => setMemberSearch(e.target.value)}
-                className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
-              />
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <Button
+                type="button"
+                onClick={handleExportFoundersCsv}
+                variant="outline"
+                className="bg-neutral-900 hover:bg-neutral-800 border-neutral-700 text-xs rounded-full px-4 py-2 flex items-center gap-1.5 cursor-pointer shrink-0 text-white"
+                title="Download full confidential roster with phone numbers and WhatsApp"
+              >
+                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Export Roster (CSV)</span>
+              </Button>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search by founder, company, email, phone..."
+                  value={memberSearch}
+                  onChange={(e) => setMemberSearch(e.target.value)}
+                  className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
+                />
+              </div>
             </div>
           </div>
 
@@ -523,6 +603,29 @@ export default function BmfAdminReviewPage() {
                         <p className="text-xs text-neutral-400 truncate">{member.role} @ <strong className="text-neutral-200">{member.company_name}</strong></p>
                         <span className="text-[10px] font-mono text-neutral-500">{member.category}</span>
                       </div>
+                    </div>
+
+                    {/* Contact Details (Admin View) */}
+                    <div className="p-3 rounded-2xl bg-black/60 border border-neutral-800 space-y-1 text-xs">
+                      {member.email && (
+                        <div className="flex items-center justify-between text-neutral-300 text-[11px]">
+                          <span className="text-neutral-500 flex items-center gap-1"><Mail className="w-3 h-3" /> Email:</span>
+                          <a href={`mailto:${member.email}`} className="text-neutral-200 hover:text-white hover:underline truncate max-w-[170px]">{member.email}</a>
+                        </div>
+                      )}
+                      {(member.phone_number || member.whatsapp_number) ? (
+                        <div className="flex items-center justify-between text-neutral-300 text-[11px]">
+                          <span className="text-neutral-500 flex items-center gap-1"><Phone className="w-3 h-3 text-emerald-400" /> Mobile:</span>
+                          <a href={`tel:${member.phone_number || member.whatsapp_number}`} className="text-emerald-400 hover:underline">
+                            {member.phone_number || member.whatsapp_number}
+                          </a>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                          <span>Mobile:</span>
+                          <span className="italic">Not provided</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Tagline / Pitch */}

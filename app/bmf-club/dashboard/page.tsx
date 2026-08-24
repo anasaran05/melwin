@@ -12,7 +12,8 @@ import {
   saveBmfJob, 
   deleteBmfJob, 
   getSupabaseBrowserClient, 
-  ensureOrFetchUserProfile 
+  ensureOrFetchUserProfile,
+  saveFounderContactDetails
 } from '@/lib/supabase/bmf-members'
 import { 
   BmfCard, 
@@ -62,6 +63,10 @@ import {
   Eye,
   EyeOff,
   Check,
+  Phone,
+  MessageSquare,
+  ShieldCheck,
+  Lock,
   Link as LinkIcon
 } from 'lucide-react'
 
@@ -172,6 +177,24 @@ function BmfMemberDashboardContent() {
   const [isPassModalOpen, setIsPassModalOpen] = useState(false)
   const [passModalFeature, setPassModalFeature] = useState<'job' | 'event'>('job')
 
+  // Contact Number State
+  const [phoneNumber, setPhoneNumber] = useState('')
+  const [isSavingContact, setIsSavingContact] = useState(false)
+  const [contactSaveStatus, setContactSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [contactSaveMessage, setContactSaveMessage] = useState('')
+
+  // 1-Step Fast Onboarding State (Full Name, Role, Company, Category, Contact Number)
+  const [isOnboarding, setIsOnboarding] = useState(false)
+  const [onboardingForm, setOnboardingForm] = useState({
+    full_name: '',
+    role: 'Founder & CEO',
+    company_name: '',
+    category: 'Technology & Software',
+    phone_number: '',
+  })
+  const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
+  const [onboardingError, setOnboardingError] = useState('')
+
   // Check if current user has an active / approved BMF Club Pass
   const hasActivePass = card?.approval_status === 'approved' || profile.role === 'admin'
 
@@ -199,6 +222,29 @@ function BmfMemberDashboardContent() {
           const memberProfile = await ensureOrFetchUserProfile(authedUser)
           setProfile(memberProfile)
           setProfileForm(memberProfile)
+          setPhoneNumber(memberProfile.phone_number || '')
+
+          // Check if user needs onboarding (missing core card details)
+          const isProfileIncomplete =
+            !memberProfile.full_name ||
+            memberProfile.full_name === 'FOUNDER' ||
+            !memberProfile.company_name ||
+            memberProfile.company_name === 'STARTUP' ||
+            !memberProfile.phone_number
+
+          if (isProfileIncomplete) {
+            setIsOnboarding(true)
+            setOnboardingForm({
+              full_name: memberProfile.full_name && memberProfile.full_name !== 'FOUNDER' ? memberProfile.full_name : '',
+              role: memberProfile.role && memberProfile.role !== 'Founder' ? memberProfile.role : 'Founder & CEO',
+              company_name: memberProfile.company_name && memberProfile.company_name !== 'STARTUP' ? memberProfile.company_name : '',
+              category: memberProfile.category || 'Technology & Software',
+              phone_number: memberProfile.phone_number || '',
+            })
+          } else {
+            setIsOnboarding(false)
+          }
+
           if (memberProfile.category && !CATEGORIES.includes(memberProfile.category)) {
             setIsCustomCategory(true)
             setCustomCategoryInput(memberProfile.category)
@@ -239,6 +285,28 @@ function BmfMemberDashboardContent() {
                 const parsed = JSON.parse(stored)
                 setProfile(parsed)
                 setProfileForm(parsed)
+                setPhoneNumber(parsed.phone_number || '')
+                
+                const isProfileIncomplete =
+                  !parsed.full_name ||
+                  parsed.full_name === 'FOUNDER' ||
+                  !parsed.company_name ||
+                  parsed.company_name === 'STARTUP' ||
+                  !parsed.phone_number
+
+                if (isProfileIncomplete) {
+                  setIsOnboarding(true)
+                  setOnboardingForm({
+                    full_name: parsed.full_name && parsed.full_name !== 'FOUNDER' ? parsed.full_name : '',
+                    role: parsed.role && parsed.role !== 'Founder' ? parsed.role : 'Founder & CEO',
+                    company_name: parsed.company_name && parsed.company_name !== 'STARTUP' ? parsed.company_name : '',
+                    category: parsed.category || 'Technology & Software',
+                    phone_number: parsed.phone_number || '',
+                  })
+                } else {
+                  setIsOnboarding(false)
+                }
+
                 if (parsed.category && !CATEGORIES.includes(parsed.category)) {
                   setIsCustomCategory(true)
                   setCustomCategoryInput(parsed.category)
@@ -256,6 +324,15 @@ function BmfMemberDashboardContent() {
                 }
                 setProfile(demoProfile)
                 setProfileForm(demoProfile)
+                setPhoneNumber('')
+                setIsOnboarding(true)
+                setOnboardingForm({
+                  full_name: demoEmail.split('@')[0].toUpperCase(),
+                  role: 'Founder & CEO',
+                  company_name: '',
+                  category: 'Technology & Software',
+                  phone_number: '',
+                })
                 setIsCustomCategory(false)
                 setCustomCategoryInput('')
                 const fallbackCard = generateDefaultCard(demoProfile)
@@ -526,6 +603,121 @@ function BmfMemberDashboardContent() {
     }
   }
 
+  // Save Confidential Founder Contact Details (Internal Only)
+  // Save Contact Number
+  const handleSaveContact = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    setIsSavingContact(true)
+    setContactSaveStatus('idle')
+    setContactSaveMessage('')
+
+    const targetUserId = profile.user_id || profile.id
+
+    try {
+      const res = await saveFounderContactDetails(targetUserId, {
+        phone_number: phoneNumber.trim(),
+        whatsapp_number: phoneNumber.trim(),
+        contact_privacy_accepted: true,
+      })
+
+      if (res.success) {
+        setContactSaveStatus('success')
+        setContactSaveMessage('Contact number updated successfully.')
+        setProfile((prev) => ({
+          ...prev,
+          phone_number: phoneNumber.trim(),
+          whatsapp_number: phoneNumber.trim(),
+        }))
+        setProfileForm((prev) => ({
+          ...prev,
+          phone_number: phoneNumber.trim(),
+          whatsapp_number: phoneNumber.trim(),
+        }))
+        setTimeout(() => setContactSaveStatus('idle'), 3000)
+      } else {
+        setContactSaveStatus('error')
+        setContactSaveMessage(res.error || 'Failed to save contact number.')
+      }
+    } catch (err: any) {
+      setContactSaveStatus('error')
+      setContactSaveMessage(err.message || 'Save contact error.')
+    } finally {
+      setIsSavingContact(false)
+    }
+  }
+
+  // 1-Step Fast Onboarding Submission Handler
+  const handleCompleteOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!onboardingForm.full_name.trim()) {
+      setOnboardingError('Please enter your full name.')
+      return
+    }
+    if (!onboardingForm.role.trim()) {
+      setOnboardingError('Please enter your role or title (e.g. Founder & CEO).')
+      return
+    }
+    if (!onboardingForm.company_name.trim()) {
+      setOnboardingError('Please enter your company or startup name.')
+      return
+    }
+    if (!onboardingForm.phone_number.trim()) {
+      setOnboardingError('Please provide your mobile / contact number for private concierge verification.')
+      return
+    }
+
+    setIsOnboardingSubmitting(true)
+    setOnboardingError('')
+
+    try {
+      const updatedMember: Partial<BmfMember> = {
+        ...profile,
+        full_name: onboardingForm.full_name.trim(),
+        role: onboardingForm.role.trim(),
+        company_name: onboardingForm.company_name.trim(),
+        category: onboardingForm.category,
+        phone_number: onboardingForm.phone_number.trim(),
+        whatsapp_number: onboardingForm.phone_number.trim(),
+        tagline: profile.tagline && profile.tagline !== 'Building the next generation venture' 
+          ? profile.tagline 
+          : `Building ${onboardingForm.company_name.trim()} in ${onboardingForm.category}`,
+        review_status: 'approved',
+        is_approved: true,
+      }
+
+      const saveRes = await saveBmfMemberProfile(updatedMember)
+      if (!saveRes.success) {
+        setOnboardingError(saveRes.error || 'Failed to save onboarding details.')
+        return
+      }
+
+      await saveFounderContactDetails(profile.user_id || profile.id, {
+        phone_number: onboardingForm.phone_number.trim(),
+        whatsapp_number: onboardingForm.phone_number.trim(),
+      })
+
+      const completeProfile = { ...profile, ...updatedMember } as BmfMember
+      setProfile(completeProfile)
+      setProfileForm(completeProfile)
+      setPhoneNumber(onboardingForm.phone_number.trim())
+      setCard((prev) => ({
+        ...prev,
+        card_holder_name: onboardingForm.full_name.trim().toUpperCase(),
+        company_name: onboardingForm.company_name.trim().toUpperCase(),
+      }))
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('bmf_current_member', JSON.stringify(completeProfile))
+      }
+
+      setIsOnboarding(false)
+    } catch (err: any) {
+      setOnboardingError(err.message || 'Onboarding error.')
+    } finally {
+      setIsOnboardingSubmitting(false)
+    }
+  }
+
   // Card Pass Application Submission Handler
   const handleSubmitCardApp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -755,6 +947,199 @@ function BmfMemberDashboardContent() {
               </div>
             )}
           </AuthForm>
+        </div>
+      </div>
+    )
+  }
+
+  // Dedicated 1-Step Onboarding Screen (Core Card & Profile Setup)
+  if (isOnboarding) {
+    const livePreviewMember: BmfMember = {
+      ...profile,
+      full_name: onboardingForm.full_name.trim() || 'FOUNDER NAME',
+      role: onboardingForm.role.trim() || 'Founder & CEO',
+      company_name: onboardingForm.company_name.trim() || 'YOUR STARTUP',
+      category: onboardingForm.category || 'Technology & Software',
+      phone_number: onboardingForm.phone_number.trim(),
+      tagline: profile.tagline && profile.tagline !== 'Building the next generation venture' 
+        ? profile.tagline 
+        : `Building ${onboardingForm.company_name.trim() || 'the next generation venture'} in ${onboardingForm.category}`,
+      is_approved: true,
+      review_status: 'approved',
+    }
+
+    return (
+      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden font-sans select-none">
+        {/* Background glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[400px] bg-[radial-gradient(ellipse_at_center,rgba(56,189,248,0.12)_0%,transparent_70%)] pointer-events-none" />
+
+        <div className="w-full max-w-4xl relative z-10 space-y-6 animate-in fade-in-0 duration-300">
+          
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 shadow-inner">
+              <img src={BMF_LOGO_URL} alt="BMF" className="w-4 h-4 object-contain" />
+              <span className="font-mono uppercase font-bold text-neutral-200">BMF Founders Club &bull; Onboarding</span>
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Setup Your Founder Card
+            </h1>
+            <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto">
+              Provide your core founder credentials to generate your syndicate card and unlock the Founder Studio.
+            </p>
+          </div>
+
+          {/* Onboarding Grid: Live Preview (Left) + 5-Field Form (Right) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-[#101014]/90 border border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-md">
+            
+            {/* Live 3D Card Preview */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center space-y-3">
+              <span className="text-[11px] font-mono uppercase tracking-widest text-neutral-400 font-bold">
+                Live Card Preview
+              </span>
+              <MemberFlipCard member={livePreviewMember} />
+              <span className="text-[10px] font-mono text-neutral-500">
+                Hover / click to flip & preview back
+              </span>
+            </div>
+
+            {/* 5-Field Setup Form */}
+            <div className="lg:col-span-7 space-y-5 text-left">
+              {onboardingError && (
+                <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-700/60 text-rose-300 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>{onboardingError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleCompleteOnboarding} className="space-y-4">
+                
+                {/* 1. Full Name */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                    <span>Full Name</span>
+                    <span className="text-sky-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Mohammed Anas"
+                    value={onboardingForm.full_name}
+                    onChange={(e) => setOnboardingForm({ ...onboardingForm, full_name: e.target.value })}
+                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                {/* 2. Role / Title & 3. Company Name */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                      <span>Role / Title</span>
+                      <span className="text-sky-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Founder & CEO"
+                      value={onboardingForm.role}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, role: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                      <span>Company / Startup</span>
+                      <span className="text-sky-400">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Acme AI"
+                      value={onboardingForm.company_name}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, company_name: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* 4. Industry Category */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                    <span>Industry Category</span>
+                    <span className="text-sky-400">*</span>
+                  </label>
+                  <select
+                    value={onboardingForm.category}
+                    onChange={(e) => setOnboardingForm({ ...onboardingForm, category: e.target.value })}
+                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors cursor-pointer"
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* 5. Contact Mobile Number */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                      <Phone className="w-3.5 h-3.5 text-sky-400" />
+                      <span>Contact / Mobile Number</span>
+                      <span className="text-sky-400">*</span>
+                    </label>
+                    <span className="text-[10px] font-mono text-neutral-500">Private / Never Public</span>
+                  </div>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="+91 98765 43210 or +1 415 555 0199"
+                    value={onboardingForm.phone_number}
+                    onChange={(e) => setOnboardingForm({ ...onboardingForm, phone_number: e.target.value })}
+                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                  />
+                  <p className="text-[10px] text-neutral-500">
+                    Used exclusively by our concierge team for event passes and private syndicate RSVPs.
+                  </p>
+                </div>
+
+                {/* Submit Action Button */}
+                <div className="pt-2">
+                  <Button
+                    type="submit"
+                    disabled={isOnboardingSubmitting}
+                    className="w-full bg-white hover:bg-neutral-200 text-black font-bold text-xs py-3.5 rounded-full transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                  >
+                    {isOnboardingSubmitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Generating Founder Card...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        <span>Create Founder Card & Enter Studio &rarr;</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                <div className="pt-2 text-center">
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    className="text-[11px] text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
+                  >
+                    Sign out / switch account
+                  </button>
+                </div>
+
+              </form>
+            </div>
+          </div>
+
         </div>
       </div>
     )
@@ -1651,6 +2036,24 @@ function BmfMemberDashboardContent() {
                           className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
                         />
                       </div>
+
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-neutral-300 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-neutral-400" />
+                          <span>Contact Number</span>
+                          <span className="text-[10px] text-neutral-500 font-normal">(Private)</span>
+                        </label>
+                        <input
+                          type="tel"
+                          placeholder="+91 98765 43210"
+                          value={profileForm.phone_number || ''}
+                          onChange={(e) => {
+                            setProfileForm({ ...profileForm, phone_number: e.target.value, whatsapp_number: e.target.value })
+                            setPhoneNumber(e.target.value)
+                          }}
+                          className="w-full bg-neutral-900/80 border border-neutral-700/80 focus:border-white rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 
@@ -2080,15 +2483,29 @@ function BmfMemberDashboardContent() {
         {/* TAB 5: ACCOUNT SETTINGS */}
         {/* ======================================================================= */}
         {activeTab === 'settings' && (
-          <div className="py-8 animate-in fade-in-0 duration-300 max-w-2xl text-left space-y-6">
+          <div className="py-8 animate-in fade-in-0 duration-300 max-w-xl text-left space-y-6">
             <div className="space-y-1 border-b border-neutral-800 pb-4">
-              <h2 className="text-2xl font-bold text-white">Founder Account Settings</h2>
+              <h2 className="text-2xl font-bold text-white">Account Settings</h2>
               <p className="text-xs text-neutral-400">
-                Manage your credentials, notification channels, and privacy preferences.
+                Manage your credentials and internal contact details.
               </p>
             </div>
 
-            <div className="space-y-4">
+            {/* Status Messages */}
+            {contactSaveStatus === 'success' && (
+              <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-700/50 text-emerald-300 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{contactSaveMessage}</span>
+              </div>
+            )}
+            {contactSaveStatus === 'error' && (
+              <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-700/60 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                <span>{contactSaveMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveContact} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold text-neutral-300">Registered Email</label>
                 <input
@@ -2100,23 +2517,46 @@ function BmfMemberDashboardContent() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-neutral-300">WhatsApp Notification Alerts</label>
-                <div className="flex items-center justify-between p-3.5 bg-neutral-900 rounded-xl border border-neutral-800">
-                  <span className="text-xs text-neutral-300">Instant mastermind & dinner RSVPs</span>
-                  <span className="text-xs font-mono font-bold text-emerald-400">Active</span>
-                </div>
+                <label className="text-xs font-semibold text-neutral-300">Contact Number</label>
+                <input
+                  type="tel"
+                  placeholder="+91 98765 43210"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="w-full bg-neutral-900 border border-neutral-700 focus:border-neutral-400 rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-neutral-500">
+                  Used by our team for concierge updates and invites. Never shown on your public card.
+                </p>
               </div>
 
-              <div className="pt-4 border-t border-neutral-800 flex justify-between items-center">
+              <div className="pt-2">
+                <Button
+                  type="submit"
+                  disabled={isSavingContact}
+                  className="bg-white hover:bg-neutral-200 text-black px-6 py-2 rounded-full font-bold text-xs transition-all cursor-pointer"
+                >
+                  {isSavingContact ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
+                </Button>
+              </div>
+
+              <div className="pt-6 border-t border-neutral-800 flex justify-between items-center">
                 <button
                   type="button"
                   onClick={handleSignOut}
-                  className="text-xs text-rose-400 hover:text-rose-300 font-bold transition-colors cursor-pointer"
+                  className="text-xs text-rose-400 hover:text-rose-300 font-semibold transition-colors cursor-pointer"
                 >
                   Sign Out of Founder Studio
                 </button>
               </div>
-            </div>
+            </form>
           </div>
         )}
 

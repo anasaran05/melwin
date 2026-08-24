@@ -135,7 +135,22 @@ export async function GET(request: NextRequest) {
   const totalFiltered = filtered.length
   const startIndex = (page - 1) * limit
   const endIndex = startIndex + limit
-  const paginatedMembers = filtered.slice(startIndex, endIndex)
+  const rawPaginatedMembers = filtered.slice(startIndex, endIndex)
+  
+  // Explicitly sanitize private contact details for public directory
+  const sanitizedMembers = rawPaginatedMembers.map((m) => {
+    const { 
+      phone_number, 
+      whatsapp_number, 
+      telegram_handle, 
+      preferred_contact_method, 
+      contact_privacy_accepted,
+      email,
+      ...publicProfile 
+    } = m
+    return publicProfile
+  })
+
   const hasMore = endIndex < totalFiltered
   const totalPages = Math.ceil(totalFiltered / limit)
 
@@ -143,7 +158,7 @@ export async function GET(request: NextRequest) {
   return NextResponse.json(
     {
       success: true,
-      members: paginatedMembers,
+      members: sanitizedMembers,
       pagination: {
         page,
         limit,

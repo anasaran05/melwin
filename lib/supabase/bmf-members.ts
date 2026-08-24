@@ -6,6 +6,11 @@ export interface BmfMember {
   user_id?: string | null
   full_name: string
   email?: string
+  phone_number?: string | null
+  whatsapp_number?: string | null
+  telegram_handle?: string | null
+  preferred_contact_method?: 'whatsapp' | 'phone' | 'email' | 'telegram' | string | null
+  contact_privacy_accepted?: boolean | null
   role: string
   company_name: string
   company_logo?: string
@@ -733,6 +738,57 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
     return { success: true }
   } catch (err: any) {
     return { success: false, error: err.message || 'Failed to save member profile' }
+  }
+}
+
+export async function saveFounderContactDetails(
+  memberIdOrUserId: string,
+  contactData: {
+    phone_number?: string | null
+    whatsapp_number?: string | null
+    telegram_handle?: string | null
+    preferred_contact_method?: string | null
+    contact_privacy_accepted?: boolean | null
+  }
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('bmf_current_member')
+        const current = stored ? JSON.parse(stored) : INITIAL_BMF_MEMBERS[0]
+        const updated = { ...current, ...contactData, updated_at: new Date().toISOString() }
+        localStorage.setItem('bmf_current_member', JSON.stringify(updated))
+      }
+      return { success: true }
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    const targetUserId = user?.id || memberIdOrUserId
+
+    const { data: existing } = await supabase
+      .from('bmf_members')
+      .select('id')
+      .or(`user_id.eq.${targetUserId},id.eq.${memberIdOrUserId}`)
+      .limit(1)
+      .maybeSingle()
+
+    if (existing) {
+      const { error } = await supabase
+        .from('bmf_members')
+        .update({
+          ...contactData,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', existing.id)
+
+      if (error) return { success: false, error: error.message }
+      return { success: true }
+    }
+
+    return { success: false, error: 'Member record not found' }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Failed to save contact details' }
   }
 }
 
