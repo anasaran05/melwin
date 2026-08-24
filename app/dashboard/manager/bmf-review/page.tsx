@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { 
   BmfMember, 
@@ -65,7 +65,7 @@ import {
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
-export default function BmfAdminReviewPage() {
+function BmfAdminReviewContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
   const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros'>('showcases')
@@ -1627,5 +1627,17 @@ export default function BmfAdminReviewPage() {
       )}
 
     </div>
+  )
+}
+
+export default function BmfAdminReviewPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-[400px] flex items-center justify-center p-8">
+        <Loader2 className="w-8 h-8 text-slate-400 animate-spin" />
+      </div>
+    }>
+      <BmfAdminReviewContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { ManagerSidebar } from '@/components/dashboard/manager-sidebar';
 import { Menu, X, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -43,14 +43,18 @@ export default function ManagerLayout({ children }: { children: React.ReactNode 
           />
           {/* Slide-out Sidebar */}
           <div className="relative z-10 w-72 max-w-[85vw] bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
-            <ManagerSidebar onClose={() => setIsMobileNavOpen(false)} />
+            <Suspense fallback={<div className="w-full h-full bg-white animate-pulse" />}>
+              <ManagerSidebar onClose={() => setIsMobileNavOpen(false)} />
+            </Suspense>
           </div>
         </div>
       )}
 
       {/* 3. DESKTOP SIDEBAR (Untouched, hidden on mobile, visible on md+) */}
       <aside className="hidden md:flex w-72 shrink-0 min-h-screen">
-        <ManagerSidebar />
+        <Suspense fallback={<div className="w-72 shrink-0 min-h-screen bg-white animate-pulse" />}>
+          <ManagerSidebar />
+        </Suspense>
       </aside>
 
       {/* 4. MAIN CONTENT CONTAINER */}
