@@ -228,7 +228,7 @@ export function BmfHeroSection() {
             href="/bmf-club/directory"
             className="w-full inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-7 py-3.5 rounded-xl font-semibold text-sm transition-colors shadow-xs active:scale-[0.98]"
           >
-            <span>Explore Founder Showcase</span>
+            <span>See other founders</span>
           </Link>
         </motion.div>
 
@@ -424,7 +424,7 @@ export function BmfHeroSection() {
               href="/bmf-club/directory"
               className="inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-7 py-4 rounded-xl font-semibold text-sm transition-colors shadow-xs hover:scale-[1.02] active:scale-[0.98]"
             >
-              <span>Explore Founder Showcase</span>
+              <span>See other founders</span>
             </Link>
           </motion.div>
         </div>
