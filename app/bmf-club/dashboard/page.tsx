@@ -183,15 +183,21 @@ function BmfMemberDashboardContent() {
   const [contactSaveStatus, setContactSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [contactSaveMessage, setContactSaveMessage] = useState('')
 
-  // 1-Step Fast Onboarding State (Full Name, Role, Company, Category, Contact Number)
+  // 2-Step Interactive Onboarding State (Step 1: Credentials, Step 2: Visuals/Branding)
   const [isOnboarding, setIsOnboarding] = useState(false)
+  const [onboardingStep, setOnboardingStep] = useState<1 | 2>(1)
   const [onboardingForm, setOnboardingForm] = useState({
     full_name: '',
     role: 'Founder & CEO',
     company_name: '',
     category: 'Technology & Software',
     phone_number: '',
+    avatar_url: '',
+    company_logo: '',
   })
+  const [onboardingPendingAvatarFile, setOnboardingPendingAvatarFile] = useState<File | null>(null)
+  const [onboardingPendingLogoFile, setOnboardingPendingLogoFile] = useState<File | null>(null)
+  const [isOnboardingAvatarModalOpen, setIsOnboardingAvatarModalOpen] = useState(false)
   const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
   const [onboardingError, setOnboardingError] = useState('')
 
@@ -234,12 +240,15 @@ function BmfMemberDashboardContent() {
 
           if (isProfileIncomplete) {
             setIsOnboarding(true)
+            setOnboardingStep(1)
             setOnboardingForm({
               full_name: memberProfile.full_name && memberProfile.full_name !== 'FOUNDER' ? memberProfile.full_name : '',
               role: memberProfile.role && memberProfile.role !== 'Founder' ? memberProfile.role : 'Founder & CEO',
               company_name: memberProfile.company_name && memberProfile.company_name !== 'STARTUP' ? memberProfile.company_name : '',
               category: memberProfile.category || 'Technology & Software',
               phone_number: memberProfile.phone_number || '',
+              avatar_url: memberProfile.avatar_url || '',
+              company_logo: memberProfile.company_logo || '',
             })
           } else {
             setIsOnboarding(false)
@@ -296,12 +305,15 @@ function BmfMemberDashboardContent() {
 
                 if (isProfileIncomplete) {
                   setIsOnboarding(true)
+                  setOnboardingStep(1)
                   setOnboardingForm({
                     full_name: parsed.full_name && parsed.full_name !== 'FOUNDER' ? parsed.full_name : '',
                     role: parsed.role && parsed.role !== 'Founder' ? parsed.role : 'Founder & CEO',
                     company_name: parsed.company_name && parsed.company_name !== 'STARTUP' ? parsed.company_name : '',
                     category: parsed.category || 'Technology & Software',
                     phone_number: parsed.phone_number || '',
+                    avatar_url: parsed.avatar_url || '',
+                    company_logo: parsed.company_logo || '',
                   })
                 } else {
                   setIsOnboarding(false)
@@ -326,12 +338,15 @@ function BmfMemberDashboardContent() {
                 setProfileForm(demoProfile)
                 setPhoneNumber('')
                 setIsOnboarding(true)
+                setOnboardingStep(1)
                 setOnboardingForm({
                   full_name: demoEmail.split('@')[0].toUpperCase(),
                   role: 'Founder & CEO',
                   company_name: '',
                   category: 'Technology & Software',
                   phone_number: '',
+                  avatar_url: '',
+                  company_logo: '',
                 })
                 setIsCustomCategory(false)
                 setCustomCategoryInput('')
@@ -646,8 +661,8 @@ function BmfMemberDashboardContent() {
     }
   }
 
-  // 1-Step Fast Onboarding Submission Handler
-  const handleCompleteOnboarding = async (e: React.FormEvent) => {
+  // Step 1 -> Step 2 Navigation Handler
+  const handleStep1Next = (e: React.FormEvent) => {
     e.preventDefault()
     if (!onboardingForm.full_name.trim()) {
       setOnboardingError('Please enter your full name.')
@@ -666,10 +681,56 @@ function BmfMemberDashboardContent() {
       return
     }
 
+    setOnboardingError('')
+    setOnboardingStep(2)
+  }
+
+  // 2-Step Onboarding Final Submission Handler (Saves to DB after Step 2)
+  const handleCompleteOnboarding = async (e: React.FormEvent) => {
+    e.preventDefault()
     setIsOnboardingSubmitting(true)
     setOnboardingError('')
 
     try {
+      let finalAvatarUrl = onboardingForm.avatar_url || profile.avatar_url
+      let finalLogoUrl = onboardingForm.company_logo || profile.company_logo
+
+      const targetUserId = profile.user_id || profile.id || 'founder'
+
+      // Upload staged WebP portrait if changed in onboarding
+      if (onboardingPendingAvatarFile) {
+        const formData = new FormData()
+        formData.append('file', onboardingPendingAvatarFile)
+        formData.append('folder', 'founders')
+        formData.append('userId', targetUserId)
+
+        const uploadRes = await fetch('/api/bmf/upload-media', {
+          method: 'POST',
+          body: formData,
+        })
+        const uploadData = await uploadRes.json()
+        if (uploadRes.ok && uploadData.success && uploadData.url) {
+          finalAvatarUrl = uploadData.url
+        }
+      }
+
+      // Upload staged company logo if changed in onboarding
+      if (onboardingPendingLogoFile) {
+        const formData = new FormData()
+        formData.append('file', onboardingPendingLogoFile)
+        formData.append('folder', 'companies')
+        formData.append('userId', targetUserId)
+
+        const uploadRes = await fetch('/api/bmf/upload-media', {
+          method: 'POST',
+          body: formData,
+        })
+        const uploadData = await uploadRes.json()
+        if (uploadRes.ok && uploadData.success && uploadData.url) {
+          finalLogoUrl = uploadData.url
+        }
+      }
+
       const updatedMember: Partial<BmfMember> = {
         ...profile,
         full_name: onboardingForm.full_name.trim(),
@@ -678,6 +739,8 @@ function BmfMemberDashboardContent() {
         category: onboardingForm.category,
         phone_number: onboardingForm.phone_number.trim(),
         whatsapp_number: onboardingForm.phone_number.trim(),
+        avatar_url: finalAvatarUrl || getFounderFallbackAvatar(onboardingForm.full_name.trim()),
+        company_logo: finalLogoUrl || undefined,
         tagline: profile.tagline && profile.tagline !== 'Building the next generation venture' 
           ? profile.tagline 
           : `Building ${onboardingForm.company_name.trim()} in ${onboardingForm.category}`,
@@ -952,7 +1015,7 @@ function BmfMemberDashboardContent() {
     )
   }
 
-  // Dedicated 1-Step Onboarding Screen (Core Card & Profile Setup)
+  // Dedicated 2-Step Interactive Onboarding Screen (Step 1: Credentials, Step 2: Visuals & Branding)
   if (isOnboarding) {
     const livePreviewMember: BmfMember = {
       ...profile,
@@ -961,6 +1024,8 @@ function BmfMemberDashboardContent() {
       company_name: onboardingForm.company_name.trim() || 'YOUR STARTUP',
       category: onboardingForm.category || 'Technology & Software',
       phone_number: onboardingForm.phone_number.trim(),
+      avatar_url: onboardingForm.avatar_url || getFounderFallbackAvatar(onboardingForm.full_name.trim() || 'Founder'),
+      company_logo: onboardingForm.company_logo || undefined,
       tagline: profile.tagline && profile.tagline !== 'Building the next generation venture' 
         ? profile.tagline 
         : `Building ${onboardingForm.company_name.trim() || 'the next generation venture'} in ${onboardingForm.category}`,
@@ -979,17 +1044,21 @@ function BmfMemberDashboardContent() {
           <div className="text-center space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-xs text-neutral-300 shadow-inner">
               <img src={BMF_LOGO_URL} alt="BMF" className="w-4 h-4 object-contain" />
-              <span className="font-mono uppercase font-bold text-neutral-200">BMF Founders Club &bull; Onboarding</span>
+              <span className="font-mono uppercase font-bold text-neutral-200">
+                BMF Founders Club &bull; {onboardingStep === 1 ? 'Step 1 of 2: Credentials' : 'Step 2 of 2: Visuals & Branding'}
+              </span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Setup Your Founder Card
+              {onboardingStep === 1 ? 'Setup Your Founder Card' : 'Add Visuals & Company Logo'}
             </h1>
             <p className="text-xs sm:text-sm text-neutral-400 max-w-md mx-auto">
-              Provide your core founder credentials to generate your syndicate card and unlock the Founder Studio.
+              {onboardingStep === 1 
+                ? 'Provide your core founder credentials to initialize your official syndicate pass.'
+                : 'Personalize your portrait avatar and startup logo for your live card and directory listing.'}
             </p>
           </div>
 
-          {/* Onboarding Grid: Live Preview (Left) + 5-Field Form (Right) */}
+          {/* Onboarding Grid: Live 3D Card (Left) + Multi-Step Form (Right) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-[#101014]/90 border border-neutral-800 rounded-3xl p-6 sm:p-10 shadow-2xl backdrop-blur-md">
             
             {/* Live 3D Card Preview */}
@@ -1003,144 +1072,337 @@ function BmfMemberDashboardContent() {
               </span>
             </div>
 
-            {/* 5-Field Setup Form */}
+            {/* Form Column */}
             <div className="lg:col-span-7 space-y-5 text-left">
               {onboardingError && (
-                <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-700/60 text-rose-300 text-xs flex items-center gap-2">
+                <div className="p-3.5 rounded-2xl bg-rose-950/60 border border-rose-700/60 text-rose-300 text-xs flex items-center gap-2 animate-in fade-in-0">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                   <span>{onboardingError}</span>
                 </div>
               )}
 
-              <form onSubmit={handleCompleteOnboarding} className="space-y-4">
-                
-                {/* 1. Full Name */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
-                    <span>Full Name</span>
-                    <span className="text-sky-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Mohammed Anas"
-                    value={onboardingForm.full_name}
-                    onChange={(e) => setOnboardingForm({ ...onboardingForm, full_name: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
-                  />
-                </div>
-
-                {/* 2. Role / Title & 3. Company Name */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* ========================================================= */}
+              {/* STEP 1: FOUNDER CREDENTIALS */}
+              {/* ========================================================= */}
+              {onboardingStep === 1 && (
+                <form onSubmit={handleStep1Next} className="space-y-4 animate-in fade-in-0 duration-200">
+                  
+                  {/* 1. Full Name */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
-                      <span>Role / Title</span>
+                      <span>Full Name</span>
                       <span className="text-sky-400">*</span>
                     </label>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Founder & CEO"
-                      value={onboardingForm.role}
-                      onChange={(e) => setOnboardingForm({ ...onboardingForm, role: e.target.value })}
+                      placeholder="e.g. Mohammed Anas"
+                      value={onboardingForm.full_name}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, full_name: e.target.value })}
                       className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
                     />
                   </div>
 
+                  {/* 2. Role / Title & 3. Company Name */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                        <span>Role / Title</span>
+                        <span className="text-sky-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Founder & CEO"
+                        value={onboardingForm.role}
+                        onChange={(e) => setOnboardingForm({ ...onboardingForm, role: e.target.value })}
+                        className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                        <span>Company / Startup</span>
+                        <span className="text-sky-400">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Acme AI"
+                        value={onboardingForm.company_name}
+                        onChange={(e) => setOnboardingForm({ ...onboardingForm, company_name: e.target.value })}
+                        className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {/* 4. Industry Category */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
-                      <span>Company / Startup</span>
+                      <span>Industry Category</span>
                       <span className="text-sky-400">*</span>
                     </label>
+                    <select
+                      value={onboardingForm.category}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, category: e.target.value })}
+                      className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors cursor-pointer"
+                    >
+                      {CATEGORIES.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* 5. Contact Mobile Number */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
+                        <Phone className="w-3.5 h-3.5 text-sky-400" />
+                        <span>Contact / Mobile Number</span>
+                        <span className="text-sky-400">*</span>
+                      </label>
+                      <span className="text-[10px] font-mono text-neutral-500">Private / Never Public</span>
+                    </div>
                     <input
-                      type="text"
+                      type="tel"
                       required
-                      placeholder="e.g. Acme AI"
-                      value={onboardingForm.company_name}
-                      onChange={(e) => setOnboardingForm({ ...onboardingForm, company_name: e.target.value })}
+                      placeholder="+91 98765 43210 or +1 415 555 0199"
+                      value={onboardingForm.phone_number}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, phone_number: e.target.value })}
                       className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
                     />
+                    <p className="text-[10px] text-neutral-500">
+                      Used exclusively by our concierge team for event passes and private syndicate RSVPs.
+                    </p>
                   </div>
-                </div>
 
-                {/* 4. Industry Category */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
-                    <span>Industry Category</span>
-                    <span className="text-sky-400">*</span>
-                  </label>
-                  <select
-                    value={onboardingForm.category}
-                    onChange={(e) => setOnboardingForm({ ...onboardingForm, category: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none transition-colors cursor-pointer"
-                  >
-                    {CATEGORIES.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* 5. Contact Mobile Number */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-semibold text-neutral-200 flex items-center gap-1">
-                      <Phone className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Contact / Mobile Number</span>
-                      <span className="text-sky-400">*</span>
-                    </label>
-                    <span className="text-[10px] font-mono text-neutral-500">Private / Never Public</span>
+                  {/* Step 1 CTA Button */}
+                  <div className="pt-2">
+                    <Button
+                      type="submit"
+                      className="w-full bg-white hover:bg-neutral-200 text-black font-bold text-xs py-3.5 rounded-full transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      <span>Continue to Visuals & Branding &rarr;</span>
+                    </Button>
                   </div>
-                  <input
-                    type="tel"
-                    required
-                    placeholder="+91 98765 43210 or +1 415 555 0199"
-                    value={onboardingForm.phone_number}
-                    onChange={(e) => setOnboardingForm({ ...onboardingForm, phone_number: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 focus:border-white rounded-xl px-4 py-2.5 text-xs text-white placeholder-neutral-500 focus:outline-none transition-colors"
-                  />
-                  <p className="text-[10px] text-neutral-500">
-                    Used exclusively by our concierge team for event passes and private syndicate RSVPs.
-                  </p>
-                </div>
 
-                {/* Submit Action Button */}
-                <div className="pt-2">
-                  <Button
-                    type="submit"
-                    disabled={isOnboardingSubmitting}
-                    className="w-full bg-white hover:bg-neutral-200 text-black font-bold text-xs py-3.5 rounded-full transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
-                  >
-                    {isOnboardingSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span>Generating Founder Card...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-4 h-4" />
-                        <span>Create Founder Card & Enter Studio &rarr;</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
+                  <div className="pt-2 text-center">
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      className="text-[11px] text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
+                    >
+                      Sign out / switch account
+                    </button>
+                  </div>
 
-                <div className="pt-2 text-center">
-                  <button
-                    type="button"
-                    onClick={handleSignOut}
-                    className="text-[11px] text-neutral-500 hover:text-rose-400 transition-colors cursor-pointer"
-                  >
-                    Sign out / switch account
-                  </button>
-                </div>
+                </form>
+              )}
 
-              </form>
+              {/* ========================================================= */}
+              {/* STEP 2: VISUALS & IDENTITY (AVATAR & LOGO) */}
+              {/* ========================================================= */}
+              {onboardingStep === 2 && (
+                <form onSubmit={handleCompleteOnboarding} className="space-y-5 animate-in fade-in-0 duration-200">
+                  
+                  {/* Visual Assets Row */}
+                  <div className="space-y-4">
+                    
+                    {/* 1. Founder Portrait Avatar */}
+                    <div className="p-3.5 rounded-2xl bg-neutral-900/70 border border-neutral-800 flex items-center gap-3.5">
+                      <div className="w-16 h-20 rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shrink-0 relative">
+                        <img
+                          src={onboardingForm.avatar_url || getFounderFallbackAvatar(onboardingForm.full_name || 'Founder')}
+                          alt="Avatar"
+                          className="w-full h-full object-cover"
+                        />
+                        {onboardingPendingAvatarFile && (
+                          <span className="absolute bottom-0 inset-x-0 bg-amber-500 text-black text-[9px] font-bold text-center py-0.5">
+                            Selected
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white">Founder Portrait</span>
+                          {onboardingForm.avatar_url && (
+                            <span className="text-[10px] text-emerald-400 font-mono font-semibold">● Ready</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-neutral-400">
+                          Upload your photo or choose a curated 3D avatar.
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 active:scale-95">
+                            <Upload className="w-3 h-3" />
+                            <span>Upload Photo</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  setOnboardingPendingAvatarFile(file)
+                                  setOnboardingForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                }
+                              }}
+                            />
+                          </label>
+
+                          <button
+                            type="button"
+                            onClick={() => setIsOnboardingAvatarModalOpen(true)}
+                            className="px-3 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-[11px] font-medium transition-all inline-flex items-center gap-1.5 active:scale-95"
+                          >
+                            <Sparkles className="w-3 h-3 text-amber-400" />
+                            <span>Avatar Library</span>
+                          </button>
+
+                          {onboardingForm.avatar_url && (
+                            <button
+                              type="button"
+                              title="Reset Avatar"
+                              onClick={() => {
+                                setOnboardingPendingAvatarFile(null)
+                                setOnboardingForm((prev) => ({ ...prev, avatar_url: '' }))
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-rose-500/20 text-neutral-500 hover:text-rose-400 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 2. Company / Startup Logo */}
+                    <div className="p-3.5 rounded-2xl bg-neutral-900/70 border border-neutral-800 flex items-center gap-3.5">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden bg-neutral-950 border border-white/10 shrink-0 flex items-center justify-center relative">
+                        {onboardingForm.company_logo ? (
+                          <img
+                            src={onboardingForm.company_logo}
+                            alt="Logo"
+                            className="w-full h-full object-contain p-2"
+                            onError={(e) => {
+                              e.currentTarget.style.display = 'none'
+                            }}
+                          />
+                        ) : (
+                          <Building2 className="w-6 h-6 text-neutral-600" />
+                        )}
+                        {onboardingPendingLogoFile && (
+                          <span className="absolute bottom-0 inset-x-0 bg-amber-500 text-black text-[9px] font-bold text-center py-0.5">
+                            Selected
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5 min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-white">Startup / Company Logo</span>
+                          {onboardingForm.company_logo ? (
+                            <span className="text-[10px] text-emerald-400 font-mono font-semibold">● Attached</span>
+                          ) : (
+                            <span className="text-[10px] text-neutral-500 font-mono">Optional</span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-neutral-400">
+                          Upload transparent PNG or SVG brand icon.
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
+                          <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-all inline-flex items-center gap-1.5 active:scale-95">
+                            <Upload className="w-3 h-3" />
+                            <span>Upload Logo</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0]
+                                if (file) {
+                                  setOnboardingPendingLogoFile(file)
+                                  setOnboardingForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                }
+                              }}
+                            />
+                          </label>
+
+                          {onboardingForm.company_logo && (
+                            <button
+                              type="button"
+                              title="Remove Logo"
+                              onClick={() => {
+                                setOnboardingPendingLogoFile(null)
+                                setOnboardingForm((prev) => ({ ...prev, company_logo: '' }))
+                              }}
+                              className="p-1.5 rounded-lg hover:bg-rose-500/20 text-neutral-500 hover:text-rose-400 transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Navigation CTA Buttons */}
+                  <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setOnboardingStep(1)}
+                      className="w-full sm:w-auto px-5 py-3 rounded-full bg-neutral-900 hover:bg-neutral-800 text-neutral-300 border border-neutral-700 text-xs font-semibold transition-all cursor-pointer"
+                    >
+                      &larr; Back to Details
+                    </button>
+
+                    <Button
+                      type="submit"
+                      disabled={isOnboardingSubmitting}
+                      className="flex-1 w-full bg-white hover:bg-neutral-200 text-black font-bold text-xs py-3.5 rounded-full transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2 cursor-pointer active:scale-98"
+                    >
+                      {isOnboardingSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span>Saving Profile & Entering Studio...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>Complete & Enter Founder Studio &rarr;</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+
+                </form>
+              )}
+
             </div>
           </div>
 
         </div>
+
+        {/* 3D Avatar Picker Modal */}
+        {isOnboardingAvatarModalOpen && (
+          <AvatarPickerModal
+            isOpen={isOnboardingAvatarModalOpen}
+            onClose={() => setIsOnboardingAvatarModalOpen(false)}
+            currentAvatarUrl={onboardingForm.avatar_url}
+            onSelectAvatar={(avatarUrl) => {
+              setOnboardingPendingAvatarFile(null)
+              setOnboardingForm((prev) => ({ ...prev, avatar_url: avatarUrl }))
+              setIsOnboardingAvatarModalOpen(false)
+            }}
+          />
+        )}
+
       </div>
     )
   }
