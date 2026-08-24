@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import { 
   BmfMember, 
@@ -22,6 +22,10 @@ import {
   CARD_TIERS,
   fetchAllCardsForAdmin
 } from '@/lib/supabase/bmf-cards'
+import {
+  BmfIntroRequest,
+  fetchAllIntrosForAdmin
+} from '@/lib/supabase/bmf-intros'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { 
@@ -53,14 +57,24 @@ import {
   Award,
   ShieldAlert,
   Download,
+  Handshake,
+  Mail,
   Phone,
-  MessageSquare,
-  Mail
+  MessageSquare
 } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 export default function BmfAdminReviewPage() {
-  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards'>('showcases')
+  const searchParams = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros'>('showcases')
+
+  useEffect(() => {
+    if (tabParam && ['showcases', 'events', 'registrations', 'cards', 'intros'].includes(tabParam)) {
+      setMainTab(tabParam as any)
+    }
+  }, [tabParam])
 
   // Showcase Members State
   const [members, setMembers] = useState<BmfMember[]>(INITIAL_BMF_MEMBERS)
@@ -81,6 +95,12 @@ export default function BmfAdminReviewPage() {
   const [previewCard, setPreviewCard] = useState<BmfCard | null>(null)
   const [rejectModalCard, setRejectModalCard] = useState<BmfCard | null>(null)
   const [cardRejectFeedback, setCardRejectFeedback] = useState('')
+
+  // Warm Intros State
+  const [intros, setIntros] = useState<BmfIntroRequest[]>([])
+  const [introFilter, setIntroFilter] = useState<'all' | 'pending' | 'accepted' | 'declined'>('all')
+  const [introSearch, setIntroSearch] = useState('')
+  const [activeIntroActionId, setActiveIntroActionId] = useState<string | null>(null)
 
   // Events State
   const [events, setEvents] = useState<BmfEvent[]>(INITIAL_BMF_EVENTS)
@@ -116,20 +136,44 @@ export default function BmfAdminReviewPage() {
   const loadData = async () => {
     setIsLoading(true)
     try {
-      const [membersData, eventsData, regData, cardsData] = await Promise.all([
+      const [membersData, eventsData, regData, cardsData, introsData] = await Promise.all([
         fetchAllMembersForAdmin(),
         fetchAllEventsForAdmin(),
         fetchEventRegistrations(),
         fetchAllCardsForAdmin(),
+        fetchAllIntrosForAdmin(),
       ])
       setMembers(membersData)
       setEvents(eventsData)
       setRegistrations(regData)
       setCards(cardsData)
+      setIntros(introsData)
     } catch (err) {
       console.error(err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleAdminIntroAction = async (requestId: string, action: 'accepted' | 'declined') => {
+    setActiveIntroActionId(requestId)
+    try {
+      const res = await fetch('/api/bmf/respond-intro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          request_id: requestId,
+          action,
+          founder_note: 'Approved / Connected by BMF Club Administrator',
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to update intro status')
+      setIntros((prev) => prev.map((i) => (i.id === requestId ? { ...i, status: action } : i)))
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Action failed')
+    } finally {
+      setActiveIntroActionId(null)
     }
   }
 
@@ -370,6 +414,40 @@ export default function BmfAdminReviewPage() {
     )
   })
 
+  const SHOWCASE_CHUNK_SIZE = 12
+  const [visibleShowcaseCount, setVisibleShowcaseCount] = useState(SHOWCASE_CHUNK_SIZE)
+  const [isLoadingMoreShowcases, setIsLoadingMoreShowcases] = useState(false)
+  const showcaseObserverRef = useRef<HTMLDivElement | null>(null)
+
+  // Reset pagination when filter or search changes
+  useEffect(() => {
+    setVisibleShowcaseCount(SHOWCASE_CHUNK_SIZE)
+  }, [memberFilter, memberSearch])
+
+  // Pinterest-style Infinite Scroll Intersection Observer
+  useEffect(() => {
+    if (!showcaseObserverRef.current || mainTab !== 'showcases') return
+    if (visibleShowcaseCount >= filteredMembers.length) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsLoadingMoreShowcases(true)
+          setTimeout(() => {
+            setVisibleShowcaseCount((prev) => Math.min(prev + SHOWCASE_CHUNK_SIZE, filteredMembers.length))
+            setIsLoadingMoreShowcases(false)
+          }, 120)
+        }
+      },
+      { threshold: 0.1, rootMargin: '300px' }
+    )
+
+    observer.observe(showcaseObserverRef.current)
+    return () => observer.disconnect()
+  }, [visibleShowcaseCount, filteredMembers.length, mainTab])
+
+  const visibleMembers = filteredMembers.slice(0, visibleShowcaseCount)
+
   const filteredCards = cards.filter((c) => {
     const status = c.approval_status || (c.is_active ? 'approved' : 'pending')
     const matchesFilter = cardFilter === 'all' || status === cardFilter
@@ -388,23 +466,23 @@ export default function BmfAdminReviewPage() {
   const pendingCardCount = cards.filter((c) => c.approval_status === 'pending').length
 
   return (
-    <div className="min-h-screen bg-[#0d0d10] text-white p-4 sm:p-8 space-y-8 font-sans">
+    <div className="space-y-6 max-w-7xl mx-auto select-none font-sans text-slate-900">
       
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-800 pb-6 text-left">
+      {/* Top Header Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 sm:p-6 bg-gradient-to-r from-emerald-50 via-teal-50/40 to-white border border-emerald-100/80 rounded-2xl shadow-sm text-left">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-sky-400 bg-sky-950/60 px-3 py-1 rounded-full border border-sky-800/50">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200">
               Admin Master Console
             </span>
-            <span className="text-xs font-mono text-neutral-400">
+            <span className="text-xs font-mono text-slate-500">
               BMF Founders Club Operations
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white">
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
             BMF Admissions & Events Control Deck
           </h1>
-          <p className="text-xs sm:text-sm text-neutral-400">
+          <p className="text-xs sm:text-sm text-slate-500 font-medium">
             Moderate showcase directory cards, approve bespoke metal passes, publish private dinners, and manage RSVP passes.
           </p>
         </div>
@@ -413,7 +491,7 @@ export default function BmfAdminReviewPage() {
           <Button
             onClick={loadData}
             variant="outline"
-            className="bg-neutral-900 border-neutral-700 text-neutral-200 hover:text-white text-xs rounded-full px-4 py-2 flex items-center gap-1.5 cursor-pointer"
+            className="bg-white border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-50 text-xs rounded-full px-4 py-2 flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh All</span>
@@ -421,7 +499,7 @@ export default function BmfAdminReviewPage() {
           <Link
             href="/bmf-club"
             target="_blank"
-            className="text-xs font-bold bg-white hover:bg-neutral-200 text-black px-4 py-2 rounded-full transition-all flex items-center gap-1.5"
+            className="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-full transition-all flex items-center gap-1.5 shadow-sm"
           >
             <span>Live Directory</span>
             <ExternalLink className="w-3 h-3" />
@@ -430,13 +508,13 @@ export default function BmfAdminReviewPage() {
       </div>
 
       {/* Main Tab Controls */}
-      <div className="flex items-center gap-2 border-b border-neutral-800 pb-3 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto whitespace-nowrap scrollbar-none">
         <button
           onClick={() => setMainTab('showcases')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
             mainTab === 'showcases'
-              ? 'bg-white text-black shadow-md'
-              : 'text-neutral-400 hover:text-white bg-neutral-900/60'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -445,16 +523,16 @@ export default function BmfAdminReviewPage() {
 
         <button
           onClick={() => setMainTab('cards')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
             mainTab === 'cards'
-              ? 'bg-white text-black shadow-md'
-              : 'text-neutral-400 hover:text-white bg-neutral-900/60'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <CreditCard className="w-3.5 h-3.5" />
           <span>Executive Pass Cards ({cards.length})</span>
           {pendingCardCount > 0 && (
-            <span className="bg-amber-500 text-black text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+            <span className="bg-amber-500 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
               {pendingCardCount} new
             </span>
           )}
@@ -462,26 +540,43 @@ export default function BmfAdminReviewPage() {
 
         <button
           onClick={() => setMainTab('events')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
             mainTab === 'events'
-              ? 'bg-white text-black shadow-md'
-              : 'text-neutral-400 hover:text-white bg-neutral-900/60'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <Calendar className="w-3.5 h-3.5" />
-          <span>Events & Retreats Manager ({events.length})</span>
+          <span>Events & Retreats ({events.length})</span>
         </button>
 
         <button
           onClick={() => setMainTab('registrations')}
-          className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
             mainTab === 'registrations'
-              ? 'bg-white text-black shadow-md'
-              : 'text-neutral-400 hover:text-white bg-neutral-900/60'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <Ticket className="w-3.5 h-3.5" />
-          <span>Attendee RSVP Applications ({registrations.length})</span>
+          <span>Attendee RSVPs ({registrations.length})</span>
+        </button>
+
+        <button
+          onClick={() => setMainTab('intros')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
+            mainTab === 'intros'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <Handshake className="w-3.5 h-3.5" />
+          <span>Warm Intros Pipeline ({intros.length})</span>
+          {intros.filter((i) => i.status === 'pending').length > 0 && (
+            <span className="bg-amber-500 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+              {intros.filter((i) => i.status === 'pending').length} new
+            </span>
+          )}
         </button>
       </div>
 
@@ -490,12 +585,12 @@ export default function BmfAdminReviewPage() {
       {/* ========================================================= */}
       {mainTab === 'showcases' && (
         <div className="space-y-6 text-left">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800 rounded-full w-full sm:w-auto overflow-x-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200/80 rounded-full w-full sm:w-auto overflow-x-auto whitespace-nowrap scrollbar-none shrink-0">
               <button
                 onClick={() => setMemberFilter('all')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  memberFilter === 'all' ? 'bg-white text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  memberFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 All ({members.length})
@@ -503,7 +598,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setMemberFilter('pending')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  memberFilter === 'pending' ? 'bg-amber-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  memberFilter === 'pending' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Pending ({members.filter((m) => (m.review_status || (m.is_approved ? 'approved' : 'pending')) === 'pending').length})
@@ -511,7 +606,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setMemberFilter('approved')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  memberFilter === 'approved' ? 'bg-emerald-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  memberFilter === 'approved' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Approved Live ({members.filter((m) => (m.review_status || (m.is_approved ? 'approved' : 'pending')) === 'approved').length})
@@ -519,7 +614,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setMemberFilter('rejected')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  memberFilter === 'rejected' ? 'bg-rose-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  memberFilter === 'rejected' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Needs Revisions ({members.filter((m) => (m.review_status || (m.is_approved ? 'approved' : 'pending')) === 'rejected').length})
@@ -531,21 +626,21 @@ export default function BmfAdminReviewPage() {
                 type="button"
                 onClick={handleExportFoundersCsv}
                 variant="outline"
-                className="bg-neutral-900 hover:bg-neutral-800 border-neutral-700 text-xs rounded-full px-4 py-2 flex items-center gap-1.5 cursor-pointer shrink-0 text-white"
+                className="bg-white hover:bg-slate-50 border-slate-200 text-xs rounded-full px-4 py-2 flex items-center gap-1.5 cursor-pointer shrink-0 text-slate-700 shadow-xs"
                 title="Download full confidential roster with phone numbers and WhatsApp"
               >
-                <Download className="w-3.5 h-3.5 text-cyan-400" />
+                <Download className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Export Roster (CSV)</span>
               </Button>
 
               <div className="relative w-full sm:w-72">
-                <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   placeholder="Search by founder, company, email, phone..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
+                  className="w-full bg-white border border-slate-200 rounded-full pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
                 />
               </div>
             </div>
@@ -553,36 +648,36 @@ export default function BmfAdminReviewPage() {
 
           {/* Members Showcase Queue Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMembers.map((member) => {
+            {visibleMembers.map((member) => {
               const status = member.review_status || (member.is_approved ? 'approved' : 'pending')
               const isActionRunning = activeMemberActionId === member.id
 
               return (
                 <div
                   key={member.id}
-                  className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-lg relative overflow-hidden"
+                  className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-xs hover:shadow-md transition-all relative overflow-hidden text-left"
                 >
                   <div className="space-y-4">
                     {/* Header with status badge */}
-                    <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                    <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
                         status === 'approved'
-                          ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                           : status === 'rejected'
-                          ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
-                          : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                          ? 'bg-rose-50 text-rose-700 border-rose-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
                         {status === 'approved' ? 'Live on Directory' : status === 'rejected' ? 'Revision Requested' : 'Pending Review'}
                       </span>
 
                       <div className="flex items-center gap-1.5">
                         {member.is_verified && (
-                          <span className="text-[10px] font-mono text-sky-400 bg-sky-950/60 px-2 py-0.5 rounded-full border border-sky-800/50">
+                          <span className="text-[10px] font-mono text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200 font-semibold">
                             Verified
                           </span>
                         )}
                         {member.is_featured && (
-                          <span className="text-[10px] font-mono text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded-full border border-amber-800/50">
+                          <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200 font-semibold">
                             Featured
                           </span>
                         )}
@@ -591,7 +686,7 @@ export default function BmfAdminReviewPage() {
 
                     {/* Member Details */}
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-neutral-800 border border-white/10 shrink-0">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shrink-0">
                         <img
                           src={member.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=800&auto=format&fit=crop'}
                           alt={member.full_name}
@@ -599,29 +694,29 @@ export default function BmfAdminReviewPage() {
                         />
                       </div>
                       <div className="overflow-hidden">
-                        <h3 className="text-sm font-bold text-white truncate">{member.full_name}</h3>
-                        <p className="text-xs text-neutral-400 truncate">{member.role} @ <strong className="text-neutral-200">{member.company_name}</strong></p>
-                        <span className="text-[10px] font-mono text-neutral-500">{member.category}</span>
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{member.full_name}</h3>
+                        <p className="text-xs text-slate-500 truncate">{member.role} @ <strong className="text-slate-800">{member.company_name}</strong></p>
+                        <span className="text-[10px] font-mono text-slate-400 font-medium">{member.category}</span>
                       </div>
                     </div>
 
                     {/* Contact Details (Admin View) */}
-                    <div className="p-3 rounded-2xl bg-black/60 border border-neutral-800 space-y-1 text-xs">
+                    <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
                       {member.email && (
-                        <div className="flex items-center justify-between text-neutral-300 text-[11px]">
-                          <span className="text-neutral-500 flex items-center gap-1"><Mail className="w-3 h-3" /> Email:</span>
-                          <a href={`mailto:${member.email}`} className="text-neutral-200 hover:text-white hover:underline truncate max-w-[170px]">{member.email}</a>
+                        <div className="flex items-center justify-between text-slate-700 text-[11px]">
+                          <span className="text-slate-400 flex items-center gap-1"><Mail className="w-3 h-3 text-slate-400" /> Email:</span>
+                          <a href={`mailto:${member.email}`} className="text-slate-700 hover:text-emerald-600 hover:underline truncate max-w-[170px] font-medium">{member.email}</a>
                         </div>
                       )}
                       {(member.phone_number || member.whatsapp_number) ? (
-                        <div className="flex items-center justify-between text-neutral-300 text-[11px]">
-                          <span className="text-neutral-500 flex items-center gap-1"><Phone className="w-3 h-3 text-emerald-400" /> Mobile:</span>
-                          <a href={`tel:${member.phone_number || member.whatsapp_number}`} className="text-emerald-400 hover:underline">
+                        <div className="flex items-center justify-between text-slate-700 text-[11px]">
+                          <span className="text-slate-400 flex items-center gap-1"><Phone className="w-3 h-3 text-emerald-600" /> Mobile:</span>
+                          <a href={`tel:${member.phone_number || member.whatsapp_number}`} className="text-emerald-600 font-semibold hover:underline">
                             {member.phone_number || member.whatsapp_number}
                           </a>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between text-[11px] text-neutral-500">
+                        <div className="flex items-center justify-between text-[11px] text-slate-400">
                           <span>Mobile:</span>
                           <span className="italic">Not provided</span>
                         </div>
@@ -629,26 +724,26 @@ export default function BmfAdminReviewPage() {
                     </div>
 
                     {/* Tagline / Pitch */}
-                    <p className="text-xs text-neutral-300 bg-black/40 p-3 rounded-xl border border-neutral-800/80 line-clamp-2">
+                    <p className="text-xs text-slate-600 bg-slate-50/80 p-3 rounded-xl border border-slate-100 line-clamp-2 italic">
                       &ldquo;{member.tagline}&rdquo;
                     </p>
 
                     {/* Metrics / Stage */}
-                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-neutral-400">
-                      <div>Stage: <strong className="text-neutral-200">{member.stage || 'N/A'}</strong></div>
-                      <div>Traction: <strong className="text-emerald-400">{member.metrics || 'Active'}</strong></div>
+                    <div className="grid grid-cols-2 gap-2 text-[11px] font-mono text-slate-500">
+                      <div>Stage: <strong className="text-slate-800">{member.stage || 'N/A'}</strong></div>
+                      <div>Traction: <strong className="text-emerald-600 font-bold">{member.metrics || 'Active'}</strong></div>
                     </div>
                   </div>
 
                   {/* Action Controls */}
-                  <div className="pt-4 border-t border-neutral-800/80 space-y-2">
+                  <div className="pt-4 border-t border-slate-100 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       {status !== 'approved' ? (
                         <Button
                           type="button"
                           disabled={isActionRunning}
                           onClick={() => handleMemberAction(member.id, 'approve')}
-                          className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Approve & Go Live</span>
@@ -658,9 +753,9 @@ export default function BmfAdminReviewPage() {
                           type="button"
                           disabled={isActionRunning}
                           onClick={() => handleMemberAction(member.id, 'reject', 'Showcase paused by administrator.')}
-                          className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                          className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                         >
-                          <XCircle className="w-3.5 h-3.5 text-neutral-400" />
+                          <XCircle className="w-3.5 h-3.5 text-slate-400" />
                           <span>Pause / Unpublish</span>
                         </Button>
                       )}
@@ -672,7 +767,7 @@ export default function BmfAdminReviewPage() {
                           setRejectModalMember(member)
                           setFeedbackText(member.admin_feedback || 'Please update your metrics and high-res portrait.')
                         }}
-                        className="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                        className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                       >
                         <AlertCircle className="w-3.5 h-3.5" />
                         <span>Send Feedback</span>
@@ -683,7 +778,7 @@ export default function BmfAdminReviewPage() {
                       <button
                         type="button"
                         onClick={() => handleMemberAction(member.id, 'toggle_verify')}
-                        className={`hover:underline cursor-pointer ${member.is_verified ? 'text-sky-400' : 'text-neutral-500'}`}
+                        className={`hover:underline cursor-pointer ${member.is_verified ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
                       >
                         {member.is_verified ? '✓ Verified Badge' : '+ Verify Founder'}
                       </button>
@@ -691,28 +786,28 @@ export default function BmfAdminReviewPage() {
                       <button
                         type="button"
                         onClick={() => handleMemberAction(member.id, 'toggle_featured')}
-                        className={`hover:underline cursor-pointer ${member.is_featured ? 'text-amber-400' : 'text-neutral-500'}`}
+                        className={`hover:underline cursor-pointer ${member.is_featured ? 'text-amber-600 font-bold' : 'text-slate-500'}`}
                       >
                         {member.is_featured ? '★ Featured Spotlight' : '+ Spotlight'}
                       </button>
                     </div>
 
                     {/* Priority & Top Lineup Controls */}
-                    <div className="flex items-center justify-between pt-1.5 border-t border-neutral-800/60 text-[11px] font-mono">
+                    <div className="flex items-center justify-between pt-1.5 border-t border-slate-100 text-[11px] font-mono">
                       <button
                         type="button"
                         onClick={() => handleMemberAction(member.id, 'set_priority', undefined, member.priority_order === 1 ? 100 : 1)}
-                        className={`hover:underline cursor-pointer flex items-center gap-1 ${member.priority_order === 1 ? 'text-amber-300 font-bold' : 'text-neutral-400'}`}
+                        className={`hover:underline cursor-pointer flex items-center gap-1 ${member.priority_order === 1 ? 'text-amber-600 font-bold' : 'text-slate-500'}`}
                       >
                         <span>{member.priority_order === 1 ? '👑 Pinned #1 (Top)' : '📌 Pin to #1'}</span>
                       </button>
 
-                      <div className="flex items-center gap-1.5 text-neutral-400">
+                      <div className="flex items-center gap-1.5 text-slate-500">
                         <span className="text-[10px]">Rank:</span>
                         <select
                           value={member.priority_order ?? 100}
                           onChange={(e) => handleMemberAction(member.id, 'set_priority', undefined, Number(e.target.value))}
-                          className="bg-neutral-900 border border-neutral-700 text-white rounded px-2 py-0.5 text-[10px] cursor-pointer"
+                          className="bg-white border border-slate-200 text-slate-700 rounded px-2 py-0.5 text-[10px] cursor-pointer"
                         >
                           <option value={1}>#1 (President / Top)</option>
                           <option value={2}>#2</option>
@@ -728,6 +823,26 @@ export default function BmfAdminReviewPage() {
               )
             })}
           </div>
+
+          {/* Pinterest-style Infinite Scroll Sentinel & Indicator */}
+          <div ref={showcaseObserverRef} className="pt-4 text-center">
+            {visibleShowcaseCount < filteredMembers.length ? (
+              <div className="flex items-center justify-center gap-2.5 text-xs text-slate-600 py-3.5 px-6 bg-white rounded-2xl border border-slate-200/80 max-w-sm mx-auto shadow-xs">
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-600 shrink-0" />
+                <span className="font-mono text-[11px]">
+                  Loading more founders ({visibleShowcaseCount} of {filteredMembers.length})...
+                </span>
+              </div>
+            ) : (
+              filteredMembers.length > 12 && (
+                <div className="py-4 text-center">
+                  <p className="text-[11px] font-mono text-slate-400">
+                    ✓ All {filteredMembers.length} founders loaded in queue
+                  </p>
+                </div>
+              )
+            )}
+          </div>
         </div>
       )}
 
@@ -739,26 +854,26 @@ export default function BmfAdminReviewPage() {
           
           {/* Sub Header & Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-[#141418] border border-neutral-800">
-              <span className="text-[10px] font-mono uppercase text-neutral-500">Total Pass Records</span>
-              <p className="text-xl font-bold text-white mt-1">{cards.length}</p>
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs">
+              <span className="text-[10px] font-mono uppercase text-slate-400">Total Pass Records</span>
+              <p className="text-xl font-bold text-slate-900 mt-1">{cards.length}</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#141418] border border-amber-500/30">
-              <span className="text-[10px] font-mono uppercase text-amber-400">Pending Review</span>
-              <p className="text-xl font-bold text-amber-300 mt-1">{pendingCardCount}</p>
+            <div className="p-4 rounded-2xl bg-white border border-amber-200 shadow-xs">
+              <span className="text-[10px] font-mono uppercase text-amber-700">Pending Review</span>
+              <p className="text-xl font-bold text-amber-600 mt-1">{pendingCardCount}</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#141418] border border-emerald-500/30">
-              <span className="text-[10px] font-mono uppercase text-emerald-400">Active Live Passes</span>
-              <p className="text-xl font-bold text-emerald-300 mt-1">
+            <div className="p-4 rounded-2xl bg-white border border-emerald-200 shadow-xs">
+              <span className="text-[10px] font-mono uppercase text-emerald-700">Active Live Passes</span>
+              <p className="text-xl font-bold text-emerald-600 mt-1">
                 {cards.filter((c) => c.approval_status === 'approved' || c.is_active).length}
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#141418] border border-rose-500/30">
-              <span className="text-[10px] font-mono uppercase text-rose-400">Rejected / Revisions</span>
-              <p className="text-xl font-bold text-rose-300 mt-1">
+            <div className="p-4 rounded-2xl bg-white border border-rose-200 shadow-xs">
+              <span className="text-[10px] font-mono uppercase text-rose-700">Rejected / Revisions</span>
+              <p className="text-xl font-bold text-rose-600 mt-1">
                 {cards.filter((c) => c.approval_status === 'rejected').length}
               </p>
             </div>
@@ -766,11 +881,11 @@ export default function BmfAdminReviewPage() {
 
           {/* Filter Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5 p-1 bg-neutral-900 border border-neutral-800 rounded-full w-full sm:w-auto overflow-x-auto">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200/80 rounded-full w-full sm:w-auto overflow-x-auto">
               <button
                 onClick={() => setCardFilter('all')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  cardFilter === 'all' ? 'bg-white text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  cardFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 All ({cards.length})
@@ -778,7 +893,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setCardFilter('pending')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  cardFilter === 'pending' ? 'bg-amber-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  cardFilter === 'pending' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Pending Review ({cards.filter((c) => c.approval_status === 'pending').length})
@@ -786,7 +901,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setCardFilter('approved')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  cardFilter === 'approved' ? 'bg-emerald-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  cardFilter === 'approved' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Live & Unlocked ({cards.filter((c) => c.approval_status === 'approved' || c.is_active).length})
@@ -794,7 +909,7 @@ export default function BmfAdminReviewPage() {
               <button
                 onClick={() => setCardFilter('rejected')}
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                  cardFilter === 'rejected' ? 'bg-rose-400 text-black shadow-xs' : 'text-neutral-400 hover:text-white'
+                  cardFilter === 'rejected' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 Rejected ({cards.filter((c) => c.approval_status === 'rejected').length})
@@ -802,23 +917,23 @@ export default function BmfAdminReviewPage() {
             </div>
 
             <div className="relative w-full sm:w-72">
-              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
                 placeholder="Search cardholders, tiers, ventures..."
                 value={cardSearch}
                 onChange={(e) => setCardSearch(e.target.value)}
-                className="w-full bg-neutral-900/80 border border-neutral-700/80 rounded-full pl-9 pr-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
+                className="w-full bg-white border border-slate-200 rounded-full pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
               />
             </div>
           </div>
 
           {/* Card Applications List */}
           {filteredCards.length === 0 ? (
-            <div className="p-12 rounded-3xl bg-[#141418] border border-neutral-800 text-center space-y-3">
-              <CreditCard className="w-10 h-10 text-neutral-600 mx-auto" />
-              <h3 className="text-base font-bold text-white">No Pass Card Applications Found</h3>
-              <p className="text-xs text-neutral-400">
+            <div className="p-12 rounded-2xl bg-white border border-slate-200/80 text-center space-y-3 shadow-xs">
+              <CreditCard className="w-10 h-10 text-slate-400 mx-auto" />
+              <h3 className="text-base font-bold text-slate-900">No Pass Card Applications Found</h3>
+              <p className="text-xs text-slate-500">
                 Applications submitted by founders from their studio dashboard will appear here for review.
               </p>
             </div>
@@ -832,17 +947,17 @@ export default function BmfAdminReviewPage() {
                 return (
                   <div
                     key={c.id}
-                    className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between shadow-lg relative overflow-hidden text-left"
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-xs hover:shadow-md transition-all relative overflow-hidden text-left"
                   >
                     <div className="space-y-4">
                       {/* Header with status badge */}
-                      <div className="flex items-center justify-between gap-2 border-b border-neutral-800/80 pb-3">
+                      <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
                         <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border ${
                           status === 'approved'
-                            ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
+                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                             : status === 'rejected'
-                            ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
-                            : 'bg-amber-950/80 text-amber-300 border-amber-700/60'
+                            ? 'bg-rose-50 text-rose-700 border-rose-200'
+                            : 'bg-amber-50 text-amber-700 border-amber-200'
                         }`}>
                           {status === 'approved' ? 'Live & Unlocked' : status === 'rejected' ? 'Rejected' : 'Pending Review'}
                         </span>
@@ -854,28 +969,28 @@ export default function BmfAdminReviewPage() {
 
                       {/* Cardholder & Company */}
                       <div>
-                        <h3 className="text-sm font-bold text-white truncate">{c.card_holder_name}</h3>
-                        <p className="text-xs text-neutral-400 truncate">{c.company_name}</p>
-                        <p className="text-[10px] font-mono text-neutral-500 mt-0.5">UID: {c.nfc_uid}</p>
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{c.card_holder_name}</h3>
+                        <p className="text-xs text-slate-500 truncate">{c.company_name}</p>
+                        <p className="text-[10px] font-mono text-slate-400 mt-0.5">UID: {c.nfc_uid}</p>
                       </div>
 
                       {/* Application Data if Available */}
                       {c.application_data && (
-                        <div className="p-3 bg-black/50 rounded-xl border border-neutral-800/80 space-y-1.5 text-xs">
+                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1.5 text-xs">
                           {c.application_data.traction_metric && (
-                            <div className="text-neutral-300">
-                              <span className="text-[10px] font-mono text-neutral-500 uppercase block">Traction:</span>
-                              <strong className="text-emerald-400">{c.application_data.traction_metric}</strong>
+                            <div className="text-slate-700">
+                              <span className="text-[10px] font-mono text-slate-400 uppercase block">Traction:</span>
+                              <strong className="text-emerald-600 font-semibold">{c.application_data.traction_metric}</strong>
                             </div>
                           )}
                           {c.application_data.pitch_tagline && (
-                            <div className="text-neutral-300 line-clamp-2 italic">
+                            <div className="text-slate-600 line-clamp-2 italic">
                               &ldquo;{c.application_data.pitch_tagline}&rdquo;
                             </div>
                           )}
                           {c.application_data.why_join && (
-                            <div className="text-neutral-400 text-[11px] line-clamp-2 pt-1 border-t border-neutral-800">
-                              <span className="text-[9px] font-mono uppercase text-neutral-500 block">Why Join:</span>
+                            <div className="text-slate-500 text-[11px] line-clamp-2 pt-1 border-t border-slate-200/60">
+                              <span className="text-[9px] font-mono uppercase text-slate-400 block">Why Join:</span>
                               {c.application_data.why_join}
                             </div>
                           )}
@@ -884,7 +999,7 @@ export default function BmfAdminReviewPage() {
                               href={c.application_data.portfolio_or_linkedin}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex items-center gap-1 text-[10px] text-sky-400 hover:underline pt-1"
+                              className="inline-flex items-center gap-1 text-[10px] text-indigo-600 hover:underline pt-1 font-semibold"
                             >
                               <span>Founder Profile</span>
                               <ExternalLink className="w-3 h-3" />
@@ -895,21 +1010,21 @@ export default function BmfAdminReviewPage() {
 
                       {/* Rejection feedback if existing */}
                       {c.admin_feedback && (
-                        <div className="p-2.5 rounded-xl bg-rose-950/30 border border-rose-800/50 text-[11px] text-rose-300">
+                        <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-[11px] text-rose-700">
                           <strong>Feedback:</strong> {c.admin_feedback}
                         </div>
                       )}
                     </div>
 
                     {/* Action Controls */}
-                    <div className="pt-4 border-t border-neutral-800/80 space-y-2">
+                    <div className="pt-4 border-t border-slate-100 space-y-2">
                       <div className="grid grid-cols-2 gap-2">
                         {status !== 'approved' ? (
                           <Button
                             type="button"
                             disabled={isActionRunning}
                             onClick={() => handleCardAction(c.id, 'approve')}
-                            className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Approve & Unlock</span>
@@ -919,9 +1034,9 @@ export default function BmfAdminReviewPage() {
                             type="button"
                             disabled={isActionRunning}
                             onClick={() => handleCardAction(c.id, 'reject', 'Pass locked by administrator.')}
-                            className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                           >
-                            <Lock className="w-3.5 h-3.5 text-neutral-400" />
+                            <Lock className="w-3.5 h-3.5 text-slate-400" />
                             <span>Lock / Revoke</span>
                           </Button>
                         )}
@@ -933,7 +1048,7 @@ export default function BmfAdminReviewPage() {
                             setRejectModalCard(c)
                             setCardRejectFeedback(c.admin_feedback || 'Your venture traction does not currently meet syndicate thresholds.')
                           }}
-                          className="bg-rose-950/60 hover:bg-rose-900/80 border border-rose-700/60 text-rose-300 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
+                          className="bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-xs py-2 rounded-full flex items-center justify-center gap-1 cursor-pointer"
                         >
                           <AlertCircle className="w-3.5 h-3.5" />
                           <span>Reject / Notes</span>
@@ -944,16 +1059,16 @@ export default function BmfAdminReviewPage() {
                         <button
                           type="button"
                           onClick={() => setPreviewCard(c)}
-                          className="inline-flex items-center gap-1 text-[11px] font-mono text-neutral-400 hover:text-white cursor-pointer"
+                          className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-900 cursor-pointer"
                         >
-                          <Eye className="w-3 h-3 text-sky-400" />
+                          <Eye className="w-3 h-3 text-indigo-600" />
                           <span>3D Card Preview</span>
                         </button>
 
                         <select
                           value={c.card_tier}
                           onChange={(e) => handleCardAction(c.id, 'set_tier', undefined, e.target.value as CardTier)}
-                          className="bg-neutral-900 border border-neutral-700 rounded-lg px-2 py-0.5 text-[10px] font-mono text-neutral-300"
+                          className="bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-[10px] font-mono text-slate-700"
                         >
                           {(Object.keys(CARD_TIERS) as CardTier[]).map((t) => (
                             <option key={t} value={t}>{t.toUpperCase()}</option>
@@ -975,15 +1090,15 @@ export default function BmfAdminReviewPage() {
       {/* ========================================================= */}
       {mainTab === 'events' && (
         <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Curated Founder Gatherings & Dinners</h2>
-              <p className="text-xs text-neutral-400">Publish closed-door masterminds and route CTAs internally or externally.</p>
+              <h2 className="text-xl font-bold text-slate-900">Curated Founder Gatherings & Dinners</h2>
+              <p className="text-xs text-slate-500 font-medium">Publish closed-door masterminds and route CTAs internally or externally.</p>
             </div>
 
             <Button
               onClick={() => setIsEventModalOpen(true)}
-              className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Publish Gathering</span>
@@ -992,35 +1107,35 @@ export default function BmfAdminReviewPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div key={event.id} className="bg-[#141418] border border-neutral-800 rounded-3xl p-5 space-y-4 flex flex-col justify-between">
+              <div key={event.id} className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase bg-sky-950/80 text-sky-400 px-2.5 py-0.5 rounded-full border border-sky-800/60 font-bold">
+                    <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200 font-bold">
                       {event.category}
                     </span>
-                    <span className="text-xs font-mono text-neutral-400">{event.event_date}</span>
+                    <span className="text-xs font-mono text-slate-400">{event.event_date}</span>
                   </div>
 
-                  <h3 className="text-base font-bold text-white">{event.title}</h3>
-                  <p className="text-xs text-neutral-400 line-clamp-2">{event.tagline || event.description}</p>
+                  <h3 className="text-base font-bold text-slate-900">{event.title}</h3>
+                  <p className="text-xs text-slate-500 line-clamp-2">{event.tagline || event.description}</p>
                   
-                  <div className="pt-2 text-xs font-mono text-neutral-400 space-y-1">
+                  <div className="pt-2 text-xs font-mono text-slate-500 space-y-1">
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-neutral-500" />
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
                       <span>{event.location_city} ({event.location_venue || 'Private Venue'})</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-neutral-500" />
+                      <Users className="w-3.5 h-3.5 text-slate-400" />
                       <span>Capacity: {event.total_capacity || 18} Founders &bull; {event.registered_count || 0} Registered</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="pt-3 border-t border-neutral-800 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-neutral-500">CTA: {event.cta_type}</span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-slate-400">CTA: {event.cta_type}</span>
                   <button
                     onClick={() => handleDeleteEvent(event.id)}
-                    className="text-neutral-500 hover:text-rose-400 p-1.5 transition-colors cursor-pointer"
+                    className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -1036,16 +1151,16 @@ export default function BmfAdminReviewPage() {
       {/* ========================================================= */}
       {mainTab === 'registrations' && (
         <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
-          <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
+          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
             <div>
-              <h2 className="text-xl font-bold text-white">Attendee RSVP Approvals</h2>
-              <p className="text-xs text-neutral-400">Review and approve admission passes for closed-door mastermind dinners.</p>
+              <h2 className="text-xl font-bold text-slate-900">Attendee RSVP Approvals</h2>
+              <p className="text-xs text-slate-500 font-medium">Review and approve admission passes for closed-door mastermind dinners.</p>
             </div>
 
             <select
               value={selectedEventId}
               onChange={(e) => setSelectedEventId(e.target.value)}
-              className="bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-1.5 text-xs text-white"
+              className="bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 shadow-xs"
             >
               <option value="all">All Events ({registrations.length})</option>
               {events.map((ev) => (
@@ -1056,19 +1171,19 @@ export default function BmfAdminReviewPage() {
 
           <div className="space-y-3">
             {filteredRegistrations.map((reg) => (
-              <div key={reg.id} className="p-4 rounded-2xl bg-[#141418] border border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={reg.id} className="p-4 rounded-2xl bg-white border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-white">{reg.full_name}</h4>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-300">
+                    <h4 className="text-sm font-bold text-slate-900">{reg.full_name}</h4>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold">
                       {reg.company_name || 'Founder'}
                     </span>
                   </div>
-                  <p className="text-xs text-neutral-400 font-mono">
+                  <p className="text-xs text-slate-500 font-mono">
                     {reg.email} &bull; {reg.phone || 'No phone'}
                   </p>
                   {reg.notes && (
-                    <p className="text-xs text-neutral-300 italic pt-1">
+                    <p className="text-xs text-slate-600 italic pt-1">
                       &ldquo;{reg.notes}&rdquo;
                     </p>
                   )}
@@ -1078,14 +1193,14 @@ export default function BmfAdminReviewPage() {
                   <Button
                     type="button"
                     onClick={() => handleRegistrationAction(reg.id, 'approve')}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-black font-bold text-xs px-4 py-1.5 rounded-full cursor-pointer"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-1.5 rounded-full cursor-pointer shadow-xs"
                   >
                     Approve Pass
                   </Button>
                   <Button
                     type="button"
                     onClick={() => handleRegistrationAction(reg.id, 'reject')}
-                    className="bg-neutral-800 hover:bg-neutral-700 text-neutral-300 text-xs px-4 py-1.5 rounded-full cursor-pointer"
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs px-4 py-1.5 rounded-full cursor-pointer"
                   >
                     Decline
                   </Button>
@@ -1100,14 +1215,14 @@ export default function BmfAdminReviewPage() {
       {/* 3D METAL CARD PREVIEW MODAL */}
       {/* ========================================================= */}
       {previewCard && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-[#121216] border border-neutral-700 rounded-3xl p-6 sm:p-10 max-w-2xl w-full space-y-6 shadow-2xl text-center animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between border-b border-neutral-800 pb-4 text-left">
               <div>
                 <h3 className="text-lg font-bold text-white">{previewCard.card_holder_name}</h3>
                 <p className="text-xs text-neutral-400">{previewCard.company_name} &bull; {previewCard.card_tier.toUpperCase()} TIER</p>
               </div>
-              <button onClick={() => setPreviewCard(null)} className="p-2 text-neutral-400 hover:text-white">
+              <button onClick={() => setPreviewCard(null)} className="p-2 text-neutral-400 hover:text-white cursor-pointer">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
@@ -1125,7 +1240,7 @@ export default function BmfAdminReviewPage() {
                 <button
                   type="button"
                   onClick={() => setPreviewCard(null)}
-                  className="text-xs text-neutral-400 hover:text-white px-4 py-2"
+                  className="text-xs text-neutral-400 hover:text-white px-4 py-2 cursor-pointer"
                 >
                   Close
                 </button>
@@ -1146,13 +1261,13 @@ export default function BmfAdminReviewPage() {
       {/* CARD REJECTION / FEEDBACK MODAL */}
       {/* ========================================================= */}
       {rejectModalCard && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#141418] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left animate-in zoom-in-95 duration-200">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-slate-900">
                 Reject / Request Revisions for {rejectModalCard.card_holder_name}
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-slate-500">
                 Provide constructive feedback explaining why this pass is not currently approved.
               </p>
             </div>
@@ -1161,7 +1276,7 @@ export default function BmfAdminReviewPage() {
               rows={5}
               value={cardRejectFeedback}
               onChange={(e) => setCardRejectFeedback(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
               placeholder="Explain required traction or syndicate alignment..."
             />
 
@@ -1169,14 +1284,14 @@ export default function BmfAdminReviewPage() {
               <button
                 type="button"
                 onClick={() => setRejectModalCard(null)}
-                className="px-4 py-2 text-xs text-neutral-400 hover:text-white"
+                className="px-4 py-2 text-xs text-slate-500 hover:text-slate-900 cursor-pointer"
               >
                 Cancel
               </button>
               <Button
                 type="button"
                 onClick={() => handleCardAction(rejectModalCard.id, 'reject', cardRejectFeedback)}
-                className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-5 py-2.5 rounded-full cursor-pointer"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-full cursor-pointer shadow-xs"
               >
                 Send Rejection Feedback
               </Button>
@@ -1186,14 +1301,207 @@ export default function BmfAdminReviewPage() {
       )}
 
       {/* ========================================================= */}
+      {/* TAB 5: WARM INTROS CONCIERGE & PIPELINE */}
+      {/* ========================================================= */}
+      {mainTab === 'intros' && (
+        <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
+          {/* Metrics Overview */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1 shadow-xs">
+              <p className="text-[10px] font-mono uppercase text-slate-400">Total Intro Requests</p>
+              <p className="text-2xl font-black text-slate-900">{intros.length}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-amber-200 space-y-1 shadow-xs">
+              <p className="text-[10px] font-mono uppercase text-amber-700">Pending Review</p>
+              <p className="text-2xl font-black text-amber-600">
+                {intros.filter((i) => i.status === 'pending').length}
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-emerald-200 space-y-1 shadow-xs">
+              <p className="text-[10px] font-mono uppercase text-emerald-700">Connected</p>
+              <p className="text-2xl font-black text-emerald-600">
+                {intros.filter((i) => i.status === 'accepted').length}
+              </p>
+            </div>
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1 shadow-xs">
+              <p className="text-[10px] font-mono uppercase text-slate-400">Passed / Declined</p>
+              <p className="text-2xl font-black text-slate-600">
+                {intros.filter((i) => i.status === 'declined').length}
+              </p>
+            </div>
+          </div>
+
+          {/* Filter & Search Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200/80 rounded-full w-full sm:w-auto overflow-x-auto">
+              {(['all', 'pending', 'accepted', 'declined'] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setIntroFilter(f)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer capitalize ${
+                    introFilter === f
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {f} ({f === 'all' ? intros.length : intros.filter((i) => i.status === f).length})
+                </button>
+              ))}
+            </div>
+
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search requester, founder, company..."
+                value={introSearch}
+                onChange={(e) => setIntroSearch(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-full pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
+              />
+            </div>
+          </div>
+
+          {/* Intros Table */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-500 font-mono uppercase text-[10px] tracking-wider bg-slate-50">
+                    <th className="py-3.5 px-4">Requester</th>
+                    <th className="py-3.5 px-4">Target Founder</th>
+                    <th className="py-3.5 px-4">Purpose & Message</th>
+                    <th className="py-3.5 px-4">Date</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4 text-right">Admin Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-slate-700">
+                  {intros
+                    .filter((item) => (introFilter === 'all' ? true : item.status === introFilter))
+                    .filter((item) => {
+                      if (!introSearch) return true
+                      const q = introSearch.toLowerCase()
+                      return (
+                        item.requester_name.toLowerCase().includes(q) ||
+                        item.requester_email.toLowerCase().includes(q) ||
+                        item.target_member_name.toLowerCase().includes(q) ||
+                        item.target_member_company.toLowerCase().includes(q) ||
+                        item.purpose.toLowerCase().includes(q)
+                      )
+                    })
+                    .map((item) => {
+                      const isPending = item.status === 'pending'
+                      const isAccepted = item.status === 'accepted'
+                      const isDeclined = item.status === 'declined'
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                          <td className="py-4 px-4 align-top">
+                            <div className="font-bold text-slate-900 text-sm">{item.requester_name}</div>
+                            <div className="text-[11px] text-slate-500">
+                              {item.requester_role || 'Founder'} {item.requester_company ? `@ ${item.requester_company}` : ''}
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-1">
+                              📧 {item.requester_email}
+                            </div>
+                            {item.requester_phone && (
+                              <div className="text-[10px] text-emerald-600 font-mono font-medium">
+                                📱 {item.requester_phone}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-4 px-4 align-top">
+                            <div className="font-bold text-slate-900">{item.target_member_name}</div>
+                            <div className="text-[11px] text-slate-500">{item.target_member_company}</div>
+                            <div className="text-[10px] text-slate-400 font-mono mt-1">
+                              {item.target_member_email}
+                            </div>
+                          </td>
+
+                          <td className="py-4 px-4 align-top max-w-xs">
+                            <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold mb-1.5 border border-slate-200">
+                              {item.purpose}
+                            </span>
+                            <p className="text-xs text-slate-600 italic line-clamp-3 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                              &ldquo;{item.message}&rdquo;
+                            </p>
+                          </td>
+
+                          <td className="py-4 px-4 align-top font-mono text-[10px] text-slate-400 whitespace-nowrap">
+                            {new Date(item.created_at).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </td>
+
+                          <td className="py-4 px-4 align-top">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full font-mono text-[10px] font-bold uppercase tracking-wider ${
+                              isPending
+                                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                : isAccepted
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-slate-100 text-slate-600 border border-slate-200'
+                            }`}>
+                              {item.status}
+                            </span>
+                          </td>
+
+                          <td className="py-4 px-4 align-top text-right whitespace-nowrap">
+                            {isPending && (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button
+                                  size="sm"
+                                  disabled={activeIntroActionId === item.id}
+                                  onClick={() => handleAdminIntroAction(item.id, 'accepted')}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] px-3 py-1 rounded-full cursor-pointer shadow-xs"
+                                >
+                                  {activeIntroActionId === item.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <Check className="w-3 h-3 mr-1" />
+                                  )}
+                                  Connect
+                                </Button>
+
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={activeIntroActionId === item.id}
+                                  onClick={() => handleAdminIntroAction(item.id, 'declined')}
+                                  className="border-slate-200 text-slate-600 hover:text-slate-900 text-[10px] px-3 py-1 rounded-full cursor-pointer"
+                                >
+                                  Pass
+                                </Button>
+                              </div>
+                            )}
+                            {isAccepted && (
+                              <span className="text-[10px] font-mono text-emerald-600 font-semibold flex items-center justify-end gap-1">
+                                <CheckCircle2 className="w-3 h-3" /> Email Exchanged
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
       {/* CREATE EVENT MODAL */}
       {/* ========================================================= */}
       {isEventModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-[#121216] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl text-left my-8 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-neutral-800 pb-4">
-              <h3 className="text-lg font-bold text-white">Publish New Founder Gathering</h3>
-              <button onClick={() => setIsEventModalOpen(false)} className="text-neutral-400 hover:text-white">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl text-left my-8 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <h3 className="text-lg font-bold text-slate-900">Publish New Founder Gathering</h3>
+              <button onClick={() => setIsEventModalOpen(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
@@ -1201,65 +1509,65 @@ export default function BmfAdminReviewPage() {
             <form onSubmit={handleSaveEvent} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-neutral-300">Gathering Title *</label>
+                  <label className="text-xs font-semibold text-slate-700">Gathering Title *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. AI Infra Closed-Door Dinner"
                     value={eventForm.title}
                     onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">Event Date *</label>
+                  <label className="text-xs font-semibold text-slate-700">Event Date *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. March 28, 2026"
                     value={eventForm.event_date}
                     onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-neutral-300">City / Location *</label>
+                  <label className="text-xs font-semibold text-slate-700">City / Location *</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Bangalore (Indiranagar)"
                     value={eventForm.location_city}
                     onChange={(e) => setEventForm({ ...eventForm, location_city: e.target.value })}
-                    className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-neutral-300">Event Description</label>
+                <label className="text-xs font-semibold text-slate-700">Event Description</label>
                 <textarea
                   rows={3}
                   placeholder="Describe the format, focus areas, and attendees..."
                   value={eventForm.description}
                   onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-white resize-none"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 resize-none shadow-xs"
                 />
               </div>
 
-              <div className="pt-3 border-t border-neutral-800 flex items-center justify-end gap-3">
+              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsEventModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-neutral-400 hover:text-white"
+                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <Button
                   type="submit"
                   disabled={isSavingEvent}
-                  className="bg-white hover:bg-neutral-200 text-black font-bold text-xs px-6 py-2.5 rounded-full cursor-pointer"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-full cursor-pointer shadow-xs"
                 >
                   {isSavingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                   <span>Publish Gathering</span>
@@ -1274,13 +1582,13 @@ export default function BmfAdminReviewPage() {
       {/* SHOWCASE REJECTION MODAL */}
       {/* ========================================================= */}
       {rejectModalMember && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-[#161619] border border-neutral-700 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left">
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-lg w-full space-y-4 shadow-2xl text-left">
             <div className="space-y-1">
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-slate-900">
                 Request Revisions for {rejectModalMember.company_name}
               </h3>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-slate-500">
                 This message will be dispatched directly to <strong>{rejectModalMember.email || rejectModalMember.full_name}</strong>.
               </p>
             </div>
@@ -1289,7 +1597,7 @@ export default function BmfAdminReviewPage() {
               rows={5}
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-white font-mono"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-mono"
               placeholder="Provide specific instructions..."
             />
 
@@ -1297,7 +1605,7 @@ export default function BmfAdminReviewPage() {
               <button
                 type="button"
                 onClick={() => setRejectModalMember(null)}
-                className="px-4 py-2 text-xs font-semibold text-neutral-400 hover:text-white"
+                className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer"
               >
                 Cancel
               </button>
@@ -1308,7 +1616,7 @@ export default function BmfAdminReviewPage() {
                   setIsSendingFeedback(true)
                   handleMemberAction(rejectModalMember.id, 'reject', feedbackText)
                 }}
-                className="bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs px-5 py-2.5 rounded-full inline-flex items-center gap-1.5 cursor-pointer"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-5 py-2.5 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
               >
                 {isSendingFeedback ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>Send Feedback Email</span>

@@ -27,6 +27,7 @@ import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { ImageUploader } from '@/components/bmf-club/image-uploader'
 import { AvatarPickerModal } from '@/components/bmf-club/avatar-picker-modal'
+import { DashboardIntrosTab } from '@/components/bmf-club/dashboard-intros-tab'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
@@ -48,6 +49,7 @@ import {
   Calendar, 
   Menu, 
   X, 
+  Handshake,
   CreditCard, 
   Clock, 
   Wifi, 
@@ -115,7 +117,7 @@ function BmfMemberDashboardContent() {
   const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'jobs' | 'events' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'intros' | 'jobs' | 'events' | 'settings'>('overview')
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   
@@ -1408,7 +1410,7 @@ function BmfMemberDashboardContent() {
   }
 
   interface NavItem {
-    id: 'overview' | 'profile' | 'jobs' | 'events' | 'settings'
+    id: 'overview' | 'profile' | 'intros' | 'jobs' | 'events' | 'settings'
     label: string
     icon: React.ComponentType<{ className?: string }>
     badge?: string | number
@@ -1421,6 +1423,7 @@ function BmfMemberDashboardContent() {
   const navItems: NavItem[] = [
     { id: 'overview', label: 'Studio & 3D Card', icon: LayoutDashboard },
     { id: 'profile', label: 'Founder Profile Editor', icon: User },
+    { id: 'intros', label: 'Warm Intros & Inquiries', icon: Handshake },
     { id: 'jobs', label: 'Post Startup Jobs', icon: Briefcase, badge: jobs.length },
     { id: 'events', label: 'Masterminds & Events', icon: Calendar, badge: 'Live' },
     { id: 'settings', label: 'Account Settings', icon: Sliders },
@@ -2375,6 +2378,15 @@ function BmfMemberDashboardContent() {
             </div>
           )
         })()}
+
+        {/* ======================================================================= */}
+        {/* TAB: WARM INTROS & INQUIRIES */}
+        {/* ======================================================================= */}
+        {activeTab === 'intros' && (
+          <div className="py-8 animate-in fade-in-0 duration-300 max-w-4xl text-left space-y-8">
+            <DashboardIntrosTab profile={profile} userEmail={profile.email || ''} />
+          </div>
+        )}
 
         {/* ======================================================================= */}
         {/* TAB 3: STARTUP JOBS MANAGER */}

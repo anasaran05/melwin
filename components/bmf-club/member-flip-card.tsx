@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
+import { RequestIntroModal } from '@/components/bmf-club/request-intro-modal'
 import { 
   Linkedin, 
   Twitter, 
@@ -18,6 +19,7 @@ import {
 
 interface MemberFlipCardProps {
   member: BmfMember
+  onRequestIntro?: (member: BmfMember) => void
 }
 
 function formatMemberSince(dateStr?: string) {
@@ -31,8 +33,9 @@ function formatMemberSince(dateStr?: string) {
   }
 }
 
-export function MemberFlipCard({ member }: MemberFlipCardProps) {
+export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
   const avatarFallback = getFounderFallbackAvatar(member.full_name)
   const avatarUrl = normalizeR2Url(member.avatar_url, member.full_name)
   const isCustomLogo = Boolean(
@@ -266,14 +269,21 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
                 )}
               </div>
 
-              <a
-                href="/bmf-club/login"
-                onClick={(e) => e.stopPropagation()}
-                className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0"
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (onRequestIntro) {
+                    onRequestIntro(member)
+                  } else {
+                    setIsIntroModalOpen(true)
+                  }
+                }}
+                className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
               >
                 <span>Intro</span>
                 <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
-              </a>
+              </button>
             </div>
 
             {/* Bottom Line Divider & Member Since Text alone */}
@@ -284,6 +294,15 @@ export function MemberFlipCard({ member }: MemberFlipCardProps) {
 
         </div>
       </motion.div>
+
+      {/* Warm Intro Request Modal */}
+      {!onRequestIntro && (
+        <RequestIntroModal
+          isOpen={isIntroModalOpen}
+          onClose={() => setIsIntroModalOpen(false)}
+          member={member}
+        />
+      )}
     </div>
   )
 }

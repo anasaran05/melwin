@@ -266,3 +266,276 @@ export async function sendEventRsvpConfirmationEmail({
   }
 }
 
+/* ========================================================================= */
+/* WARM INTRO SYSTEM EMAIL DISPATCHERS                                       */
+/* ========================================================================= */
+
+export interface SendNewIntroRequestParams {
+  to: string
+  targetFounderName: string
+  requesterName: string
+  requesterCompany?: string | null
+  requesterRole?: string | null
+  purpose: string
+  message: string
+  dashboardUrl?: string
+}
+
+export async function sendNewIntroRequestEmail({
+  to,
+  targetFounderName,
+  requesterName,
+  requesterCompany,
+  requesterRole,
+  purpose,
+  message,
+  dashboardUrl = 'https://buildwithmelwin.com/bmf-club/dashboard',
+}: SendNewIntroRequestParams): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const resend = getResendClient()
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #ffffff; margin: 0; padding: 40px 20px; }
+            .card { max-width: 580px; margin: 0 auto; background: #141417; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 36px 32px; }
+            .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #10b981; background: rgba(16,185,129,0.15); padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+            h1 { font-size: 24px; font-weight: 900; line-height: 1.2; margin: 0 0 16px 0; color: #ffffff; }
+            p { font-size: 14px; line-height: 1.6; color: #a1a1aa; margin: 0 0 20px 0; }
+            .quote-box { background: rgba(255,255,255,0.04); border-left: 3px solid #10b981; border-radius: 0 14px 14px 0; padding: 16px 20px; margin: 20px 0; }
+            .btn { display: inline-block; background: #ffffff; color: #000000; font-weight: 800; font-size: 13px; text-decoration: none; padding: 14px 28px; border-radius: 100px; margin-top: 12px; }
+            .footer { font-size: 11px; color: #71717a; text-align: center; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">🤝 BMF Warm Intro Request</span>
+            <h1>Hi ${targetFounderName},</h1>
+            <p><strong>${requesterName}</strong> ${requesterRole ? `(${requesterRole})` : ''} ${requesterCompany ? `at <strong>${requesterCompany}</strong>` : ''} has requested an introduction to you regarding <strong>${purpose}</strong>.</p>
+            
+            <div class="quote-box">
+              <p style="margin: 0 0 6px 0; color: #71717a; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.1em;">Context / Note from ${requesterName}:</p>
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-style: italic; line-height: 1.5;">"${message}"</p>
+            </div>
+
+            <p style="color: #d4d4d8; font-size: 13px;">To protect your inbox, your email remains private until you choose to connect. Review and accept this request in your founder studio:</p>
+            <a href="${dashboardUrl}" class="btn">Review & Accept in Dashboard &rarr;</a>
+
+            <div class="footer">
+              <p style="margin: 0;">BMF Founders Club &bull; High-Signal Warm Introductions</p>
+              <p style="margin: 4px 0 0 0;">Where High-Conviction Builders Connect.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    if (!resend) {
+      console.log(`[Resend Mock Email Dispatch to ${to}]: New Intro Request from ${requesterName} to ${targetFounderName}`)
+      return { success: true, id: 'mock-intro-request-id' }
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `🤝 ${requesterName} requested an intro with you (BMF Club)`,
+      html,
+    })
+
+    if (error) {
+      console.error('[Resend Error]:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: any) {
+    console.error('[Email Send Error]:', err)
+    return { success: false, error: err.message || 'Failed to dispatch email' }
+  }
+}
+
+export interface SendMutualWarmIntroParams {
+  founderEmail: string
+  founderName: string
+  founderCompany: string
+  founderPhone?: string | null
+  requesterEmail: string
+  requesterName: string
+  requesterCompany?: string | null
+  requesterPhone?: string | null
+  purpose: string
+  message: string
+}
+
+export async function sendMutualWarmIntroEmail({
+  founderEmail,
+  founderName,
+  founderCompany,
+  founderPhone,
+  requesterEmail,
+  requesterName,
+  requesterCompany,
+  requesterPhone,
+  purpose,
+  message,
+}: SendMutualWarmIntroParams): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const resend = getResendClient()
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #ffffff; margin: 0; padding: 40px 20px; }
+            .card { max-width: 600px; margin: 0 auto; background: #141417; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 36px 32px; }
+            .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+            h1 { font-size: 24px; font-weight: 900; line-height: 1.2; margin: 0 0 16px 0; color: #ffffff; }
+            p { font-size: 14px; line-height: 1.6; color: #a1a1aa; margin: 0 0 20px 0; }
+            .profile-grid { display: table; width: 100%; margin: 20px 0; }
+            .profile-col { display: table-cell; width: 50%; vertical-align: top; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px; }
+            .profile-col:first-child { margin-right: 10px; }
+            .quote-box { background: rgba(255,255,255,0.04); border-left: 3px solid #38bdf8; border-radius: 0 14px 14px 0; padding: 16px 20px; margin: 20px 0; }
+            .footer { font-size: 11px; color: #71717a; text-align: center; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">✨ BMF Club &bull; Warm Introduction</span>
+            <h1>${founderName}, meet ${requesterName}! 🤝</h1>
+            <p>It's our pleasure to connect you both through the <strong>BMF Founders Network</strong> regarding <strong>${purpose}</strong>.</p>
+            
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+              <tr>
+                <td width="48%" style="vertical-align: top; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px;">
+                  <p style="margin: 0 0 4px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: bold;">Founder</p>
+                  <h4 style="margin: 0 0 6px 0; font-size: 16px; color: #ffffff;">${founderName}</h4>
+                  <p style="margin: 0 0 4px 0; font-size: 13px; color: #d4d4d8;">🏢 ${founderCompany}</p>
+                  <p style="margin: 0 0 4px 0; font-size: 12px; color: #a1a1aa;">📧 <a href="mailto:${founderEmail}" style="color: #38bdf8; text-decoration: none;">${founderEmail}</a></p>
+                  ${founderPhone ? `<p style="margin: 0; font-size: 12px; color: #a1a1aa;">📱 ${founderPhone}</p>` : ''}
+                </td>
+                <td width="4%"></td>
+                <td width="48%" style="vertical-align: top; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px;">
+                  <p style="margin: 0 0 4px 0; font-size: 11px; color: #38bdf8; text-transform: uppercase; font-weight: bold;">Requester</p>
+                  <h4 style="margin: 0 0 6px 0; font-size: 16px; color: #ffffff;">${requesterName}</h4>
+                  <p style="margin: 0 0 4px 0; font-size: 13px; color: #d4d4d8;">🏢 ${requesterCompany || 'Independent'}</p>
+                  <p style="margin: 0 0 4px 0; font-size: 12px; color: #a1a1aa;">📧 <a href="mailto:${requesterEmail}" style="color: #38bdf8; text-decoration: none;">${requesterEmail}</a></p>
+                  ${requesterPhone ? `<p style="margin: 0; font-size: 12px; color: #a1a1aa;">📱 ${requesterPhone}</p>` : ''}
+                </td>
+              </tr>
+            </table>
+
+            <div class="quote-box">
+              <p style="margin: 0 0 6px 0; color: #71717a; font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 0.1em;">Original Context:</p>
+              <p style="margin: 0; color: #ffffff; font-size: 14px; font-style: italic; line-height: 1.5;">"${message}"</p>
+            </div>
+
+            <p style="color: #ffffff; font-weight: 600; font-size: 14px; margin-top: 24px;">👉 Next Steps:</p>
+            <p style="color: #a1a1aa; font-size: 13px; margin: 0 0 8px 0;">Feel free to hit <strong>Reply All</strong> on this email or connect directly on WhatsApp to continue the conversation.</p>
+
+            <div class="footer">
+              <p style="margin: 0;">BMF Founders Club &bull; High-Signal Network</p>
+              <p style="margin: 4px 0 0 0;">Where High-Conviction Builders Connect.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    if (!resend) {
+      console.log(`[Resend Mock Email Dispatch]: Mutual Warm Intro between ${founderEmail} and ${requesterEmail}`)
+      return { success: true, id: 'mock-mutual-intro-id' }
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [founderEmail, requesterEmail],
+      replyTo: [founderEmail, requesterEmail],
+      subject: `🤝 Warm Intro: ${requesterName} <> ${founderName} (BMF Club)`,
+      html,
+    })
+
+    if (error) {
+      console.error('[Resend Error]:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: any) {
+    console.error('[Email Send Error]:', err)
+    return { success: false, error: err.message || 'Failed to dispatch email' }
+  }
+}
+
+export interface SendIntroConfirmationParams {
+  to: string
+  requesterName: string
+  targetFounderName: string
+  targetFounderCompany: string
+}
+
+export async function sendIntroRequestConfirmationEmail({
+  to,
+  requesterName,
+  targetFounderName,
+  targetFounderCompany,
+}: SendIntroConfirmationParams): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const resend = getResendClient()
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #ffffff; margin: 0; padding: 40px 20px; }
+            .card { max-width: 580px; margin: 0 auto; background: #141417; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 36px 32px; }
+            .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+            h1 { font-size: 24px; font-weight: 900; line-height: 1.2; margin: 0 0 16px 0; color: #ffffff; }
+            p { font-size: 14px; line-height: 1.6; color: #a1a1aa; margin: 0 0 20px 0; }
+            .footer { font-size: 11px; color: #71717a; text-align: center; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">📨 Intro Request Sent</span>
+            <h1>Hello, ${requesterName}!</h1>
+            <p>Your introduction request to <strong>${targetFounderName}</strong> (${targetFounderCompany}) has been safely delivered.</p>
+            <p>Once ${targetFounderName} accepts, we will send an introduction email connecting both of you directly so you can sync up.</p>
+            
+            <div class="footer">
+              <p style="margin: 0;">BMF Founders Club Admissions & Concierge</p>
+              <p style="margin: 4px 0 0 0;">Where High-Conviction Builders Connect.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    if (!resend) {
+      console.log(`[Resend Mock Email Dispatch to ${to}]: Intro confirmation for request to ${targetFounderName}`)
+      return { success: true, id: 'mock-intro-confirm-id' }
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `📨 Intro request sent to ${targetFounderName} (BMF Club)`,
+      html,
+    })
+
+    if (error) {
+      console.error('[Resend Error]:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: any) {
+    console.error('[Email Send Error]:', err)
+    return { success: false, error: err.message || 'Failed to dispatch email' }
+  }
+}
+
+
