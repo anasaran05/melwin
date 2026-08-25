@@ -9,8 +9,8 @@ import {
   AtomSeServicesSection,
   AtomSeProcessSection,
   AtomSeInquiryFormSection,
-  AtomSeFooter,
 } from '@/components/atom-se'
+import { Footer } from '@/components/footer'
 
 export default function AtomSePage() {
   const [introState, setIntroState] = useState<'animating' | 'done'>('animating')
@@ -53,8 +53,8 @@ export default function AtomSePage() {
       {/* Project Inquiry Stepper / Form */}
       <AtomSeInquiryFormSection />
 
-      {/* Dedicated Atom SE Footer */}
-      <AtomSeFooter />
+      {/* Main Dr. Melwin Footer */}
+      <Footer />
     </main>
   )
 }

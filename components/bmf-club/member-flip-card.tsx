@@ -7,6 +7,7 @@ import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { getCardTheme } from '@/lib/card-themes'
 import { RequestIntroModal } from '@/components/bmf-club/request-intro-modal'
+import { FounderProfileModal } from '@/components/bmf-club/founder-profile-modal'
 import { 
   Linkedin, 
   Twitter, 
@@ -44,6 +45,7 @@ export function MemberFlipCard({
   currentUserEmail,
 }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
   const isFeatured = Boolean(member.is_featured)
   const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
@@ -360,11 +362,7 @@ export function MemberFlipCard({
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation()
-                    if (onRequestIntro) {
-                      onRequestIntro(member)
-                    } else {
-                      setIsIntroModalOpen(true)
-                    }
+                    setIsProfileModalOpen(true)
                   }}
                   className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
                 >
@@ -382,6 +380,21 @@ export function MemberFlipCard({
 
         </div>
       </motion.div>
+
+      {/* Expanded Founder Profile Details Modal */}
+      <FounderProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        member={member}
+        isOwnCard={isOwnCard}
+        onApproach={(targetMember) => {
+          if (onRequestIntro) {
+            onRequestIntro(targetMember)
+          } else {
+            setIsIntroModalOpen(true)
+          }
+        }}
+      />
 
       {/* Warm Intro Request Modal */}
       {!onRequestIntro && (

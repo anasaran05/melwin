@@ -10,15 +10,10 @@ import {
   ArrowRight,
   CheckCircle2,
   Users,
-  Code2,
   Video,
   DollarSign,
-  GraduationCap,
   Briefcase,
-  TrendingUp,
   FileText,
-  Globe2,
-  Coffee,
   X
 } from 'lucide-react'
 
@@ -38,7 +33,7 @@ interface ServiceItem {
 }
 
 const servicesData: ServiceItem[] = [
-  // 1. BMFC (Open)
+  // 1. BMF Club (Open)
   {
     id: 'bmfc',
     title: 'BMF Club (BMFC)',
@@ -57,26 +52,7 @@ const servicesData: ServiceItem[] = [
       'Exclusive startup perks, credits & partner discounts'
     ]
   },
-  // 2. Atom SE (Locked)
-  {
-    id: 'atom-se',
-    title: 'Atom SE (Tech Arm)',
-    subtitle: 'Custom Software Engineering & AI Solutions',
-    category: 'Technology & AI',
-    description: 'Enterprise-grade software engineering, bespoke modern web apps, high-throughput mobile platforms, and custom AI automations built for high performance and scale.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
-    icon: Code2,
-    lockedReason: 'Atom SE (Tech Arm) is currently locked and undergoing platform scaling. It will be available soon!',
-    highlights: [
-      'Full-stack Next.js, React & Cloud infrastructure',
-      'Tailored AI workflows & custom LLM integrations',
-      'High-conversion UI/UX design & SEO optimization',
-      'Dedicated engineering sprint delivery with zero bloat'
-    ]
-  },
-  // 3. Personal Branding (Open)
+  // 2. Personal Branding (Open)
   {
     id: 'personal-branding',
     title: 'Personal Branding (Agency)',
@@ -95,7 +71,7 @@ const servicesData: ServiceItem[] = [
       'Direct revenue & inbound lead pipeline alignment'
     ]
   },
-  // 4. Funding & Grants (Locked)
+  // 3. Funding & Grants (Locked)
   {
     id: 'funding-grants',
     title: 'Funding & Grants Matchmaking',
@@ -114,26 +90,7 @@ const servicesData: ServiceItem[] = [
       'Term sheet negotiation & cap-table structuring'
     ]
   },
-  // 5. Startup Academy (Locked)
-  {
-    id: 'startup-academy',
-    title: 'Startup Academy',
-    subtitle: 'Structured 0-to-1 Incubation & Bootcamps',
-    category: 'Education & Incubation',
-    description: 'Practical masterclasses, founder bootcamps, unit economics workshops, and venture scaling playbooks designed from real operator experience.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
-    icon: GraduationCap,
-    lockedReason: 'Curriculum and cohort schedules are being finalized. This service will be available soon!',
-    highlights: [
-      'Zero-to-One idea validation & product-market fit',
-      'Pricing models, margins & unit economics',
-      'Legal incorporation & compliance masterclasses',
-      'Live weekly mentorship with Dr. Melwin'
-    ]
-  },
-  // 6. Jobs & Startup Talent (Locked)
+  // 4. Jobs & Startup Talent (Locked)
   {
     id: 'jobs-talent',
     title: 'Jobs & Startup Talent Hub',
@@ -152,31 +109,12 @@ const servicesData: ServiceItem[] = [
       'Founder-first hiring agreements'
     ]
   },
-  // 7. Digital Growth & Paid Ads (Locked)
-  {
-    id: 'digital-growth',
-    title: 'Digital Growth & Paid Ads',
-    subtitle: 'High-ROI Performance Marketing & SEO',
-    category: 'Marketing & Acquisition',
-    description: 'Multi-channel paid acquisition across Meta & Google Ads, technical SEO dominance, conversion rate optimization, and automated sales funnels.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
-    icon: TrendingUp,
-    lockedReason: 'We are prepping our specialized growth frameworks. This service will be available soon!',
-    highlights: [
-      'High-converting Meta & Google search ad campaigns',
-      'First-page Google SEO & organic content strategy',
-      'Landing page A/B testing & funnel optimization',
-      'Transparent weekly ROAS & CAC analytics'
-    ]
-  },
-  // 8. CA, Legal & Taxes (Locked)
+  // 6. Biz Registrations & Legal Compliance (Locked)
   {
     id: 'business-services',
-    title: 'CA, Legal & Business Compliance',
+    title: 'Biz Registrations & Legal Compliance',
     subtitle: 'Company Incorporation, GST, IP & CA Filings',
-    category: 'Legal & Finance',
+    category: 'Legal & Business',
     description: 'Hassle-free company registration (Pvt Ltd / LLP), monthly GST returns, trademark IP protection, founder vesting agreements, and bookkeeping.',
     isOpen: false,
     tag: 'AVAILABLE SOON',
@@ -188,44 +126,6 @@ const servicesData: ServiceItem[] = [
       'Monthly GST & TDS returns with zero penalties',
       'Co-founder agreements, NDAs & ESOP drafting',
       'Dedicated CA advisor for startup audits'
-    ]
-  },
-  // 9. Export & Import Trade (Locked)
-  {
-    id: 'export-import',
-    title: 'Export & Import Trade Network',
-    subtitle: 'Cross-Border Commerce & Logistics',
-    category: 'Global Trade',
-    description: 'International trade setup, IEC licensing, customs clearance, overseas buyer matchmaking, and cross-border logistics support.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
-    icon: Globe2,
-    lockedReason: 'Global trade partner routes are being mapped out. This service will be available soon!',
-    highlights: [
-      'Export-Import code (IEC) & DGFT licensing',
-      'Global buyer matchmaking & trade compliance',
-      'End-to-end freight & customs clearance',
-      'Cross-border payment structuring'
-    ]
-  },
-  // 10. Wocha Ventures (Locked)
-  {
-    id: 'wocha',
-    title: 'Wocha Ventures (Franchise)',
-    subtitle: 'Specialty Beverage & Experiential Retail',
-    category: 'D2C & Retail Franchise',
-    description: 'Modern retail beverage brand, experiential tea café franchising, and store rollout support scaling across South India.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
-    icon: Coffee,
-    lockedReason: 'Franchise blueprints and territory roadmaps are in preparation. This service will be available soon!',
-    highlights: [
-      'Turnkey café setup & standardized recipes',
-      'Centralized supply chain & inventory management',
-      'High-margin unit economics & rapid ROI',
-      'Comprehensive store launch marketing support'
     ]
   }
 ]
@@ -282,8 +182,8 @@ export default function ServicesPage() {
           transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           className="text-base sm:text-lg md:text-xl text-[#555555] max-w-2xl mx-auto font-normal leading-relaxed"
         >
-          A comprehensive suite of specialized arms built to build, scale, engineer, fund, and market ambitious startups. 
-          BMF Club, Atom SE, and Personal Branding are live for immediate access; our upcoming services are locked and will be available soon.
+          A comprehensive suite of specialized arms built to build, scale, fund, and market ambitious startups. 
+          BMF Club and Personal Branding are live for immediate access; our upcoming services are locked and will be available soon.
         </motion.p>
 
         {/* Quick Filter Tabs */}

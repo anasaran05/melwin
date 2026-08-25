@@ -16,7 +16,11 @@ import {
   Linkedin,
   ShieldCheck,
   Loader2,
-  LogIn
+  LogIn,
+  ExternalLink,
+  Copy,
+  Check,
+  AlertCircle
 } from 'lucide-react'
 import { 
   BmfMember, 
@@ -39,6 +43,37 @@ const PURPOSES = [
   { id: 'Founder Chat', label: 'Founder Chat', placeholder: 'Say hello and mention what you are currently building...' },
   { id: 'Advisory / Talent', label: 'Advisory / Talent', placeholder: 'Describe advisory, mentorship, or leadership inquiry...' },
 ]
+
+const DAILY_APPROACH_LIMIT = 3
+
+function getTodayStorageKey(userIdentifier: string) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  return `bmf_daily_approaches_${userIdentifier.toLowerCase()}_${todayStr}`
+}
+
+function getStoredDailyApproaches(userIdentifier: string): number {
+  if (typeof window === 'undefined' || !userIdentifier) return 0
+  try {
+    const key = getTodayStorageKey(userIdentifier)
+    const val = localStorage.getItem(key)
+    return val ? parseInt(val, 10) || 0 : 0
+  } catch {
+    return 0
+  }
+}
+
+function incrementStoredDailyApproaches(userIdentifier: string): number {
+  if (typeof window === 'undefined' || !userIdentifier) return 1
+  try {
+    const key = getTodayStorageKey(userIdentifier)
+    const current = getStoredDailyApproaches(userIdentifier)
+    const next = current + 1
+    localStorage.setItem(key, next.toString())
+    return next
+  } catch {
+    return 1
+  }
+}
 
 export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModalProps) {
   const [mounted, setMounted] = useState(false)
@@ -63,10 +98,15 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
   const [purpose, setPurpose] = useState('Founder Chat')
   const [message, setMessage] = useState('')
 
-  // Submission state
+  // Daily Limit state
+  const [dailyUsed, setDailyUsed] = useState(0)
+
+  // Submission & Post-submit details
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
+  const [targetEmailResolved, setTargetEmailResolved] = useState('')
+  const [hasCopiedEmail, setHasCopiedEmail] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -94,9 +134,15 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
         if (typeof window !== 'undefined') {
           const storedEmail = localStorage.getItem('bmf_current_user_email') || ''
           const storedName = localStorage.getItem('bmf_current_user_name') || ''
-          if (storedEmail) setEmail(storedEmail)
-          if (storedName) setName(storedName)
-          setAuthView(storedEmail ? 'form' : 'login')
+          if (storedEmail) {
+            setEmail(storedEmail)
+            if (storedName) setName(storedName)
+            const used = getStoredDailyApproaches(storedEmail)
+            setDailyUsed(used)
+            setAuthView('form')
+          } else {
+            setAuthView('login')
+          }
         }
         return
       }
@@ -113,7 +159,36 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
           setCompany(profile.company_name || '')
           setRole(profile.role || '')
           setLinkedin(profile.linkedin_url || '')
+        } else {
+          setName(user.user_metadata?.full_name || user.email?.split('@')[0] || '')
+          setEmail(user.email || '')
         }
+
+        // Calculate daily approaches used today
+        const userIdentifier = user.email || user.id
+        let used = getStoredDailyApproaches(userIdentifier)
+
+        // Query Supabase for exact daily count if available
+        try {
+          const todayStart = new Date()
+          todayStart.setHours(0, 0, 0, 0)
+          const { count } = await supabase
+            .from('bmf_intro_requests')
+            .select('id', { count: 'exact', head: true })
+            .eq('requester_user_id', user.id)
+            .gte('created_at', todayStart.toISOString())
+
+          if (typeof count === 'number') {
+            used = count
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(getTodayStorageKey(userIdentifier), count.toString())
+            }
+          }
+        } catch (e) {
+          // fallback to localStorage
+        }
+
+        setDailyUsed(used)
         setAuthView('form')
       } else {
         setCurrentUser(null)
@@ -137,6 +212,8 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
   if (!isOpen || !member || !mounted) return null
 
   const activePurposeObj = PURPOSES.find(p => p.id === purpose) || PURPOSES[3]
+  const remainingApproaches = Math.max(0, DAILY_APPROACH_LIMIT - dailyUsed)
+  const isDailyLimitReached = remainingApproaches <= 0
 
   // In-modal Google Sign-In
   const handleGoogleSignIn = async () => {
@@ -201,10 +278,13 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
             setCompany(profile.company_name || '')
             setRole(profile.role || '')
           }
+          const userIdentifier = data.user.email || data.user.id
+          setDailyUsed(getStoredDailyApproaches(userIdentifier))
           setAuthView('form')
         }
       } else {
         localStorage.setItem('bmf_current_user_email', loginEmail.trim())
+        setDailyUsed(getStoredDailyApproaches(loginEmail.trim()))
         setAuthView('form')
       }
     } catch (err: any) {
@@ -221,10 +301,53 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
     (currentUser?.email && member.email && currentUser.email.trim().toLowerCase() === member.email.trim().toLowerCase())
   )
 
+  // Construct Direct `mailto:` URL for client email opening
+  const buildMailtoUrl = (targetEmail: string) => {
+    const subject = `🤝 BMF Founder Connection: ${name || 'Fellow Founder'} <> ${member.full_name} (${purpose})`
+    const body = `Hi ${member.full_name},
+
+I came across your profile on the BMF Club Founder Directory and wanted to connect directly.
+
+🎯 Reason for Connecting: ${purpose}
+
+"${message.trim()}"
+
+---
+Connecting Founder Details:
+• Name: ${name || 'Fellow Founder'}
+• Role & Company: ${role ? `${role}, ` : ''}${company || 'Venture'}
+• Email: ${email || currentUser?.email || ''}
+${phone ? `• WhatsApp / Phone: ${phone}\n` : ''}${linkedin ? `• LinkedIn: ${linkedin}\n` : ''}
+Sent via BMF Founders Club Showcase Directory`
+
+    return `mailto:${encodeURIComponent(targetEmail)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  }
+
+  const triggerDirectMailto = (targetEmail: string) => {
+    if (!targetEmail || typeof window === 'undefined') return
+    const mailtoUrl = buildMailtoUrl(targetEmail)
+    try {
+      const link = document.createElement('a')
+      link.href = mailtoUrl
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (e) {
+      window.location.href = mailtoUrl
+    }
+  }
+
   // Submit Intro Request
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
+
+    if (isDailyLimitReached) {
+      setErrorMsg('Daily limit reached: You have used your 3 daily founder approaches. Your limit resets at midnight.')
+      return
+    }
 
     if (isSelfIntro) {
       setErrorMsg('You cannot request an introduction to your own profile.')
@@ -238,6 +361,8 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
 
     setIsSubmitting(true)
     try {
+      const effectiveTargetEmail = member.email || ''
+
       const res = await fetch('/api/bmf/request-intro', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -245,7 +370,7 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
           target_member_id: member.id,
           target_member_name: member.full_name,
           target_member_company: member.company_name,
-          target_member_email: member.email,
+          target_member_email: effectiveTargetEmail,
           requester_user_id: currentUser?.id || null,
           requester_name: name.trim() || 'Fellow Founder',
           requester_email: email.trim() || currentUser?.email || 'founder@bmf.club',
@@ -260,7 +385,23 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
 
       const data = await res.json()
       if (!res.ok) {
+        if (data.dailyLimitReached) {
+          setDailyUsed(3)
+        }
         throw new Error(data.error || 'Failed to submit introduction request.')
+      }
+
+      // Record daily count increment
+      const userIdentifier = currentUser?.email || currentUser?.id || email
+      const newCount = incrementStoredDailyApproaches(userIdentifier)
+      setDailyUsed(newCount)
+
+      const finalTargetEmail = data.targetEmail || effectiveTargetEmail
+      setTargetEmailResolved(finalTargetEmail)
+
+      // Open user's default email client pre-filled automatically
+      if (finalTargetEmail) {
+        triggerDirectMailto(finalTargetEmail)
       }
 
       setIsSuccess(true)
@@ -270,6 +411,23 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCopyEmailAndDetails = () => {
+    if (!targetEmailResolved) return
+    const textToCopy = `To: ${targetEmailResolved}
+Subject: 🤝 BMF Founder Connection: ${name} <> ${member.full_name} (${purpose})
+
+Hi ${member.full_name},
+
+${message.trim()}
+
+Best regards,
+${name} (${email})`
+
+    navigator.clipboard.writeText(textToCopy)
+    setHasCopiedEmail(true)
+    setTimeout(() => setHasCopiedEmail(false), 2000)
   }
 
   const handleResetAndClose = () => {
@@ -299,14 +457,30 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
           transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full max-w-lg bg-[#121215] border border-white/15 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] my-auto"
         >
-          {/* Top Bar with Clean Close Button */}
+          {/* Top Bar with Clean Close Button & Daily Limit Indicator */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 bg-white/[0.02] shrink-0">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-300 font-mono">
-                Founder Introduction
+                Founder Connection
               </span>
             </div>
+
+            {/* Daily Quota Tag */}
+            {authView === 'form' && !isSuccess && (
+              <div 
+                className={`text-[10.5px] font-mono px-2.5 py-0.5 rounded-full border ${
+                  remainingApproaches > 1 
+                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' 
+                    : remainingApproaches === 1
+                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                    : 'bg-red-500/15 text-red-300 border-red-500/30'
+                }`}
+                title="Max 3 founder approach requests per calendar day"
+              >
+                ⚡ {remainingApproaches} / {DAILY_APPROACH_LIMIT} daily left
+              </div>
+            )}
 
             <button
               onClick={handleResetAndClose}
@@ -321,40 +495,83 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
               /* Loading auth check state */
               <div className="py-12 text-center space-y-3">
                 <Loader2 className="w-6 h-6 animate-spin text-emerald-400 mx-auto" />
-                <p className="text-xs text-neutral-400">Loading founder session...</p>
+                <p className="text-xs text-neutral-400">Verifying founder membership session...</p>
               </div>
             ) : isSuccess ? (
-              /* Success Confirmation State */
+              /* ========================================================================= */
+              /* SUCCESS SCREEN WITH DIRECT TARGET EMAIL & PREFILLED MAIL CLIENT LAUNCHER */
+              /* ========================================================================= */
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                className="py-8 text-center space-y-4"
+                className="py-4 text-center space-y-4"
               >
-                <div className="w-16 h-16 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto">
-                  <CheckCircle2 className="w-8 h-8" />
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mx-auto shadow-lg shadow-emerald-500/10">
+                  <CheckCircle2 className="w-7 h-7" />
                 </div>
 
-                <div className="space-y-1.5 max-w-xs mx-auto">
-                  <h4 className="text-xl font-black text-white tracking-tight">Request Sent!</h4>
+                <div className="space-y-1 max-w-sm mx-auto">
+                  <h4 className="text-lg sm:text-xl font-black text-white tracking-tight">Request Sent & Email Ready!</h4>
                   <p className="text-xs text-neutral-300 leading-relaxed">
-                    Your introduction request has been delivered to <strong>{member.full_name}</strong>.
+                    Your request was recorded and dispatched on behalf of BMF Club. You can also connect directly via email below.
                   </p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-white/[0.03] border border-white/10 text-left max-w-sm mx-auto space-y-2 text-xs text-neutral-300">
-                  <div className="flex items-center gap-2 text-emerald-400 font-semibold text-[11px]">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>What happens next?</span>
+                {/* Target Founder Direct Email Box */}
+                {targetEmailResolved && (
+                  <div className="p-4 rounded-2xl bg-neutral-900/90 border border-emerald-500/30 text-left max-w-sm mx-auto space-y-3 shadow-md">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-mono uppercase tracking-wider text-emerald-400 font-bold flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5" />
+                        Target Founder Email
+                      </span>
+                      <span className="text-[10px] font-mono text-neutral-400">Direct Contact</span>
+                    </div>
+
+                    <div className="bg-neutral-950 p-2.5 rounded-xl border border-white/10 flex items-center justify-between gap-2">
+                      <span className="text-xs sm:text-sm font-mono font-bold text-white truncate">
+                        {targetEmailResolved}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleCopyEmailAndDetails}
+                        className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-neutral-200 text-[11px] font-mono flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
+                      >
+                        {hasCopiedEmail ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-400" />
+                            <span className="text-emerald-400">Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>Copy</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Launch Mail Client Button */}
+                    <button
+                      type="button"
+                      onClick={() => triggerDirectMailto(targetEmailResolved)}
+                      className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-black py-2.5 px-4 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md active:scale-98 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open in Mail Client ({member.full_name})</span>
+                    </button>
                   </div>
-                  <p className="text-[11px] text-neutral-400 leading-normal">
-                    Once {member.full_name} accepts your request, our system will automatically email a mutual introduction connecting both of your verified contacts.
-                  </p>
+                )}
+
+                {/* Daily limit reminder */}
+                <div className="text-[11px] font-mono text-neutral-400">
+                  ⚡ <strong>{remainingApproaches}</strong> of {DAILY_APPROACH_LIMIT} daily approaches remaining today
                 </div>
 
-                <div className="pt-3">
+                <div className="pt-2">
                   <button
                     onClick={handleResetAndClose}
-                    className="w-full max-w-xs bg-white hover:bg-neutral-200 text-black font-bold py-3 px-6 rounded-xl text-sm transition-all cursor-pointer mx-auto block"
+                    className="w-full max-w-xs bg-white/10 hover:bg-white/20 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-all border border-white/15 cursor-pointer mx-auto block"
                   >
                     Done & Return to Directory
                   </button>
@@ -362,14 +579,14 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
               </motion.div>
             ) : authView === 'login' ? (
               /* ========================================================================= */
-              /* IN-MODAL LOGIN VIEW (No Page Navigation)                                 */
+              /* IN-MODAL LOGIN VIEW (Must be authenticated before approaching)           */
               /* ========================================================================= */
               <div className="space-y-4">
                 <div className="p-4 rounded-2xl bg-neutral-900/90 border border-white/10 space-y-3.5">
                   <div className="space-y-1 text-center">
-                    <h4 className="text-sm font-bold text-white">Sign in to Connect</h4>
+                    <h4 className="text-sm font-bold text-white">Sign in to Approach Founders</h4>
                     <p className="text-[11px] text-neutral-400">
-                      Sign in so your verified founder profile is attached to this introduction request.
+                      Sign in so your verified sender profile & credentials are attached to this direct connection.
                     </p>
                   </div>
 
@@ -451,12 +668,12 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
               </div>
             ) : (
               /* ========================================================================= */
-              /* DUAL FOUNDER MATCHUP HERO + INTRO FORM                                    */
+              /* DUAL FOUNDER MATCHUP HERO + APPROACH FORM                                 */
               /* ========================================================================= */
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* 🤝 Dual Founders Animated Connection Hero */}
                 <div className="relative flex items-center justify-between p-4 rounded-2xl bg-gradient-to-r from-white/[0.03] via-emerald-500/[0.08] to-white/[0.03] border border-white/10 overflow-hidden shadow-inner">
-                  {/* Subtle animated ambient glow */}
+                  {/* Ambient glow */}
                   <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/0 via-emerald-500/10 to-emerald-500/0 pointer-events-none animate-pulse" />
 
                   {/* Left: Sender Profile (You) */}
@@ -532,6 +749,17 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                   </motion.div>
                 </div>
 
+                {/* Daily limit alert if reached */}
+                {isDailyLimitReached && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-start gap-2.5 text-xs text-red-300">
+                    <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold block">Daily Limit Reached (3/3)</span>
+                      <span>You have reached your 3 founder approach limit for today. Your quota will reset at midnight.</span>
+                    </div>
+                  </div>
+                )}
+
                 {/* Reason for Connecting Chips */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-neutral-300 block">
@@ -544,12 +772,13 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                         <button
                           key={p.id}
                           type="button"
+                          disabled={isDailyLimitReached}
                           onClick={() => setPurpose(p.id)}
                           className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-white text-black font-bold shadow-sm'
                               : 'bg-white/5 hover:bg-white/10 text-neutral-300 border border-white/5'
-                          }`}
+                          } ${isDailyLimitReached ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
                           {p.label}
                         </button>
@@ -562,15 +791,16 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-neutral-400 flex items-center justify-between">
                     <span>Message to {member.full_name} <span className="text-red-400">*</span></span>
-                  
+                    <span className="text-[10px] font-mono text-neutral-500">Prefills direct email</span>
                   </label>
                   <textarea
                     required
                     rows={3}
+                    disabled={isDailyLimitReached}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder={activePurposeObj.placeholder}
-                    className="w-full px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 resize-none"
+                    className="w-full px-3 py-2 bg-neutral-900 border border-white/10 rounded-xl text-xs text-white placeholder:text-neutral-600 focus:outline-none focus:border-white/30 resize-none disabled:opacity-50"
                   />
                 </div>
 
@@ -590,19 +820,21 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                 <div className="pt-1">
                   <button
                     type="submit"
-                    disabled={isSubmitting || isSelfIntro}
+                    disabled={isSubmitting || isSelfIntro || isDailyLimitReached}
                     className="w-full bg-white hover:bg-neutral-200 text-black font-bold py-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                        <span>Sending Request...</span>
+                        <span>Sending Request & Preparing Email...</span>
                       </>
+                    ) : isDailyLimitReached ? (
+                      <span>Daily Limit Reached (3/3)</span>
                     ) : isSelfIntro ? (
                       <span>Cannot Request Intro to Yourself</span>
                     ) : (
                       <>
-                        <span>Send Request</span>
+                        <span>Send Request & Open Email</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

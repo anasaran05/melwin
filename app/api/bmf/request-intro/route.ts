@@ -41,13 +41,43 @@ export async function POST(req: Request) {
 
     const supabase = getSupabaseServerClient()
     let savedRequest: any = null
+    let targetEmail = target_member_email || ''
+    let targetName = target_member_name || ''
+    let targetCompany = target_member_company || ''
+    let todayCount = 0
 
     if (supabase) {
-      // 1. Fetch fresh target founder details if not supplied
-      let targetEmail = target_member_email
-      let targetName = target_member_name
-      let targetCompany = target_member_company
+      // 1. Enforce Daily Limit: Max 3 approaches per user per calendar day
+      const todayStart = new Date()
+      todayStart.setHours(0, 0, 0, 0)
 
+      let countQuery = supabase
+        .from('bmf_intro_requests')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', todayStart.toISOString())
+
+      if (requester_user_id) {
+        countQuery = countQuery.eq('requester_user_id', requester_user_id)
+      } else {
+        countQuery = countQuery.eq('requester_email', requester_email.trim().toLowerCase())
+      }
+
+      const { count: dailyReqCount, error: countErr } = await countQuery
+      if (!countErr && typeof dailyReqCount === 'number') {
+        todayCount = dailyReqCount
+        if (todayCount >= 3) {
+          return NextResponse.json(
+            { 
+              error: 'Daily limit reached: You can connect with up to 3 target founders per day. Your quota will reset at midnight.',
+              dailyLimitReached: true,
+              remainingToday: 0,
+            },
+            { status: 429 }
+          )
+        }
+      }
+
+      // 2. Fetch fresh target founder details if email wasn't passed
       if (!targetEmail) {
         const { data: memberData } = await supabase
           .from('bmf_members')
@@ -56,13 +86,13 @@ export async function POST(req: Request) {
           .maybeSingle()
 
         if (memberData) {
-          targetEmail = memberData.email
-          targetName = targetName || memberData.full_name
-          targetCompany = targetCompany || memberData.company_name
+          targetEmail = memberData.email || ''
+          targetName = targetName || memberData.full_name || ''
+          targetCompany = targetCompany || memberData.company_name || ''
         }
       }
 
-      // 2. Insert into bmf_club.bmf_intro_requests
+      // 3. Insert into bmf_club.bmf_intro_requests
       const { data, error } = await supabase
         .from('bmf_intro_requests')
         .insert({
@@ -71,14 +101,14 @@ export async function POST(req: Request) {
           target_member_company: targetCompany || 'Startup',
           target_member_email: targetEmail || '',
           requester_user_id: requester_user_id || null,
-          requester_name,
-          requester_email,
+          requester_name: requester_name.trim(),
+          requester_email: requester_email.trim().toLowerCase(),
           requester_phone: requester_phone || null,
           requester_company: requester_company || null,
           requester_role: requester_role || null,
           requester_linkedin: requester_linkedin || null,
           purpose: purpose || 'Founder Chat',
-          message,
+          message: message.trim(),
           status: 'pending',
         })
         .select()
@@ -91,7 +121,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Dispatch Admin Alert (Telegram Bot & Discord Webhook)
+    // 4. Dispatch Admin Alert (Telegram Bot & Discord Webhook)
     await sendAdminIntroRequestAlert({
       requestId: savedRequest?.id || 'demo-request-id',
       requesterName: requester_name,
@@ -99,44 +129,50 @@ export async function POST(req: Request) {
       requesterPhone: requester_phone,
       requesterCompany: requester_company,
       requesterRole: requester_role,
-      targetMemberName: target_member_name || 'BMF Founder',
-      targetMemberCompany: target_member_company || 'Startup',
-      targetMemberEmail: target_member_email || '',
+      targetMemberName: targetName || 'BMF Founder',
+      targetMemberCompany: targetCompany || 'Startup',
+      targetMemberEmail: targetEmail || '',
       purpose: purpose || 'Founder Chat',
-      message,
+      message: message.trim(),
     })
 
-    // 4. Dispatch Email to Target Founder
-    if (target_member_email) {
+    // 5. Dispatch Mutual Email to Target Founder & Requester
+    if (targetEmail) {
       await sendNewIntroRequestEmail({
-        to: target_member_email,
-        targetFounderName: target_member_name,
+        to: targetEmail,
+        targetFounderName: targetName || 'Founder',
         requesterName: requester_name,
         requesterCompany: requester_company,
         requesterRole: requester_role,
         purpose: purpose || 'Founder Chat',
-        message,
+        message: message.trim(),
       })
     }
 
-    // 5. Dispatch Confirmation Email to Requester
+    // 6. Dispatch Confirmation Email to Requester
     if (requester_email) {
       await sendIntroRequestConfirmationEmail({
         to: requester_email,
         requesterName: requester_name,
-        targetFounderName: target_member_name,
-        targetFounderCompany: target_member_company,
+        targetFounderName: targetName || 'BMF Founder',
+        targetFounderCompany: targetCompany || 'Startup',
       })
     }
+
+    const remainingToday = Math.max(0, 3 - (todayCount + 1))
 
     return NextResponse.json({
       success: true,
       data: savedRequest || {
         id: 'local-' + Date.now(),
-        target_member_name,
+        target_member_name: targetName,
         requester_name,
+        target_member_email: targetEmail,
         status: 'pending',
       },
+      targetEmail: targetEmail || '',
+      targetName: targetName || 'Target Founder',
+      remainingToday,
     })
   } catch (err: any) {
     console.error('[API Request Intro Error]:', err)

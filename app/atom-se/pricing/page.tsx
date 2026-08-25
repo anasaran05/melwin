@@ -24,7 +24,7 @@ import {
   ExternalLink
 } from 'lucide-react'
 import { AtomSeNavbar } from '@/components/atom-se/navbar'
-import { AtomSeFooter } from '@/components/atom-se/footer'
+import { Footer } from '@/components/footer'
 
 interface PricingTier {
   id: string
@@ -670,7 +670,7 @@ export default function AtomSePricingPage() {
 
       </div>
 
-      <AtomSeFooter />
+      <Footer />
     </main>
   )
 }

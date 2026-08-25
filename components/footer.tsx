@@ -33,20 +33,24 @@ export function Footer() {
           {/* Quick Links */}
           <div className="flex flex-col gap-6">
             <span className="text-gray-400 text-lg">Quick links</span>
-            <div className="flex flex-wrap gap-2.5 max-w-[440px]">
+            <div className="flex flex-wrap gap-2.5 max-w-[480px]">
               {[
                 { name: 'Home', href: '/' },
                 { name: 'About Me', href: '/about' },
+                { name: 'Services', href: '/services' },
                 { name: 'BMF Club', href: '/bmf-club' },
                 { name: 'Directory', href: '/bmf-club/directory' },
+                { name: 'Personal Branding', href: '/agency' },
                 { name: 'FAQ', href: '/faq' },
-                { name: 'Atom SE (Tech)', href: '#', isLocked: true }
-               
+                { name: 'Atom SE (Tech)', href: '#', isLocked: true },
+                { name: 'Funding & Grants', href: '#', isLocked: true },
+                { name: 'Jobs & Talent', href: '#', isLocked: true },
+                { name: 'Biz Registrations', href: '#', isLocked: true }
               ].map((link) => (
                 link.isLocked ? (
                   <span
                     key={link.name}
-                    title="Atom SE (Tech) is currently locked / invitation-only"
+                    title={`${link.name} is currently locked / available soon`}
                     className="bg-[#e5e5e5] text-neutral-600 px-3.5 py-1.5 rounded-full text-xs sm:text-[13px] font-semibold inline-flex items-center gap-1.5 cursor-not-allowed select-none opacity-85"
                   >
                     <Lock className="w-3 h-3 text-neutral-500 shrink-0" />
