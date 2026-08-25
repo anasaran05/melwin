@@ -72,13 +72,21 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: [0.2, 0.9, 0.3, 1] }}
         style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
-        className="w-full h-full relative rounded-xl sm:rounded-2xl shadow-xl overflow-hidden"
+        className={`w-full h-full relative rounded-xl sm:rounded-2xl ${
+          hasAvatar 
+            ? 'shadow-xl hover:shadow-[0_15px_35px_rgba(56,189,248,0.25)] ring-1 ring-white/20' 
+            : 'shadow-md ring-1 ring-neutral-800'
+        }`}
       >
         {/* ======================================================================= */}
         {/* 1. FRONT FACE: Full-bleed Photo or Clean Empty Obsidian State */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] border-0 outline-none"
+          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] transition-colors duration-500 ${
+            hasAvatar 
+              ? 'border border-white/20 bg-neutral-900' 
+              : 'border border-dashed border-neutral-700/80 bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]'
+          }`}
           style={{ transform: 'rotateY(0deg)' }}
         >
           {hasAvatar ? (
@@ -94,12 +102,12 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
                 }}
               />
 
-              {/* Bottom Vignette Gradient (Only bottom 60% for text legibility, zero top/side border shading) */}
-              <div className="absolute inset-x-0 bottom-0 h-3/5 bg-gradient-to-t from-black/95 via-black/40 to-transparent pointer-events-none" />
+              {/* Top & Bottom Vignette Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
             </>
           ) : (
             /* Clean Empty Silhouette when not yet uploaded */
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pb-14 text-center pointer-events-none bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pb-14 text-center pointer-events-none">
               <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-lg mb-2 group-hover:scale-105 transition-transform">
                 <span className="text-lg sm:text-2xl font-black text-neutral-400">
                   {member.full_name ? member.full_name.charAt(0).toUpperCase() : 'F'}
@@ -163,7 +171,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         {/* 2. BACK FACE: Role, Company Logo, Description, Metrics, Social Links   */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#141414] text-white border-0 flex flex-col justify-between overflow-hidden"
+          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#141414] text-white border border-neutral-800 flex flex-col justify-between overflow-hidden"
         >
           {/* Top Bar: Company Identity & Category */}
           <div className="space-y-1 sm:space-y-2 text-left">
