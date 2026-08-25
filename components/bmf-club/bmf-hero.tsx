@@ -204,23 +204,10 @@ export function BmfHeroSection() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="text-xl font-bold tracking-tight text-[#444444] max-w-xs mx-auto leading-snug px-4"
+          className="text-lg sm:text-xl font-bold tracking-tight text-[#444444] max-w-xs mx-auto leading-snug px-4"
         >
-          Where High-Conviction <br /> Builders Connect.
+          Networking, Investments, Opportunities. <br /> All in one place.
         </motion.h2>
-
-        {/* Description */}
-        <motion.p
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          className="text-xs text-[#666666] leading-relaxed max-w-[320px] mx-auto px-4"
-        >
-          A free founder community to connect, collaborate, discover opportunities, and access investment opportunities.
-          <span className="block mt-1 font-semibold text-[#222222]">
-            Build your network. Find your people. Grow together.
-          </span>
-        </motion.p>
 
         {/* CTA Buttons (Moved UP above cards on mobile) */}
         <motion.div
@@ -407,34 +394,22 @@ export function BmfHeroSection() {
           </motion.div>
         </div>
 
-        {/* Desktop Bottom Section: Heading + Description + Buttons */}
-        <div className="relative z-30 text-center space-y-4 md:space-y-5 max-w-3xl mx-auto px-4 -mt-4 md:-mt-8">
+        {/* Desktop Bottom Section: Heading + Buttons */}
+        <div className="relative z-30 text-center space-y-6 max-w-3xl mx-auto px-4 -mt-4 md:-mt-8">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="text-3xl md:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight text-[#444444] max-w-2xl mx-auto leading-tight"
           >
-            Where High-Conviction <br className="hidden sm:inline" />
-            Builders Connect.
+            Networking, Investments, Opportunities. <br className="hidden sm:inline" />
+            All in one place.
           </motion.h2>
-
-          <motion.p
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-            className="text-sm md:text-base text-[#666666] max-w-xl mx-auto leading-relaxed font-normal"
-          >
-            A free founder community to connect, collaborate, discover opportunities, and access investment opportunities.
-            <span className="block mt-1 font-semibold text-[#222222]">
-              Build your network. Find your people. Grow together.
-            </span>
-          </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-row items-center justify-center gap-3 pt-2"
           >
             <Link

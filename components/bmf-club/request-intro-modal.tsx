@@ -24,6 +24,7 @@ import {
   ensureOrFetchUserProfile 
 } from '@/lib/supabase/bmf-members'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
+import handshakeLoopData from '@/public/assets/Handshake Loop.json'
 
 interface RequestIntroModalProps {
   isOpen: boolean
@@ -483,7 +484,7 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                   {/* Center: Animated Lottie Handshake Connection */}
                   <div className="flex items-center justify-center relative shrink-0 z-10 w-20 sm:w-28 h-16 sm:h-20 -my-2 overflow-visible">
                     <DotLottieReact
-                      src="/assets/Handshake Loop.json"
+                      data={handshakeLoopData}
                       loop
                       autoplay
                       className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(52,211,153,0.3)]"

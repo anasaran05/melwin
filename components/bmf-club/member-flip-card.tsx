@@ -36,8 +36,13 @@ function formatMemberSince(dateStr?: string) {
 export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
+  const hasAvatar = Boolean(
+    member.avatar_url &&
+    typeof member.avatar_url === 'string' &&
+    member.avatar_url.trim() !== ''
+  )
   const avatarFallback = getFounderFallbackAvatar(member.full_name)
-  const avatarUrl = normalizeR2Url(member.avatar_url, member.full_name)
+  const avatarUrl = hasAvatar ? normalizeR2Url(member.avatar_url) : ''
   const isCustomLogo = Boolean(
     member.company_logo &&
     typeof member.company_logo === 'string' &&
@@ -66,28 +71,52 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
-        className="w-full h-full relative [transform-style:preserve-3d] rounded-xl sm:rounded-2xl shadow-md hover:shadow-xl transition-shadow"
+        className={`w-full h-full relative [transform-style:preserve-3d] rounded-xl sm:rounded-2xl transition-all duration-500 ${
+          hasAvatar 
+            ? 'shadow-xl hover:shadow-[0_15px_35px_rgba(56,189,248,0.25)] ring-1 ring-white/20' 
+            : 'shadow-md ring-1 ring-neutral-800'
+        }`}
       >
         {/* ======================================================================= */}
-        {/* 1. FRONT FACE: Full-bleed Photo + Verified Badge + Inside Name Text Only */}
+        {/* 1. FRONT FACE: Full-bleed Photo or Clean Empty Obsidian State */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] border border-black/10 bg-neutral-900"
+          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] transition-colors duration-500 ${
+            hasAvatar 
+              ? 'border border-white/20 bg-neutral-900' 
+              : 'border border-dashed border-neutral-700/80 bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]'
+          }`}
           style={{ transform: 'rotateY(0deg)' }}
         >
-          {/* Full-bleed Portrait Image */}
-          <img
-            src={avatarUrl}
-            alt={member.full_name}
-            className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
-            loading="lazy"
-            onError={(e) => {
-              e.currentTarget.src = avatarFallback
-            }}
-          />
+          {hasAvatar ? (
+            <>
+              {/* Full-bleed Portrait Image */}
+              <img
+                src={avatarUrl}
+                alt={member.full_name}
+                className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  e.currentTarget.src = avatarFallback
+                }}
+              />
 
-          {/* Top & Bottom Vignette Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
+              {/* Top & Bottom Vignette Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
+            </>
+          ) : (
+            /* Clean Empty Silhouette when not yet uploaded */
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pb-14 text-center pointer-events-none">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-lg mb-2 group-hover:scale-105 transition-transform">
+                <span className="text-lg sm:text-2xl font-black text-neutral-400">
+                  {member.full_name ? member.full_name.charAt(0).toUpperCase() : 'F'}
+                </span>
+              </div>
+              <span className="text-[8.5px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+                Photo Empty
+              </span>
+            </div>
+          )}
 
           {/* Top-Right Corner: Company Logo (Original Aspect Ratio, No Placeholder Box) */}
           {logoUrl && (

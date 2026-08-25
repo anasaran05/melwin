@@ -39,10 +39,10 @@ export async function POST(req: Request) {
 
       requestRecord = existingReq
 
-      // 2. Fetch founder contact details (phone, whatsapp, etc.)
+      // 2. Fetch founder contact details (role, phone, whatsapp, etc.)
       const { data: targetMember } = await supabase
         .from('bmf_members')
-        .select('full_name, company_name, email, phone_number, whatsapp_number')
+        .select('full_name, company_name, role, email, phone_number, whatsapp_number')
         .eq('id', existingReq.target_member_id)
         .maybeSingle()
 
@@ -68,19 +68,24 @@ export async function POST(req: Request) {
       if (action === 'accepted') {
         const founderEmail = targetMember?.email || existingReq.target_member_email
         const founderPhone = targetMember?.phone_number || targetMember?.whatsapp_number
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buildwithmelwin.com'
 
         if (founderEmail && existingReq.requester_email) {
           await sendMutualWarmIntroEmail({
             founderEmail,
             founderName: existingReq.target_member_name,
             founderCompany: existingReq.target_member_company,
+            founderRole: targetMember?.role || null,
             founderPhone,
             requesterEmail: existingReq.requester_email,
             requesterName: existingReq.requester_name,
             requesterCompany: existingReq.requester_company,
+            requesterRole: existingReq.requester_role,
             requesterPhone: existingReq.requester_phone,
+            requesterLinkedin: existingReq.requester_linkedin,
             purpose: existingReq.purpose,
             message: existingReq.message,
+            dashboardUrl: `${baseUrl}/bmf-club/dashboard?tab=intros`,
           })
         }
       }

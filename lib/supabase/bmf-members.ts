@@ -344,26 +344,28 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
       }
       resultProfile = existingMember as BmfMember
     } else {
-      // Create new founder profile from authenticated user metadata
+      // Create new founder profile from authenticated user metadata with clean empty fields
       const newProfile: Partial<BmfMember> = {
         user_id: user.id,
         email,
-        full_name: fullName,
-        role: 'Founder & CEO',
-        company_name: `${fullName.split(' ')[0]}'s Venture`,
+        full_name: fullName !== 'Verified Founder' ? fullName : '',
+        role: '',
+        company_name: '',
         company_logo: '',
         avatar_url: avatarUrl,
-        category: 'AI & SaaS',
-        tagline: 'Building high-impact technology solutions for global markets.',
-        description: 'Founder bio and company mission statement.',
-        stage: 'Early Traction / Seed',
-        metrics: 'Active Product & Pilots',
-        location: 'Global',
-        team_size: '5-10 Builders',
+        category: '',
+        tagline: '',
+        description: '',
+        stage: '',
+        metrics: '',
+        location: '',
+        team_size: '',
+        phone_number: '',
+        whatsapp_number: '',
         is_verified: true,
-        is_approved: true,
+        is_approved: false,
+        review_status: 'pending',
         is_featured: false,
-        review_status: 'approved',
       }
 
       const { data: inserted, error: insertError } = await supabase
