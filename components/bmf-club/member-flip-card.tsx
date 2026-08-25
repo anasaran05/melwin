@@ -54,7 +54,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
 
   return (
     <div
-      className="group relative w-[155px] sm:w-[210px] md:w-[220px] h-[225px] sm:h-[315px] [perspective:1400px] cursor-pointer select-none shrink-0"
+      className="group relative w-[155px] sm:w-[210px] md:w-[220px] h-[225px] sm:h-[315px] [perspective:1200px] cursor-pointer select-none shrink-0"
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
       onClick={() => setIsFlipped((prev) => !prev)}
@@ -70,8 +70,9 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
     >
       <motion.div
         animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ duration: 0.65, ease: [0.23, 1, 0.32, 1] }}
-        className={`w-full h-full relative [transform-style:preserve-3d] rounded-xl sm:rounded-2xl transition-all duration-500 ${
+        transition={{ duration: 0.35, ease: [0.2, 0.9, 0.3, 1] }}
+        style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
+        className={`w-full h-full relative rounded-xl sm:rounded-2xl ${
           hasAvatar 
             ? 'shadow-xl hover:shadow-[0_15px_35px_rgba(56,189,248,0.25)] ring-1 ring-white/20' 
             : 'shadow-md ring-1 ring-neutral-800'
