@@ -28,6 +28,7 @@ export interface BmfMember {
   is_verified: boolean
   is_approved: boolean
   is_featured?: boolean
+  is_onboarding_completed?: boolean
   priority_order?: number
   badge_title?: string | null
   review_status?: 'pending' | 'approved' | 'rejected'
@@ -366,6 +367,7 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
         is_approved: false,
         review_status: 'pending',
         is_featured: false,
+        is_onboarding_completed: false,
       }
 
       const { data: inserted, error: insertError } = await supabase

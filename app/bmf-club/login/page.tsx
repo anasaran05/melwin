@@ -29,6 +29,8 @@ function BmfMemberLoginContent() {
   const rawNext = searchParams.get('next') || searchParams.get('redirectTo') || searchParams.get('redirect')
   const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
 
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showEmailForm, setShowEmailForm] = useState(false)
@@ -152,26 +154,84 @@ function BmfMemberLoginContent() {
         return
       }
 
+      if (authMode === 'signup') {
+        if (!password.trim() || password.trim().length < 6) {
+          setStatus('error')
+          setMessage('Please provide a password of at least 6 characters for sign up.')
+          return
+        }
+
+        const res = await fetch('/api/bmf/auth/send-auth-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            password: password.trim(),
+            fullName: fullName.trim(),
+            type: 'signup',
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+          }),
+        })
+
+        const resData = await res.json()
+        if (res.ok && resData.success) {
+          setStatus('success')
+          setMessage("Account created! We've sent a verification email with your pass activation link via Resend. Please check your inbox.")
+        } else {
+          // Direct fallback to Supabase sign up
+          const { data, error } = await supabase.auth.signUp({
+            email: email.trim(),
+            password: password.trim(),
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+              data: {
+                full_name: fullName.trim() || undefined,
+              },
+            },
+          })
+          if (error) {
+            setStatus('error')
+            setMessage(error.message || resData.error)
+          } else if (data.session && data.user) {
+            if (typeof window !== 'undefined' && data.user.email) {
+              localStorage.setItem('bmf_current_user_email', data.user.email)
+            }
+            setStatus('success')
+            setMessage('Account created successfully! Redirecting...')
+            router.push(destination)
+            router.refresh()
+          } else {
+            setStatus('success')
+            setMessage('Account created! Please check your email inbox to confirm your account and sign in.')
+          }
+        }
+        return
+      }
+
       if (password.trim()) {
         const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: email.trim(),
+          password: password.trim(),
         })
 
         if (error) {
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email,
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-            },
+          // Password failed, dispatch branded magic link via Resend
+          const res = await fetch('/api/bmf/auth/send-auth-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: email.trim(),
+              type: 'magiclink',
+              redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+            }),
           })
-
-          if (otpError) {
-            setStatus('error')
-            setMessage(error.message || otpError.message)
-          } else {
+          const resData = await res.json()
+          if (res.ok && resData.success) {
             setStatus('success')
-            setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
+            setMessage('Magic login link sent to your email via Resend! Click the link to access your dashboard.')
+          } else {
+            setStatus('error')
+            setMessage(error.message)
           }
         } else if (data.user) {
           if (typeof window !== 'undefined' && data.user.email) {
@@ -183,32 +243,42 @@ function BmfMemberLoginContent() {
           router.refresh()
         }
       } else {
-        const { error: otpError } = await supabase.auth.signInWithOtp({
-          email,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-          },
+        // Dispatch branded magic link via Resend
+        const res = await fetch('/api/bmf/auth/send-auth-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: email.trim(),
+            type: 'magiclink',
+            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+          }),
         })
-
-        if (otpError) {
-          setStatus('error')
-          setMessage(otpError.message)
-        } else {
+        const resData = await res.json()
+        if (res.ok && resData.success) {
           setStatus('success')
-          setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
+          setMessage('Magic login link sent to your email via Resend! Check your inbox.')
+        } else {
+          // Fallback to direct supabase OTP
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            email: email.trim(),
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+            },
+          })
+
+          if (otpError) {
+            setStatus('error')
+            setMessage(otpError.message || resData.error)
+          } else {
+            setStatus('success')
+            setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
+          }
         }
       }
     } catch (err: any) {
       setStatus('error')
       setMessage(err.message || 'An unexpected error occurred.')
     }
-  }
-
-  const handleQuickDemoAccess = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('bmf_current_user_email', 'kishore@pharmpulse.ai')
-    }
-    router.push(destination)
   }
 
   return (
@@ -240,22 +310,12 @@ function BmfMemberLoginContent() {
           }}
           secondaryActions={[
             {
-              label: "Continue with GitHub",
-              icon: <IconGithub />,
-              onClick: handleGithubSignIn,
-              disabled: status === 'loading',
-            },
-            {
               label: showEmailForm ? "Hide Email Login" : "Continue with Email",
               icon: <IconMail />,
               onClick: () => setShowEmailForm(!showEmailForm),
               disabled: status === 'loading',
             },
           ]}
-          skipAction={{
-            label: "Instant Member Studio Preview (Demo Mode)",
-            onClick: handleQuickDemoAccess,
-          }}
           footerContent={
             <>
               By logging in, you agree to the{" "}
@@ -267,6 +327,45 @@ function BmfMemberLoginContent() {
         >
           {showEmailForm && (
             <form onSubmit={handleEmailSignIn} className="space-y-3 pt-1 pb-2 text-left animate-in fade-in-0 duration-300">
+              {/* 2-Pill Mode Switcher: Sign In vs Sign Up */}
+              <div className="flex rounded-xl bg-neutral-900/90 p-1 border border-neutral-800 mb-2">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signin'); setMessage(''); }}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    authMode === 'signin' 
+                      ? 'bg-neutral-800 text-white shadow-sm' 
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('signup'); setMessage(''); }}
+                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    authMode === 'signup' 
+                      ? 'bg-neutral-800 text-white shadow-sm' 
+                      : 'text-neutral-400 hover:text-neutral-200'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {authMode === 'signup' && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-neutral-300">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Alex Johnson"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              )}
+
               <div className="space-y-1">
                 <label className="text-[11px] font-medium text-neutral-300">Registered Email</label>
                 <input
@@ -281,10 +380,14 @@ function BmfMemberLoginContent() {
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-neutral-300">Password (or leave blank for Magic Link)</label>
+                  <label className="text-[11px] font-medium text-neutral-300">
+                    {authMode === 'signup' ? 'Create Password (min 6 chars)' : 'Password (or leave blank for Magic Link)'}
+                  </label>
                 </div>
                 <input
                   type="password"
+                  required={authMode === 'signup'}
+                  minLength={authMode === 'signup' ? 6 : undefined}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -300,12 +403,29 @@ function BmfMemberLoginContent() {
                 {status === 'loading' ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                    <span>Authenticating...</span>
+                    <span>{authMode === 'signup' ? 'Creating Account...' : 'Authenticating...'}</span>
                   </>
                 ) : (
-                  <span>Access Member Dashboard</span>
+                  <span>{authMode === 'signup' ? 'Create Account / Sign Up' : 'Sign In with Email / Magic Link'}</span>
                 )}
               </Button>
+
+              <div className="text-center pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode(authMode === 'signin' ? 'signup' : 'signin')
+                    setMessage('')
+                  }}
+                  className="text-[11px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  {authMode === 'signin' ? (
+                    <>Don&apos;t have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign Up</span></>
+                  ) : (
+                    <>Already have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign In</span></>
+                  )}
+                </button>
+              </div>
             </form>
           )}
 
