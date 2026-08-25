@@ -27,12 +27,15 @@ import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { ImageUploader } from '@/components/bmf-club/image-uploader'
 import { AvatarPickerModal } from '@/components/bmf-club/avatar-picker-modal'
+import { CardThemeModal } from '@/components/bmf-club/card-theme-modal'
 import { DashboardIntrosTab } from '@/components/bmf-club/dashboard-intros-tab'
+import { getCardTheme } from '@/lib/card-themes'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
 import { 
   ArrowLeft, 
+  Palette,
   Sparkles, 
   CheckCircle2, 
   Loader2, 
@@ -188,6 +191,7 @@ function BmfMemberDashboardContent() {
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null)
   const [pendingLogoFile, setPendingLogoFile] = useState<File | null>(null)
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false)
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [saveMessage, setSaveMessage] = useState('')
@@ -2283,9 +2287,10 @@ function BmfMemberDashboardContent() {
             linkedin_url: profileForm.linkedin_url || profile.linkedin_url,
             twitter_url: profileForm.twitter_url || profile.twitter_url,
             website_url: profileForm.website_url || profile.website_url,
-            is_verified: true,
+            is_verified: Boolean(profile.is_verified),
             is_approved: true,
-            is_featured: profile.is_featured ?? true,
+            is_featured: Boolean(profile.is_featured),
+            card_theme: profileForm.card_theme || profile.card_theme || 'obsidian',
             created_at: profile.created_at || new Date().toISOString(),
           }
 
@@ -2354,6 +2359,31 @@ function BmfMemberDashboardContent() {
                     <div className="w-[220px]">
                       <MemberFlipCard member={previewMember} />
                     </div>
+                  </div>
+                  {/* Theme Switcher Trigger for Mobile */}
+                  <div className="w-full p-2.5 rounded-2xl bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Palette className="w-3.5 h-3.5 text-amber-400" />
+                      <span className="font-bold text-white">Card Theme</span>
+                    </div>
+                    {profile.is_featured ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsThemeModalOpen(true)}
+                        className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all cursor-pointer"
+                      >
+                        Change
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsThemeModalOpen(true)}
+                        className="px-3 py-1 rounded-xl bg-neutral-950 border border-white/10 text-neutral-400 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Lock className="w-3 h-3 text-neutral-500" />
+                        <span>Locked</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -2864,6 +2894,37 @@ function BmfMemberDashboardContent() {
                     <div className="w-[210px] md:w-[220px]">
                       <MemberFlipCard member={previewMember} />
                     </div>
+                  </div>
+
+                  {/* Card Theme Switcher Trigger */}
+                  <div className="w-full p-3 rounded-2xl bg-neutral-900/90 border border-neutral-800 text-neutral-200 flex items-center justify-between gap-3 shadow-lg">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-xl bg-neutral-800 border border-white/10 flex items-center justify-center shrink-0">
+                        <Palette className="w-4 h-4 text-amber-400" />
+                      </div>
+                      <span className="text-xs font-bold text-white tracking-wide">
+                        Card Theme
+                      </span>
+                    </div>
+
+                    {profile.is_featured ? (
+                      <button
+                        type="button"
+                        onClick={() => setIsThemeModalOpen(true)}
+                        className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-all cursor-pointer active:scale-95 border border-white/10 shadow-xs"
+                      >
+                        Change
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsThemeModalOpen(true)}
+                        className="px-3.5 py-1.5 rounded-xl bg-neutral-950/80 border border-white/10 text-neutral-400 hover:text-neutral-300 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Lock className="w-3 h-3 text-neutral-500" />
+                        <span>Locked</span>
+                      </button>
+                    )}
                   </div>
 
                   <p className="text-[11px] text-neutral-400 text-center leading-relaxed">
@@ -3638,6 +3699,49 @@ function BmfMemberDashboardContent() {
         onSelectAvatar={(avatarUrl) => {
           setPendingAvatarFile(null)
           setProfileForm((prev) => ({ ...prev, avatar_url: avatarUrl }))
+        }}
+      />
+
+      {/* ======================================================================= */}
+      {/* EXECUTIVE CARD THEME MODAL (Gated for Regulars, Unlocked for Featured) */}
+      {/* ======================================================================= */}
+      <CardThemeModal
+        isOpen={isThemeModalOpen}
+        onClose={() => setIsThemeModalOpen(false)}
+        isFeatured={Boolean(profile.is_featured)}
+        currentTheme={profileForm.card_theme || profile.card_theme || 'obsidian'}
+        memberPreview={{
+          ...profile,
+          ...profileForm,
+          full_name: profileForm.full_name || profile.full_name || 'Founder Name',
+          role: profileForm.role || profile.role || 'Founder & President',
+          company_name: profileForm.company_name || profile.company_name || 'BMFC',
+          company_logo: profileForm.company_logo ?? profile.company_logo ?? '',
+          avatar_url: profileForm.avatar_url || profile.avatar_url || '',
+          category: profileForm.category || profile.category || 'AI & SaaS',
+          tagline: profileForm.tagline || profile.tagline || 'Building high-impact technology for the future.',
+          description: profileForm.description || profile.description || '',
+          stage: profileForm.stage || profile.stage || 'Seed Stage',
+          metrics: profileForm.metrics || profile.metrics || '$250k ARR',
+          location: profileForm.location || profile.location || 'Global',
+          team_size: profileForm.team_size || profile.team_size || '10+ Team',
+          linkedin_url: profileForm.linkedin_url || profile.linkedin_url,
+          twitter_url: profileForm.twitter_url || profile.twitter_url,
+          website_url: profileForm.website_url || profile.website_url,
+          is_verified: Boolean(profile.is_verified),
+          is_approved: true,
+          is_featured: Boolean(profile.is_featured),
+          card_theme: profileForm.card_theme || profile.card_theme || 'obsidian',
+          created_at: profile.created_at || new Date().toISOString(),
+        } as BmfMember}
+        onSelectTheme={async (themeId) => {
+          setProfileForm((prev) => ({ ...prev, card_theme: themeId }))
+          setProfile((prev) => ({ ...prev, card_theme: themeId }))
+          try {
+            await saveBmfMemberProfile({ ...profile, ...profileForm, card_theme: themeId })
+          } catch (err) {
+            console.error('Failed to save card theme:', err)
+          }
         }}
       />
 

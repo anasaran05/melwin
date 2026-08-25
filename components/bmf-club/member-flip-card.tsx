@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
+import { getCardTheme } from '@/lib/card-themes'
 import { RequestIntroModal } from '@/components/bmf-club/request-intro-modal'
 import { 
   Linkedin, 
@@ -36,6 +37,9 @@ function formatMemberSince(dateStr?: string) {
 export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
+  const isFeatured = Boolean(member.is_featured)
+  const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
+
   const hasAvatar = Boolean(
     member.avatar_url &&
     typeof member.avatar_url === 'string' &&
@@ -78,10 +82,10 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         {/* 1. FRONT FACE: Full-bleed Photo or Clean Empty Obsidian State */}
         {/* ======================================================================= */}
         <div 
-          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] [webkit-backface-visibility:hidden] ${
+          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] [webkit-backface-visibility:hidden] transition-all duration-500 ${
             hasAvatar 
               ? 'bg-neutral-900' 
-              : 'bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]'
+              : `${cardTheme.bgClasses} border ${cardTheme.borderClasses}`
           }`}
           style={{ transform: 'rotateY(0deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
@@ -102,14 +106,28 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
               <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/20 pointer-events-none" />
             </>
           ) : (
-            /* Clean Empty Silhouette when not yet uploaded */
+            /* Theme-Aware Empty Silhouette when not yet uploaded */
             <div className="absolute inset-0 flex flex-col items-center justify-center p-4 pb-14 text-center pointer-events-none">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-neutral-900 border border-white/10 flex items-center justify-center shadow-lg mb-2 group-hover:scale-105 transition-transform">
-                <span className="text-lg sm:text-2xl font-black text-neutral-400">
+              {/* Ambient radial glow from theme */}
+              <div 
+                className="absolute inset-0 opacity-25 blur-xl pointer-events-none transition-all duration-500"
+                style={{
+                  background: `radial-gradient(circle at 50% 40%, ${cardTheme.previewColor}, transparent 70%)`
+                }}
+              />
+              
+              <div 
+                className="relative w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-neutral-900/90 border flex items-center justify-center shadow-xl mb-2 group-hover:scale-105 transition-all duration-300"
+                style={{
+                  borderColor: isFeatured ? `${cardTheme.previewColor}40` : 'rgba(255,255,255,0.1)',
+                  boxShadow: isFeatured ? `0 0 20px ${cardTheme.previewColor}20` : undefined
+                }}
+              >
+                <span className={`text-lg sm:text-2xl font-black ${isFeatured ? cardTheme.accentTextColor : 'text-neutral-400'}`}>
                   {member.full_name ? member.full_name.charAt(0).toUpperCase() : 'F'}
                 </span>
               </div>
-              <span className="text-[8.5px] sm:text-[10px] font-mono text-neutral-500 uppercase tracking-wider">
+              <span className="relative text-[8.5px] sm:text-[10px] font-mono text-neutral-400 uppercase tracking-wider">
                 Photo Empty
               </span>
             </div>
@@ -131,17 +149,19 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
 
           {/* Bottom Inside Text: Member Name, Role, and Company Name (3 lines) */}
           <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3.5 z-10 flex flex-col justify-end space-y-0.5 text-left">
-            {/* Line 1: Full Name & Verified Badge */}
-            <div className="flex items-center gap-1 sm:gap-1.5">
+            {/* Line 1: Full Name & Verified Blue Tick (Only for Featured Founders) */}
+            <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
               <h3 className="text-xs sm:text-lg font-black tracking-tight text-white drop-shadow-md leading-tight truncate">
                 {member.full_name}
               </h3>
-              {member.is_featured && (
-                <img 
-                  src="https://img.icons8.com/stickers/500/verified-badge.png" 
-                  alt="Featured Verified Founder" 
-                  className="w-3 h-3 sm:w-4 sm:h-4 object-contain shrink-0 drop-shadow-sm"
-                />
+              {isFeatured && (
+                <svg 
+                  viewBox="0 0 24 24" 
+                  aria-label="Verified Spotlight Founder" 
+                  className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1d9bf0] shrink-0 drop-shadow-sm fill-current"
+                >
+                  <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.75 4.75l-4-4 1.41-1.41 2.59 2.58 6.59-6.58 1.41 1.41-8 8z" />
+                </svg>
               )}
             </div>
 
@@ -167,7 +187,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         {/* 2. BACK FACE: Role, Company Logo, Description, Metrics, Social Links   */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [webkit-backface-visibility:hidden] bg-[#121215] text-white border border-white/10 flex flex-col justify-between overflow-hidden"
+          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [webkit-backface-visibility:hidden] ${cardTheme.bgClasses} text-white border ${cardTheme.borderClasses} flex flex-col justify-between overflow-hidden transition-all duration-300`}
           style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           {/* Top Bar: Company Identity & Category */}
@@ -189,14 +209,14 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
                   <h4 className="text-[10px] sm:text-xs font-bold text-white leading-tight truncate">
                     {member.company_name}
                   </h4>
-                  <span className="text-[8.5px] sm:text-[10px] text-emerald-400 font-mono block truncate">
+                  <span className={`text-[8.5px] sm:text-[10px] ${cardTheme.accentTextColor} font-mono block truncate`}>
                     {member.role}
                   </span>
                 </div>
               </div>
 
               {member.category?.trim() && (
-                <span className="text-[7px] sm:text-[8.5px] font-mono font-semibold tracking-wide bg-white/10 text-neutral-200 px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full border border-white/10 shrink-0 max-w-[60px] sm:max-w-[85px] truncate">
+                <span className={`text-[7px] sm:text-[8.5px] font-mono font-semibold tracking-wide ${cardTheme.categoryBadgeClasses} px-1 sm:px-1.5 py-0.2 sm:py-0.5 rounded-full border shrink-0 max-w-[60px] sm:max-w-[85px] truncate`}>
                   {member.category}
                 </span>
               )}
@@ -211,7 +231,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
 
             {/* Key Traction & Metrics Container (Optional) */}
             {(member.stage?.trim() || member.metrics?.trim()) && (
-              <div className="bg-neutral-900/90 rounded-md sm:rounded-lg p-1 sm:p-2 border border-white/10 space-y-0.5 sm:space-y-1">
+              <div className={`${cardTheme.metricBgClasses} rounded-md sm:rounded-lg p-1 sm:p-2 border space-y-0.5 sm:space-y-1`}>
                 {member.stage?.trim() && (
                   <div className="flex items-center justify-between text-[8px] sm:text-[10px]">
                     <span className="text-neutral-400 font-mono text-[7px] sm:text-[9px] flex items-center gap-0.5 sm:gap-1">

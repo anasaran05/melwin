@@ -31,6 +31,7 @@ export interface BmfMember {
   is_onboarding_completed?: boolean
   priority_order?: number
   badge_title?: string | null
+  card_theme?: 'obsidian' | 'gold_prestige' | 'midnight_sapphire' | 'royal_amethyst' | 'emerald_matrix' | 'sunset_rose' | 'titanium_carbon' | string
   review_status?: 'pending' | 'approved' | 'rejected'
   admin_feedback?: string | null
   created_at?: string
@@ -367,6 +368,7 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
         is_approved: false,
         review_status: 'pending',
         is_featured: false,
+        card_theme: 'obsidian',
         is_onboarding_completed: false,
       }
 
@@ -402,9 +404,104 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
   }
 }
 
+export function isUploadedAvatar(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.trim().toLowerCase()
+  if (!clean) return false
+  if (
+    clean.includes('api.dicebear.com') ||
+    clean.includes('dicebear') ||
+    clean.includes('googleusercontent.com') ||
+    clean.includes('images.unsplash.com') ||
+    clean.includes('wixstatic.com/media/6abdd9_') // avatar preset
+  ) {
+    return false
+  }
+  return (
+    clean.includes('media.buildwithmelwin.com') ||
+    clean.includes('r2.dev') ||
+    clean.includes('cloudflarestorage.com') ||
+    clean.includes('supabase.co/storage') ||
+    clean.startsWith('http')
+  )
+}
+
+export function isGoogleAvatar(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.trim().toLowerCase()
+  return clean.includes('googleusercontent.com') || clean.includes('graph.facebook.com')
+}
+
+export function isCustomCompanyLogo(logo?: string | null): boolean {
+  if (!logo || typeof logo !== 'string') return false
+  const clean = logo.trim().toLowerCase()
+  if (!clean) return false
+  if (
+    clean.includes('images.unsplash.com') ||
+    clean.includes('api.dicebear.com') ||
+    clean.includes('dicebear')
+  ) {
+    return false
+  }
+  return clean.startsWith('http') || clean.startsWith('/') || clean.length > 5
+}
+
+export function isCustomCompanyName(name?: string | null): boolean {
+  if (!name || typeof name !== 'string') return false
+  const clean = name.trim().toLowerCase()
+  if (!clean || clean.length < 2) return false
+  const genericPlaceholders = [
+    'venture',
+    'my venture',
+    'stealth',
+    'stealth startup',
+    'company',
+    'my company',
+    'default',
+    'founder',
+    'startup',
+    'n/a',
+    'none',
+  ]
+  return !genericPlaceholders.includes(clean)
+}
+
+export function getProfileQualityScore(member: BmfMember): number {
+  let score = 0
+
+  // 1. Founder Portrait Photo (up to 40 pts)
+  if (isUploadedAvatar(member.avatar_url)) {
+    score += 40
+  } else if (isGoogleAvatar(member.avatar_url)) {
+    score += 15
+  } else if (member.avatar_url && member.avatar_url.trim() !== '') {
+    score += 5
+  }
+
+  // 2. Company Logo (30 pts)
+  if (isCustomCompanyLogo(member.company_logo)) {
+    score += 30
+  }
+
+  // 3. Company Name (30 pts)
+  if (isCustomCompanyName(member.company_name)) {
+    score += 30
+  }
+
+  // Completeness bonus (up to 10 pts)
+  if (member.description && member.description.trim().length > 10) {
+    score += 5
+  }
+  if (member.category && member.category !== 'Others' && member.category.trim() !== '') {
+    score += 5
+  }
+
+  return score
+}
+
 export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
   return [...members].sort((a, b) => {
-    // 1. Explicit priority_order (1 is highest priority e.g. President)
+    // 1. Explicit priority_order (1 is highest priority e.g. President / Pinned)
     const pA = a.priority_order !== undefined && a.priority_order !== null 
       ? a.priority_order 
       : (a.full_name?.toLowerCase().includes('melwin') || a.role?.toLowerCase().includes('president') ? 1 : 100)
@@ -416,14 +513,21 @@ export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
       return pA - pB
     }
 
-    // 2. Featured status
+    // 2. Profile Quality & Completeness Score (Higher score first)
+    const scoreA = getProfileQualityScore(a)
+    const scoreB = getProfileQualityScore(b)
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA
+    }
+
+    // 3. Featured status
     const featA = a.is_featured ? 1 : 0
     const featB = b.is_featured ? 1 : 0
     if (featA !== featB) {
       return featB - featA
     }
 
-    // 3. Most recent first
+    // 4. Most recent first
     const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
     const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
     return dateB - dateA
@@ -512,7 +616,7 @@ export async function fetchPaginatedMembers(params: {
   forceFresh?: boolean
 }): Promise<PaginatedMembersResponse> {
   const page = params.page || 1
-  const limit = params.limit || 12
+  const limit = params.limit || 20
   const tier = params.tier || 'all'
   const category = params.category || 'All'
   const search = params.search || ''

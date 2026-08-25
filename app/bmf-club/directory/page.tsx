@@ -31,7 +31,7 @@ import {
 
 type MembershipTierTab = 'all' | 'premium' | 'regular'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 20
 
 export default function BmfFounderDirectoryPage() {
   // Directory state
@@ -200,7 +200,7 @@ export default function BmfFounderDirectoryPage() {
           loadNextPage()
         }
       },
-      { threshold: 0.1, rootMargin: '250px' }
+      { threshold: 0.1, rootMargin: '500px' }
     )
 
     observer.observe(observerRef.current)
