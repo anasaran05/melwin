@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState, useEffect, useRef, useCallback } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   BmfMember, 
   fetchPaginatedMembers, 
   sortBmfMembers,
-  clearClientMembersCache 
+  clearClientMembersCache,
+  getSupabaseBrowserClient
 } from '@/lib/supabase/bmf-members'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { SkeletonFounderCard } from '@/components/bmf-club/skeleton-founder-card'
@@ -21,7 +23,10 @@ import {
   RotateCw,
   SlidersHorizontal,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  ArrowLeft,
+  ArrowRight,
+  LayoutDashboard
 } from 'lucide-react'
 
 type MembershipTierTab = 'all' | 'premium' | 'regular'
@@ -48,6 +53,50 @@ export default function BmfFounderDirectoryPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
+
+  // User Authentication State for dynamic Dashboard / Join Free button
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [authLoading, setAuthLoading] = useState(true)
+
+  useEffect(() => {
+    let isSubscribed = true
+    const checkAuth = async () => {
+      try {
+        const supabase = getSupabaseBrowserClient()
+        if (supabase) {
+          const { data: { session } } = await supabase.auth.getSession()
+          if (session?.user && isSubscribed) {
+            setIsLoggedIn(true)
+            setAuthLoading(false)
+            return
+          }
+
+          supabase.auth.onAuthStateChange((_event, session) => {
+            if (isSubscribed) {
+              setIsLoggedIn(!!session?.user)
+              setAuthLoading(false)
+            }
+          })
+        }
+        if (typeof window !== 'undefined') {
+          const storedEmail = localStorage.getItem('bmf_current_user_email')
+          if (storedEmail && isSubscribed) {
+            setIsLoggedIn(true)
+          }
+        }
+      } catch (err) {
+        console.error('Error checking auth in BmfFounderDirectoryPage:', err)
+      } finally {
+        if (isSubscribed) {
+          setAuthLoading(false)
+        }
+      }
+    }
+    checkAuth()
+    return () => {
+      isSubscribed = false
+    }
+  }, [])
 
   // Infinite scroll sentinel observer ref
   const observerRef = useRef<HTMLDivElement | null>(null)
@@ -170,18 +219,101 @@ export default function BmfFounderDirectoryPage() {
     <div className="min-h-screen bg-[#f5f5f7] text-[#111111] font-sans flex flex-col justify-between selection:bg-black selection:text-white">
       
       {/* Main Directory Container */}
-      <main className="flex-1 pt-6 sm:pt-12 pb-16 sm:pb-24 px-3.5 sm:px-6 md:px-12 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
+      <main className="flex-1 pt-6 sm:pt-10 pb-16 sm:pb-24 px-3.5 sm:px-6 md:px-12 max-w-7xl mx-auto w-full space-y-6 sm:space-y-8">
         
-        {/* Title & Introduction - Center Aligned */}
-        <div className="text-center max-w-3xl mx-auto space-y-2">
-         
+        {/* Title Section with integrated side buttons */}
+        <div className="space-y-4">
+          {/* Mobile Top Controls Bar (< md) */}
+          <div className="flex md:hidden items-center justify-between gap-2">
+            <Link
+              href="/bmf-club"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-black transition-colors px-2.5 py-1.5 rounded-xl hover:bg-black/5"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>BMF Club</span>
+            </Link>
 
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-black text-[#111111] tracking-tight">
-            Founder Showcase Directory
-          </h1>
-          <p className="text-xs sm:text-base text-neutral-600 leading-relaxed max-w-xl mx-auto px-2">
-            Discover spotlighted Premium Founders and verified Syndicate Members scaling high-impact ventures.
-          </p>
+            <div>
+              {!authLoading && (
+                isLoggedIn ? (
+                  <Link
+                    href="/bmf-club/dashboard"
+                    className="inline-flex items-center gap-1.5 bg-[#111111] hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95"
+                  >
+                    <LayoutDashboard className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Go to Dashboard</span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/bmf-club/dashboard"
+                    className="inline-flex items-center gap-1.5 bg-[#111111] hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 group"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                    <span>Join Free</span>
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Desktop Integrated 3-Column Header (>= md) */}
+          <div className="hidden md:grid md:grid-cols-[1fr_auto_1fr] items-center gap-4">
+            {/* Left: Back Link */}
+            <div className="flex justify-start">
+              <Link
+                href="/bmf-club"
+                className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-neutral-600 hover:text-black transition-colors px-3 py-1.5 rounded-xl hover:bg-black/5"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>BMF Club</span>
+              </Link>
+            </div>
+
+            {/* Center: Title & Subtitle */}
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#111111] tracking-tight">
+                Founder Showcase Directory
+              </h1>
+              <p className="text-xs sm:text-base text-neutral-600 leading-relaxed max-w-xl mx-auto px-2">
+                Discover spotlighted Premium Founders and verified Syndicate Members scaling high-impact ventures.
+              </p>
+            </div>
+
+            {/* Right: Go to Dashboard / Join Free Button */}
+            <div className="flex justify-end">
+              {!authLoading && (
+                isLoggedIn ? (
+                  <Link
+                    href="/bmf-club/dashboard"
+                    className="inline-flex items-center gap-2 bg-[#111111] hover:bg-black text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all active:scale-95"
+                  >
+                    <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                    <span>Go to Dashboard</span>
+                    <ArrowRight className="w-3.5 h-3.5 opacity-70" />
+                  </Link>
+                ) : (
+                  <Link
+                    href="/bmf-club/dashboard"
+                    className="inline-flex items-center gap-2 bg-[#111111] hover:bg-black text-white px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs hover:shadow-md transition-all active:scale-95 group"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <span>Join Free</span>
+                    <ArrowRight className="w-3.5 h-3.5 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                  </Link>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* Mobile Title & Subtitle */}
+          <div className="md:hidden text-center space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-black text-[#111111] tracking-tight">
+              Founder Showcase Directory
+            </h1>
+            <p className="text-xs text-neutral-600 leading-relaxed max-w-xl mx-auto px-2">
+              Discover spotlighted Premium Founders and verified Syndicate Members scaling high-impact ventures.
+            </p>
+          </div>
         </div>
 
         {/* Filter & Search Control Panel */}

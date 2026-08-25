@@ -319,10 +319,16 @@ export function UpcomingEventsSection() {
                       <label className="text-xs font-semibold text-neutral-300">WhatsApp / Phone *</label>
                       <input
                         type="tel"
+                        inputMode="tel"
                         required
-                        placeholder="+91 98765 43210"
+                        placeholder="+919876543210"
                         value={form.phone}
-                        onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          const startsWithPlus = val.startsWith('+')
+                          const digits = val.replace(/\D/g, '')
+                          setForm({ ...form, phone: startsWithPlus ? `+${digits}` : digits })
+                        }}
                         className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white"
                       />
                     </div>

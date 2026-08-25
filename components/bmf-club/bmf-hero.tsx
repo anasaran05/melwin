@@ -134,9 +134,9 @@ export function BmfHeroSection() {
 
       // Independent speed controllers:
       // Desktop: 30s period (smooth, dynamic flow)
-      // Mobile: 60s period (calm, elegant glide)
+      // Mobile: 20s period (faster, engaging flow)
       const desktopSpeed = (numCards / 30) * delta
-      const mobileSpeed = (numCards / 60) * delta
+      const mobileSpeed = (numCards / 40) * delta
 
       setDesktopProgress((prev) => (prev + desktopSpeed) % numCards)
       setMobileProgress((prev) => (prev + mobileSpeed) % numCards)
@@ -204,10 +204,23 @@ export function BmfHeroSection() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
-          className="text-2xl font-extrabold tracking-tight text-[#777777] max-w-xs mx-auto leading-tight px-4"
+          className="text-xl font-bold tracking-tight text-[#444444] max-w-xs mx-auto leading-snug px-4"
         >
           Where High-Conviction <br /> Builders Connect.
         </motion.h2>
+
+        {/* Description */}
+        <motion.p
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
+          className="text-xs text-[#666666] leading-relaxed max-w-[320px] mx-auto px-4"
+        >
+          A free founder community to connect, collaborate, discover opportunities, and access investment opportunities.
+          <span className="block mt-1 font-semibold text-[#222222]">
+            Build your network. Find your people. Grow together.
+          </span>
+        </motion.p>
 
         {/* CTA Buttons (Moved UP above cards on mobile) */}
         <motion.div
@@ -394,22 +407,34 @@ export function BmfHeroSection() {
           </motion.div>
         </div>
 
-        {/* Desktop Bottom Section: Heading + Buttons */}
-        <div className="relative z-30 text-center space-y-6 max-w-5xl mx-auto px-4 -mt-6 md:-mt-10">
+        {/* Desktop Bottom Section: Heading + Description + Buttons */}
+        <div className="relative z-30 text-center space-y-4 md:space-y-5 max-w-3xl mx-auto px-4 -mt-4 md:-mt-8">
           <motion.h2
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-5xl md:text-6xl font-black tracking-tight text-[#777777] max-w-4xl mx-auto leading-[1.08]"
+            className="text-3xl md:text-4xl lg:text-[2.6rem] font-extrabold tracking-tight text-[#444444] max-w-2xl mx-auto leading-tight"
           >
             Where High-Conviction <br className="hidden sm:inline" />
             Builders Connect.
           </motion.h2>
 
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+            className="text-sm md:text-base text-[#666666] max-w-xl mx-auto leading-relaxed font-normal"
+          >
+            A free founder community to connect, collaborate, discover opportunities, and access investment opportunities.
+            <span className="block mt-1 font-semibold text-[#222222]">
+              Build your network. Find your people. Grow together.
+            </span>
+          </motion.p>
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.7, delay: 0.16, ease: [0.16, 1, 0.3, 1] }}
             className="flex flex-row items-center justify-center gap-3 pt-2"
           >
             <Link
