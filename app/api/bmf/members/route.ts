@@ -31,7 +31,7 @@ async function getApprovedMembersFromSupabase(): Promise<BmfMember[]> {
     const supabase = createClient(supabaseUrl, supabaseKey)
     const { data, error } = await supabase
       .from('bmf_members')
-      .select('*')
+      .select('id, user_id, full_name, role, company_name, company_logo, avatar_url, category, tagline, description, stage, metrics, location, team_size, is_verified, is_approved, is_featured, card_theme, priority_order, created_at, updated_at, linkedin_url, twitter_url, website_url, badge_title')
       .eq('is_approved', true)
       .order('priority_order', { ascending: true, nullsFirst: false })
       .order('is_featured', { ascending: false })
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         ...rateLimitResult.headers,
-        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120',
+        'Cache-Control': 'public, s-maxage=180, stale-while-revalidate=600',
       },
     }
   )

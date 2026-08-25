@@ -57,6 +57,8 @@ export default function BmfFounderDirectoryPage() {
   // User Authentication State for dynamic Dashboard / Join Free button
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | undefined>()
 
   useEffect(() => {
     let isSubscribed = true
@@ -67,6 +69,8 @@ export default function BmfFounderDirectoryPage() {
           const { data: { session } } = await supabase.auth.getSession()
           if (session?.user && isSubscribed) {
             setIsLoggedIn(true)
+            setCurrentUserId(session.user.id)
+            setCurrentUserEmail(session.user.email)
             setAuthLoading(false)
             return
           }
@@ -74,6 +78,8 @@ export default function BmfFounderDirectoryPage() {
           supabase.auth.onAuthStateChange((_event, session) => {
             if (isSubscribed) {
               setIsLoggedIn(!!session?.user)
+              setCurrentUserId(session?.user?.id)
+              setCurrentUserEmail(session?.user?.email)
               setAuthLoading(false)
             }
           })
@@ -82,6 +88,7 @@ export default function BmfFounderDirectoryPage() {
           const storedEmail = localStorage.getItem('bmf_current_user_email')
           if (storedEmail && isSubscribed) {
             setIsLoggedIn(true)
+            setCurrentUserEmail(storedEmail)
           }
         }
       } catch (err) {
@@ -335,9 +342,6 @@ export default function BmfFounderDirectoryPage() {
               >
                 <Layers className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>All Founders</span>
-                <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded-full ${tierTab === 'all' ? 'bg-black/10 text-black' : 'bg-black/5 text-neutral-500'}`}>
-                  {totalPremium + totalRegular}
-                </span>
               </button>
 
               <button
@@ -351,9 +355,6 @@ export default function BmfFounderDirectoryPage() {
               >
                 <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>Premium</span>
-                <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded-full ${tierTab === 'premium' ? 'bg-white/25 text-white' : 'bg-amber-100 text-amber-800'}`}>
-                  {totalPremium}
-                </span>
               </button>
 
               <button
@@ -367,9 +368,6 @@ export default function BmfFounderDirectoryPage() {
               >
                 <UserCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>Regular</span>
-                <span className={`text-[9px] sm:text-[10px] font-mono px-1.5 py-0.2 rounded-full ${tierTab === 'regular' ? 'bg-white/20 text-white' : 'bg-black/5 text-neutral-500'}`}>
-                  {totalRegular}
-                </span>
               </button>
             </div>
 
@@ -504,7 +502,11 @@ export default function BmfFounderDirectoryPage() {
                     transition={{ duration: 0.35, delay: (index % 6) * 0.04 }}
                     className="w-full flex justify-center shrink-0"
                   >
-                    <MemberFlipCard member={member} />
+                    <MemberFlipCard 
+                      member={member} 
+                      currentUserId={currentUserId}
+                      currentUserEmail={currentUserEmail}
+                    />
                   </motion.div>
                 ))}
               </AnimatePresence>

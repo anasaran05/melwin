@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
@@ -21,6 +22,8 @@ import {
 interface MemberFlipCardProps {
   member: BmfMember
   onRequestIntro?: (member: BmfMember) => void
+  currentUserId?: string
+  currentUserEmail?: string
 }
 
 function formatMemberSince(dateStr?: string) {
@@ -34,11 +37,23 @@ function formatMemberSince(dateStr?: string) {
   }
 }
 
-export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) {
+export function MemberFlipCard({ 
+  member, 
+  onRequestIntro,
+  currentUserId,
+  currentUserEmail,
+}: MemberFlipCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
   const isFeatured = Boolean(member.is_featured)
   const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
+
+  // Zero-network synchronous card ownership determination
+  const isOwnCard = Boolean(
+    (currentUserId && member.user_id && currentUserId === member.user_id) ||
+    (currentUserId && member.id && currentUserId === member.id) ||
+    (currentUserEmail && member.email && currentUserEmail.trim().toLowerCase() === member.email.trim().toLowerCase())
+  )
 
   const hasAvatar = Boolean(
     member.avatar_url &&
@@ -46,7 +61,11 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
     member.avatar_url.trim() !== ''
   )
   const avatarFallback = getFounderFallbackAvatar(member.full_name)
-  const avatarUrl = hasAvatar ? normalizeR2Url(member.avatar_url) : ''
+  let avatarUrl = hasAvatar ? normalizeR2Url(member.avatar_url) : ''
+  if (avatarUrl && avatarUrl.includes('images.unsplash.com') && !avatarUrl.includes('w=')) {
+    avatarUrl = `${avatarUrl}&w=440&q=80&auto=format`
+  }
+
   const isCustomLogo = Boolean(
     member.company_logo &&
     typeof member.company_logo === 'string' &&
@@ -95,8 +114,11 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
               <img
                 src={avatarUrl}
                 alt={member.full_name}
-                className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                width={220}
+                height={315}
+                decoding="async"
                 loading="lazy"
+                className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
                 onError={(e) => {
                   e.currentTarget.src = avatarFallback
                 }}
@@ -139,6 +161,10 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
               <img
                 src={logoUrl}
                 alt={member.company_name || 'Company Logo'}
+                width={60}
+                height={30}
+                decoding="async"
+                loading="lazy"
                 className="max-h-7 sm:max-h-9 max-w-[60px] sm:max-w-[80px] w-auto h-auto object-contain drop-shadow-md rounded-xs"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none'
@@ -198,6 +224,10 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
                   <img
                     src={logoUrl}
                     alt={member.company_name}
+                    width={28}
+                    height={28}
+                    decoding="async"
+                    loading="lazy"
                     className="w-5 h-5 sm:w-7 sm:h-7 rounded-md sm:rounded-lg object-cover border border-white/20 shadow-xs bg-neutral-800 shrink-0"
                   />
                 ) : (
@@ -316,21 +346,32 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
                 )}
               </div>
 
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  if (onRequestIntro) {
-                    onRequestIntro(member)
-                  } else {
-                    setIsIntroModalOpen(true)
-                  }
-                }}
-                className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-              >
-                <span>Approach</span>
-                <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
-              </button>
+              {isOwnCard ? (
+                <Link
+                  href="/bmf-club/dashboard"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                >
+                  <span>Edit</span>
+                  <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (onRequestIntro) {
+                      onRequestIntro(member)
+                    } else {
+                      setIsIntroModalOpen(true)
+                    }
+                  }}
+                  className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
+                >
+                  <span>Approach</span>
+                  <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
+                </button>
+              )}
             </div>
 
             {/* Bottom Line Divider & Member Since Text alone */}

@@ -214,10 +214,22 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
     }
   }
 
+  const isSelfIntro = Boolean(
+    (currentUser?.id && (member.user_id === currentUser.id || member.id === currentUser.id)) ||
+    (currentMemberProfile?.id && (currentMemberProfile.id === member.id || (currentMemberProfile.user_id && member.user_id && currentMemberProfile.user_id === member.user_id))) ||
+    (email && member.email && email.trim().toLowerCase() === member.email.trim().toLowerCase()) ||
+    (currentUser?.email && member.email && currentUser.email.trim().toLowerCase() === member.email.trim().toLowerCase())
+  )
+
   // Submit Intro Request
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMsg('')
+
+    if (isSelfIntro) {
+      setErrorMsg('You cannot request an introduction to your own profile.')
+      return
+    }
 
     if (!message.trim()) {
       setErrorMsg('Please write a short message before sending.')
@@ -562,6 +574,12 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                   />
                 </div>
 
+                {isSelfIntro && (
+                  <p className="text-xs text-amber-300 bg-amber-500/10 border border-amber-500/30 p-2.5 rounded-lg text-center font-mono">
+                    ● This is your own card. Introductions can only be requested to fellow founders.
+                  </p>
+                )}
+
                 {errorMsg && (
                   <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 p-2.5 rounded-lg text-center">
                     {errorMsg}
@@ -572,14 +590,16 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
                 <div className="pt-1">
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-white hover:bg-neutral-200 text-black font-bold py-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.99] disabled:opacity-60 cursor-pointer"
+                    disabled={isSubmitting || isSelfIntro}
+                    className="w-full bg-white hover:bg-neutral-200 text-black font-bold py-3 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                   >
                     {isSubmitting ? (
                       <>
                         <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
                         <span>Sending Request...</span>
                       </>
+                    ) : isSelfIntro ? (
+                      <span>Cannot Request Intro to Yourself</span>
                     ) : (
                       <>
                         <span>Send Request</span>
