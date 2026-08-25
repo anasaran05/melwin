@@ -184,11 +184,11 @@ export function FounderProfileModal({
               
               {/* 1. HERO IDENTITY SECTION */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6 pt-1">
-                {/* Large Portrait / Avatar */}
+                {/* Large Portrait / Avatar with Companion Company Logo */}
                 <div className="relative shrink-0">
                   <div 
-                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-neutral-900 border-2 shadow-xl flex items-center justify-center"
-                    style={{ borderColor: isFeatured ? `${cardTheme.previewColor}60` : 'rgba(255,255,255,0.15)' }}
+                    className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl overflow-hidden bg-neutral-900 border-2 shadow-2xl flex items-center justify-center relative"
+                    style={{ borderColor: isFeatured ? `${cardTheme.previewColor}80` : 'rgba(255,255,255,0.2)' }}
                   >
                     {hasAvatar ? (
                       <img
@@ -208,10 +208,24 @@ export function FounderProfileModal({
                     )}
                   </div>
 
-                  {/* Spotlight / Verified badge overlay */}
-                  {isFeatured && (
+                  {/* Prominent Company Logo Companion Badge */}
+                  {logoUrl ? (
                     <div 
-                      className="absolute -bottom-1.5 -right-1.5 p-1 rounded-full bg-[#111111] border border-white/20 shadow-md flex items-center justify-center"
+                      className="absolute -bottom-2 -right-2 sm:-bottom-2.5 sm:-right-2.5 w-9 h-9 sm:w-12 sm:h-12 rounded-xl bg-[#121215] border-2 border-white/25 shadow-2xl p-1 sm:p-1.5 flex items-center justify-center z-20 transition-transform hover:scale-110"
+                      title={member.company_name || 'Company Logo'}
+                    >
+                      <img
+                        src={logoUrl}
+                        alt={member.company_name || 'Company Logo'}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                        }}
+                      />
+                    </div>
+                  ) : isFeatured ? (
+                    <div 
+                      className="absolute -bottom-1.5 -right-1.5 p-1 rounded-full bg-[#111111] border border-white/20 shadow-md flex items-center justify-center z-20"
                       title="Verified Spotlight Founder"
                     >
                       <svg 
@@ -222,7 +236,7 @@ export function FounderProfileModal({
                         <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.75 4.75l-4-4 1.41-1.41 2.59 2.58 6.59-6.58 1.41 1.41-8 8z" />
                       </svg>
                     </div>
-                  )}
+                  ) : null}
                 </div>
 
                 {/* Name, Role, Company & Badges */}
@@ -231,6 +245,17 @@ export function FounderProfileModal({
                     <h3 id="founder-modal-name" className="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-2">
                       <span>{member.full_name}</span>
                     </h3>
+
+                    {/* Verified Blue Badge when logo is showing on avatar */}
+                    {isFeatured && (
+                      <svg 
+                        viewBox="0 0 24 24" 
+                        aria-label="Verified Spotlight Founder" 
+                        className="w-4 h-4 sm:w-5 sm:h-5 text-[#1d9bf0] fill-current shrink-0"
+                      >
+                        <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.75 4.75l-4-4 1.41-1.41 2.59 2.58 6.59-6.58 1.41 1.41-8 8z" />
+                      </svg>
+                    )}
                     
                     {isFeatured ? (
                       <span className="inline-flex items-center gap-1 text-[10px] sm:text-xs font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40">
@@ -245,14 +270,21 @@ export function FounderProfileModal({
                     )}
                   </div>
 
-                  {/* Role & Company with Logo preview */}
+                  {/* Role & Company with Logo */}
                   <div className="flex items-center gap-2 text-sm sm:text-base text-neutral-300 flex-wrap">
                     <span className="font-semibold text-white">{member.role}</span>
                     {member.company_name?.trim() && (
                       <>
                         <span className="text-neutral-500">•</span>
                         <span className={`${cardTheme.accentTextColor} font-bold flex items-center gap-1.5`}>
-                          {member.company_name}
+                          {logoUrl && (
+                            <img
+                              src={logoUrl}
+                              alt=""
+                              className="w-4 h-4 sm:w-5 sm:h-5 object-contain rounded-xs"
+                            />
+                          )}
+                          <span>{member.company_name}</span>
                         </span>
                       </>
                     )}
@@ -282,20 +314,6 @@ export function FounderProfileModal({
                     <Building2 className="w-3.5 h-3.5 text-neutral-400" />
                     About Founder & Venture
                   </span>
-
-                  {/* Company Logo in Bio Box */}
-                  {logoUrl && (
-                    <div className="p-1.5 bg-neutral-900/90 rounded-lg border border-white/15 shadow-sm max-w-[120px] max-h-8 flex items-center justify-center">
-                      <img
-                        src={logoUrl}
-                        alt={member.company_name || 'Company Logo'}
-                        className="max-h-5 max-w-[110px] w-auto h-auto object-contain"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none'
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {member.tagline?.trim() && (
