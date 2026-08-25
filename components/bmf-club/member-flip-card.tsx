@@ -310,7 +310,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
                 }}
                 className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
               >
-                <span>Intro</span>
+                <span>Approach</span>
                 <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
               </button>
             </div>

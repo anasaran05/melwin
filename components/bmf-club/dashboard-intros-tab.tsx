@@ -323,7 +323,7 @@ export function DashboardIntrosTab({ profile, userEmail }: DashboardIntrosTabPro
             <div className="py-12 text-center rounded-2xl bg-neutral-900/30 border border-white/5 space-y-2">
               <p className="text-sm font-semibold text-neutral-300">You haven't requested any intros yet</p>
               <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                Browse the member directory and click <strong>Intro ↗</strong> on any verified founder's card to request a warm connection.
+                Browse the member directory and click <strong>Approach ↗</strong> on any verified founder's card to request a warm connection.
               </p>
             </div>
           ) : (
