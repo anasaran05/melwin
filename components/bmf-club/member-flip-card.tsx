@@ -54,7 +54,7 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
 
   return (
     <div
-      className="group relative w-[155px] sm:w-[210px] md:w-[220px] h-[225px] sm:h-[315px] [perspective:1200px] cursor-pointer select-none shrink-0"
+      className="group relative w-[155px] sm:w-[210px] md:w-[220px] h-[225px] sm:h-[315px] [perspective:1200px] cursor-pointer select-none shrink-0 outline-none focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0"
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
       onClick={() => setIsFlipped((prev) => !prev)}
@@ -72,22 +72,18 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{ duration: 0.35, ease: [0.2, 0.9, 0.3, 1] }}
         style={{ transformStyle: 'preserve-3d', willChange: 'transform' }}
-        className={`w-full h-full relative rounded-xl sm:rounded-2xl ${
-          hasAvatar 
-            ? 'shadow-xl hover:shadow-[0_15px_35px_rgba(56,189,248,0.25)] ring-1 ring-white/20' 
-            : 'shadow-md ring-1 ring-neutral-800'
-        }`}
+        className="w-full h-full relative rounded-xl sm:rounded-2xl shadow-xl [transform-style:preserve-3d]"
       >
         {/* ======================================================================= */}
         {/* 1. FRONT FACE: Full-bleed Photo or Clean Empty Obsidian State */}
         {/* ======================================================================= */}
         <div 
-          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] transition-colors duration-500 ${
+          className={`absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl overflow-hidden [backface-visibility:hidden] [webkit-backface-visibility:hidden] ${
             hasAvatar 
-              ? 'border border-white/20 bg-neutral-900' 
-              : 'border border-dashed border-neutral-700/80 bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]'
+              ? 'bg-neutral-900' 
+              : 'bg-gradient-to-b from-[#18181b] via-[#101012] to-[#09090b]'
           }`}
-          style={{ transform: 'rotateY(0deg)' }}
+          style={{ transform: 'rotateY(0deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           {hasAvatar ? (
             <>
@@ -171,7 +167,8 @@ export function MemberFlipCard({ member, onRequestIntro }: MemberFlipCardProps) 
         {/* 2. BACK FACE: Role, Company Logo, Description, Metrics, Social Links   */}
         {/* ======================================================================= */}
         <div 
-          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [transform:rotateY(180deg)] bg-[#141414] text-white border border-neutral-800 flex flex-col justify-between overflow-hidden"
+          className="absolute inset-0 w-full h-full rounded-xl sm:rounded-2xl p-2 sm:p-3.5 [backface-visibility:hidden] [webkit-backface-visibility:hidden] bg-[#121215] text-white border border-white/10 flex flex-col justify-between overflow-hidden"
+          style={{ transform: 'rotateY(180deg)', backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden' }}
         >
           {/* Top Bar: Company Identity & Category */}
           <div className="space-y-1 sm:space-y-2 text-left">
