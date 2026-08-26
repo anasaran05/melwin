@@ -633,7 +633,7 @@ export function ServicesGrid() {
 
           {/* Right Column: Dynamic Form Container */}
           <div className="lg:col-span-7">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 md:p-10 border border-neutral-200/90 shadow-xl relative overflow-hidden">
+            <div className="bg-white rounded-3xl p-4 sm:p-8 md:p-10 border border-neutral-200/90 shadow-xl relative overflow-hidden">
               {/* Form Header */}
               <div className="mb-6 pb-6 border-b border-neutral-100">
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
@@ -671,22 +671,25 @@ export function ServicesGrid() {
                     className="space-y-4 sm:space-y-5"
                   >
                     {/* Melwin Card Preview */}
-                    <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-200/90 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-3">
+                    <div className="bg-neutral-50 rounded-2xl p-3.5 sm:p-4 border border-neutral-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
                         <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0">
                           <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1">
-                            <span className="font-bold text-sm text-neutral-900">Dr. Melwin Vincent</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-nowrap">
+                            <span className="font-bold text-sm text-neutral-900 whitespace-nowrap">Dr. Melwin Vincent</span>
                             <BadgeCheck className="w-4 h-4 text-blue-500 shrink-0" />
                           </div>
-                          <span className="text-xs text-neutral-500">1-on-1 Strategy Consultation • 45-60 min</span>
+                          <span className="text-xs text-neutral-500 block leading-tight mt-0.5">1-on-1 Strategy Consultation • 45-60 min</span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs text-neutral-400 line-through mr-1.5">₹5,000</span>
-                        <span className="text-lg font-extrabold text-neutral-900">₹2,999</span>
+                      <div className="flex items-center justify-between sm:justify-end sm:text-right pt-2.5 sm:pt-0 border-t border-neutral-200/70 sm:border-t-0 shrink-0">
+                        <span className="text-xs text-neutral-500 font-medium sm:hidden">Investment</span>
+                        <div className="flex items-baseline gap-1.5 sm:block">
+                          <span className="text-xs text-neutral-400 line-through sm:mr-1.5">₹5,000</span>
+                          <span className="text-base sm:text-lg font-extrabold text-neutral-900">₹2,999</span>
+                        </div>
                       </div>
                     </div>
 

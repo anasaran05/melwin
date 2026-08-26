@@ -29,12 +29,36 @@ export function BioSection() {
           <p className="text-base md:text-xl text-[#111111]/80 leading-relaxed font-normal">
             Beyond building companies, my mission is creating a founder-first startup ecosystem where entrepreneurs learn, collaborate, and scale together to make lasting impact.
           </p>
-          <div className="flex flex-col gap-3 mt-4">
+          <div className="flex flex-wrap gap-2.5 mt-4">
             <Link 
               href="/bmf-club" 
-              className="bg-[#111111] text-white rounded-xl py-4 px-8 font-medium hover:bg-neutral-800 transition-all text-center flex items-center justify-center gap-2 group shadow-sm hover:scale-[1.01] active:scale-[0.99]"
+              className="bg-[#111111] text-white rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-neutral-800 transition-all text-center flex items-center justify-center gap-1.5 shadow-sm hover:scale-105 active:scale-95"
             >
               <span>Join founder's club (Free)</span>
+            </Link>
+            <Link 
+              href="/agency" 
+              className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
+            >
+              Personal Branding
+            </Link>
+            <Link 
+              href="/atom-se" 
+              className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
+            >
+              Atom SE (Tech)
+            </Link>
+            <Link 
+              href="/funding-grants" 
+              className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
+            >
+              Funding & Grants
+            </Link>
+            <Link 
+              href="/services" 
+              className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
+            >
+              Explore services
             </Link>
             <button 
               onClick={(e) => {
@@ -43,16 +67,10 @@ export function BioSection() {
                 const el = document.getElementById('consultation') || document.getElementById('services');
                 el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }}
-              className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-100 transition-colors border border-gray-300 text-center"
+              className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
             >
               Consult with Melwin 1-1
             </button>
-            <Link 
-              href="/services" 
-              className="bg-white text-[#111111] rounded-xl py-4 px-8 font-medium hover:bg-gray-100 transition-colors border border-gray-200 text-center"
-            >
-              Explore services
-            </Link>
           </div>
         </div>
       </div>
