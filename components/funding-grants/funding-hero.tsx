@@ -23,18 +23,18 @@ export function FundingHero() {
       </div>
 
       {/* Hero Header - Full Viewport Fit */}
-      <section className="min-h-[100dvh] w-full flex flex-col justify-center items-center px-4 sm:px-6 md:px-12 relative pt-24 pb-16">
-        <div className="max-w-5xl mx-auto text-center space-y-6 md:space-y-8 my-auto">
+      <section className="min-h-[100dvh] w-full flex flex-col justify-center items-center px-4 sm:px-6 md:px-12 relative pt-20 sm:pt-24 pb-14 sm:pb-16">
+        <div className="max-w-5xl mx-auto text-center space-y-4 sm:space-y-6 md:space-y-8 my-auto">
           
           {/* Title */}
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#111111] max-w-4xl mx-auto leading-[1.05]"
+            className="text-3xl sm:text-6xl md:text-7xl font-black tracking-tight text-[#111111] max-w-4xl mx-auto leading-[1.1] sm:leading-[1.05]"
           >
             Funding & Grants <br />
-            <span className="text-[#777777]">Fuel Your Venture Without Early Dilution.</span>
+            <span className="text-[#777777]">Explore Government Grants, Startup Schemes & Private Funding Options.</span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -42,9 +42,9 @@ export function FundingHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="text-base sm:text-lg md:text-xl text-[#555555] max-w-3xl mx-auto font-normal leading-relaxed"
+            className="text-xs sm:text-lg md:text-xl text-[#555555] max-w-3xl mx-auto font-normal leading-relaxed px-2 sm:px-0"
           >
-            Unlock non-dilutive government schemes, prestigious research grants, incubator seed pools, and direct founder-investor matching syndicates across India, UAE, and global ecosystems.
+            Explore government funding schemes, grants, incubator programmes, accelerators, and private investment opportunities across India and selected global ecosystems.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -52,11 +52,11 @@ export function FundingHero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2"
+            className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 pt-2"
           >
             <a
               href="#apply"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 sm:py-4 rounded-full font-bold text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-full font-bold text-xs sm:text-sm transition-all shadow-lg shadow-black/10 hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Submit Venture for Grant Review</span>
               <ArrowRight className="w-4 h-4" />
@@ -64,7 +64,7 @@ export function FundingHero() {
 
             <a
               href="#schemes"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-7 py-3.5 sm:py-4 rounded-full font-semibold text-sm transition-colors shadow-xs hover:scale-[1.02] active:scale-[0.98]"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-neutral-100 text-[#111111] border border-black/10 px-6 sm:px-7 py-3.5 sm:py-4 rounded-full font-semibold text-xs sm:text-sm transition-colors shadow-xs hover:scale-[1.02] active:scale-[0.98]"
             >
               <span>Browse Grant Directory</span>
             </a>

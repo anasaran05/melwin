@@ -42,8 +42,8 @@ export function Footer() {
                 { name: 'Directory', href: '/bmf-club/directory' },
                 { name: 'Personal Branding', href: '/agency' },
                 { name: 'FAQ', href: '/faq' },
-                { name: 'Atom SE (Tech)', href: '#', isLocked: true },
-                { name: 'Funding & Grants', href: '#', isLocked: true },
+                { name: 'Atom SE (Tech)', href: '/atom-se' },
+                { name: 'Funding & Grants', href: '/funding-grants' },
                 { name: 'Jobs & Talent', href: '#', isLocked: true },
                 { name: 'Biz Registrations', href: '#', isLocked: true }
               ].map((link) => (

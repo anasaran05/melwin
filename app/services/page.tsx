@@ -14,7 +14,8 @@ import {
   DollarSign,
   Briefcase,
   FileText,
-  X
+  X,
+  Cpu
 } from 'lucide-react'
 
 interface ServiceItem {
@@ -71,18 +72,37 @@ const servicesData: ServiceItem[] = [
       'Direct revenue & inbound lead pipeline alignment'
     ]
   },
-  // 3. Funding & Grants (Locked)
+  // 3. Atom SE (Open)
+  {
+    id: 'atom-se',
+    title: 'Atom SE (Tech & AI Studio)',
+    subtitle: 'Full-Stack Software, AI Agents & High-Performance Web Apps',
+    category: 'Technology & Product',
+    description: 'Bespoke engineering arm building production-ready web apps, scalable APIs, AI automation pipelines, and enterprise-grade software products.',
+    isOpen: true,
+    tag: 'TECH RETAINERS',
+    statusBadge: 'OPEN FOR CLIENTS',
+    icon: Cpu,
+    href: '/atom-se',
+    highlights: [
+      'Modern Next.js, React, Node.js & cloud infrastructure',
+      'Custom AI agents, LLM workflows & automation',
+      'High-performance UI/UX design & fluid animations',
+      'End-to-end product architecture & maintenance'
+    ]
+  },
+  // 4. Funding & Grants (Open)
   {
     id: 'funding-grants',
     title: 'Funding & Grants Matchmaking',
     subtitle: 'Government Subsidies & Investor Syndication',
     category: 'Capital & Investment',
     description: 'Seed pitch deck refinement, state & central government grant subsidies, angel investor syndicate matchmaking, and due-diligence data room prep.',
-    isOpen: false,
-    tag: 'AVAILABLE SOON',
-    statusBadge: 'LOCKED',
+    isOpen: true,
+    tag: '2026 ACTIVE SCHEMES',
+    statusBadge: 'OPEN FOR FOUNDERS',
     icon: DollarSign,
-    lockedReason: 'This service is currently locked and undergoing final setup. It will be available soon!',
+    href: '/funding-grants',
     highlights: [
       'Startup India Seed Fund & Grant application support',
       'Curated pitch deck reviews & financial models',
@@ -90,7 +110,7 @@ const servicesData: ServiceItem[] = [
       'Term sheet negotiation & cap-table structuring'
     ]
   },
-  // 4. Jobs & Startup Talent (Locked)
+  // 5. Jobs & Startup Talent (Locked)
   {
     id: 'jobs-talent',
     title: 'Jobs & Startup Talent Hub',

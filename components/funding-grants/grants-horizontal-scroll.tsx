@@ -24,6 +24,9 @@ export interface GrantItem {
   description: string
   keyEligibility: string[]
   badgeColor?: string
+  statusBadge?: string
+  fundingLabel?: string
+  supportDetails?: string
 }
 
 interface GrantsHorizontalScrollProps {
@@ -189,7 +192,7 @@ function FlickerLetterBox({
         <span
           className={`font-black tracking-tighter leading-none transition-transform duration-100 ${
             isFlickering ? 'scale-110 text-emerald-400' : 'scale-100 text-black'
-          } ${isHovered && !isFlickering ? 'text-white' : ''} text-4xl sm:text-6xl md:text-7xl lg:text-8xl`}
+          } ${isHovered && !isFlickering ? 'text-white' : ''} text-2xl sm:text-6xl md:text-7xl lg:text-8xl`}
         >
           {displayChar}
         </span>
@@ -206,6 +209,16 @@ function FlickerLetterBox({
 export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) {
   const targetRef = useRef<HTMLDivElement | null>(null)
   const [activeModalGrant, setActiveModalGrant] = useState<GrantItem | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768)
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const { scrollYProgress } = useScroll({
     target: targetRef,
@@ -213,9 +226,9 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
   })
 
   // Map vertical scroll progress (0 to 1) to horizontal translation
-  // Intro block (100vw) + 6 cards (50vw each = 300vw) + Outro card (50vw) = 450vw total
-  // Distance to translate = 450vw - 100vw = 350vw
-  const x = useTransform(scrollYProgress, [0, 1], ['0vw', '-350vw'])
+  // Desktop: Intro (100vw) + 6 cards (50vw each = 300vw) + Outro card (50vw) = 450vw total -> distance: -350vw
+  // Mobile: Intro (100vw) + 6 cards (88vw each = 528vw) + Outro card (88vw) = 716vw total -> distance: -616vw
+  const x = useTransform(scrollYProgress, [0, 1], ['0vw', isMobile ? '-616vw' : '-350vw'])
   const progressScaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   return (
@@ -314,7 +327,7 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
               return (
                 <div
                   key={grant.id}
-                  className={`w-[88vw] sm:w-[50vw] h-full shrink-0 ${theme.bg} ${theme.textColor} p-6 sm:p-10 md:p-14 flex flex-col justify-between border-r-2 border-black relative overflow-hidden group`}
+                  className={`w-[88vw] sm:w-[50vw] h-full shrink-0 ${theme.bg} ${theme.textColor} p-4 sm:p-8 md:p-14 flex flex-col justify-between border-r-2 border-black relative overflow-hidden group`}
                 >
                   {/* Subtle Geometric Background Watermark */}
                   <div 
@@ -328,32 +341,32 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
                   </div>
 
                   {/* Top Header Row of Card */}
-                  <div className="relative z-10 space-y-4">
-                    <div className="flex items-start justify-between gap-4">
+                  <div className="relative z-10 space-y-2 sm:space-y-4">
+                    <div className="flex items-start justify-between gap-3 sm:gap-4">
                       {/* Checkmark Tag */}
-                      <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
-                        <span className="font-mono tracking-tight">{grant.type} &bull; {grant.stage}</span>
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-sm font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+                        <span className="font-mono tracking-tight line-clamp-1">{grant.type} &bull; {grant.stage}</span>
                       </div>
 
                       {/* + Expansion Button */}
                       <button
                         type="button"
                         onClick={() => setActiveModalGrant(grant)}
-                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full ${theme.btnBg} flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 active:scale-95 shrink-0`}
+                        className={`w-9 h-9 sm:w-12 sm:h-12 rounded-full ${theme.btnBg} flex items-center justify-center shadow-lg transition-transform duration-300 hover:scale-110 active:scale-95 shrink-0`}
                         title="View Detailed Eligibility & Guidelines"
                       >
-                        <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+                        <Plus className="w-4 h-4 sm:w-6 sm:h-6" />
                       </button>
                     </div>
 
                     {/* Giant Headline Title */}
-                    <div className="pt-2">
-                      <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.1]">
+                    <div className="pt-1 sm:pt-2">
+                      <h3 className="text-xl sm:text-3xl md:text-5xl font-black tracking-tight leading-[1.1]">
                         {grant.title}
                       </h3>
-                      <div className="pt-2 flex items-center gap-2">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider ${theme.badgeColor} border border-current/20`}>
+                      <div className="pt-1.5 sm:pt-2 flex items-center gap-2">
+                        <span className={`inline-block px-2.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider ${theme.badgeColor} border border-current/20`}>
                           {grant.agency}
                         </span>
                       </div>
@@ -361,59 +374,69 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
                   </div>
 
                   {/* Center Visual & Key Grant Highlight */}
-                  <div className="relative z-10 py-6 my-auto flex flex-col items-center justify-center text-center">
+                  <div className="relative z-10 py-2 sm:py-3 my-auto flex flex-col items-center justify-center text-center gap-1.5 sm:gap-2">
                     
                     {/* Visual 3D Representation Box */}
-                    <div className="relative w-48 h-48 sm:w-60 sm:h-60 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                    <div className="relative w-48 h-60 sm:w-60 sm:h-72 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
                       {/* Stylized Badge Box / Grant Voucher Emblem */}
-                      <div className="w-40 h-52 sm:w-48 sm:h-60 rounded-2xl bg-white/95 text-black shadow-2xl p-5 border-2 border-black flex flex-col justify-between transform -rotate-3 group-hover:rotate-0 transition-transform duration-500">
-                        <div className="flex justify-between items-start">
-                          <span className="text-[11px] font-mono font-bold uppercase text-neutral-500">
+                      <div className="w-44 h-56 sm:w-56 sm:h-68 rounded-2xl bg-white/95 text-black shadow-2xl p-3.5 sm:p-5 border-2 border-black flex flex-col justify-between transform -rotate-2 group-hover:rotate-0 transition-transform duration-500 overflow-hidden">
+                        
+                        {/* Voucher Top Header */}
+                        <div className="flex justify-between items-start gap-2 border-b border-neutral-100 pb-1.5 sm:pb-2">
+                          <span className="text-[9px] sm:text-[11px] font-mono font-bold uppercase text-neutral-500 line-clamp-1 text-left">
                             {grant.sector}
                           </span>
-                          <span className="text-xl">{theme.iconEmoji}</span>
+                          <span className="text-base sm:text-lg shrink-0">{theme.iconEmoji}</span>
                         </div>
 
-                        <div className="text-center my-auto space-y-1">
-                          <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
-                            Sanction Limit
+                        {/* Voucher Center Highlight */}
+                        <div className="text-center my-auto py-1 space-y-1">
+                          <span className="text-[8px] sm:text-[10px] font-mono uppercase tracking-widest text-neutral-400 block truncate">
+                            {grant.fundingLabel || 'Typical / Potential Funding'}
                           </span>
-                          <div className="text-xl sm:text-2xl font-black text-black tracking-tight leading-tight">
+                          <div className={`text-black tracking-tight leading-snug line-clamp-4 ${
+                            grant.grantAmount.length <= 25
+                              ? 'text-lg sm:text-2xl font-black'
+                              : grant.grantAmount.length <= 48
+                              ? 'text-xs sm:text-base font-extrabold'
+                              : 'text-[11px] sm:text-sm font-bold'
+                          }`}>
                             {grant.grantAmount}
                           </div>
                         </div>
 
-                        <div className="pt-2 border-t border-neutral-200 flex items-center justify-between text-[10px] font-mono font-bold text-neutral-600">
-                          <span>GOVT SCHEME #{String(index + 1).padStart(2, '0')}</span>
-                          <span className="text-emerald-600 font-bold">&bull; ACTIVE</span>
+                        {/* Voucher Bottom Status */}
+                        <div className="pt-1.5 sm:pt-2 border-t border-neutral-200 flex items-center justify-center text-[8px] sm:text-[10px] font-mono font-bold text-neutral-600 truncate text-center tracking-tight">
+                          <span className="truncate">{grant.statusBadge || `GOVT SCHEME #${String(index + 1).padStart(2, '0')} • ACTIVE`}</span>
                         </div>
                       </div>
                     </div>
 
-                    <p className={`text-xs sm:text-sm md:text-base ${theme.subtextColor} max-w-md mx-auto pt-4 line-clamp-2 leading-relaxed font-medium`}>
+                    <p className={`text-xs sm:text-sm md:text-base ${theme.subtextColor} max-w-md mx-auto pt-1 sm:pt-2 line-clamp-2 leading-relaxed font-medium`}>
                       {grant.description}
                     </p>
                   </div>
 
                   {/* Bottom Action Section */}
-                  <div className="relative z-10 pt-4 border-t border-current/15 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div className="relative z-10 pt-3 sm:pt-4 border-t border-current/15 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                     <div className="text-xs font-mono">
-                      <span className="opacity-75">Max Fund: </span>
-                      <span className="font-bold">{grant.grantAmount}</span>
+                      <span className="font-bold text-[10px] sm:text-[11px] leading-snug block max-w-xs">
+                        {grant.supportDetails || `Support: ${grant.grantAmount}`}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => setActiveModalGrant(grant)}
-                        className={`text-xs font-bold px-4 py-2.5 rounded-full ${theme.accentBg} hover:bg-white/30 transition-all`}
+                        className={`text-[11px] sm:text-xs font-bold px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-full ${theme.accentBg} hover:bg-white/30 transition-all text-center flex-1 sm:flex-none`}
                       >
                         Details & Checklist
                       </button>
 
                       <a
                         href="#apply"
-                        className={`inline-flex items-center gap-1.5 text-xs font-bold px-5 py-2.5 rounded-full ${theme.btnBg} shadow-md transition-all hover:scale-105 active:scale-95`}
+                        className={`inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-full ${theme.btnBg} shadow-md transition-all hover:scale-105 active:scale-95 flex-1 sm:flex-none`}
                       >
                         <span>Apply</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
@@ -426,44 +449,44 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
             })}
 
             {/* 3. OUTRO HALF-SCREEN ADVISORY CARD */}
-            <div className="w-[88vw] sm:w-[50vw] h-full shrink-0 bg-[#f7f7f2] text-black p-8 sm:p-12 md:p-16 flex flex-col justify-between border-r-2 border-black relative overflow-hidden">
-              <div className="space-y-6">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-black text-xs font-mono font-bold uppercase tracking-wider">
+            <div className="w-[88vw] sm:w-[50vw] h-full shrink-0 bg-[#f7f7f2] text-black p-5 sm:p-10 md:p-16 flex flex-col justify-between border-r-2 border-black relative overflow-hidden">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-black text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider">
                   <Sparkles className="w-3.5 h-3.5 text-amber-600" />
                   <span>Custom Dossier Structuring</span>
                 </div>
 
-                <h3 className="text-3xl sm:text-5xl font-black tracking-tight text-black leading-tight">
+                <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight text-black leading-tight">
                   Need a Comprehensive Capital Audit?
                 </h3>
 
-                <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-md">
+                <p className="text-xs sm:text-sm md:text-base text-neutral-600 leading-relaxed max-w-md">
                   Dr. Melwin’s team evaluates your IP, technology readiness level (TRL), and corporate structuring to map you to every available government grant and angel co-investment pool.
                 </p>
 
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div className="space-y-2 sm:space-y-3 pt-1 sm:pt-2">
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
+                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
                     <span>SISFS, BIRAC BIG & MeitY SAMRIDH Proposal Filing</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
+                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
                     <span>Host Incubator & Evaluation Board Defense</span>
                   </div>
-                  <div className="flex items-center gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Matching Angel Checks with Zero Early Equity Dilution</span>
+                  <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm font-semibold text-neutral-800">
+                    <CheckCircle2 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 shrink-0" />
+                    <span>exploring grant and private investment options with consideration for founder dilution.</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-8">
+              <div className="pt-4 sm:pt-8">
                 <a
                   href="#apply"
-                  className="w-full inline-flex items-center justify-center gap-3 bg-black hover:bg-neutral-800 text-white px-8 py-4 sm:py-5 rounded-2xl font-bold text-sm sm:text-base transition-all shadow-xl hover:scale-[1.02]"
+                  className="w-full inline-flex items-center justify-center gap-2 sm:gap-3 bg-black hover:bg-neutral-800 text-white px-6 sm:px-8 py-3.5 sm:py-5 rounded-xl sm:rounded-2xl font-bold text-xs sm:text-base transition-all shadow-xl hover:scale-[1.02]"
                 >
                   <span>Submit Venture for Grant Review</span>
-                  <ArrowRight className="w-5 h-5" />
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </a>
               </div>
             </div>
@@ -518,7 +541,7 @@ export function GrantsHorizontalScroll({ grants }: GrantsHorizontalScrollProps) 
                 <div className="space-y-4 py-6 overflow-y-auto max-h-[50vh] pr-1">
                   <div className="grid grid-cols-2 gap-3 bg-[#f8f8f6] p-4 rounded-2xl border border-black/5 text-xs font-mono">
                     <div>
-                      <span className="text-neutral-500 block">Sanction Cap:</span>
+                      <span className="text-neutral-500 block">{activeModalGrant.fundingLabel || 'Typical / Potential Funding'}:</span>
                       <span className="font-bold text-emerald-700 text-sm">{activeModalGrant.grantAmount}</span>
                     </div>
                     <div>

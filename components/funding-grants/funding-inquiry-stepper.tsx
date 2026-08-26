@@ -10,37 +10,50 @@ import {
   ArrowLeft,
   Send,
   Loader2,
+  ChevronRight,
+  Link as LinkIcon,
   Sparkles,
   ShieldCheck,
-  Building,
-  Coins,
-  FileText,
-  User,
-  Layers,
-  ChevronRight
+  Zap,
+  HelpCircle
 } from 'lucide-react'
 
 export function FundingInquiryStepper() {
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
+    // Step 1: Founder & Startup Basics
     name: '',
     email: '',
     phone: '',
     company: '',
-    track: 'Government Grants (SISFS / BIRAC / MeitY)',
-    sector: 'HealthTech / BioTech / MedTech',
-    stage: 'Proof of Concept / Prototype',
-    deck_url: '',
-    message: ''
+    location: '',
+    website_or_linkedin: '',
+
+    // Step 2: What You Are Building & Progress
+    sector: 'AI, Software & SaaS',
+    stage: '🛠️ Prototype / Working Demo Built',
+    one_line_pitch: '',
+
+    // Step 3: Funding Goals & Pitch Deck
+    funding_type: '🌐 Both Grants & Private Funding',
+    target_amount: '₹20 Lakhs – ₹50 Lakhs (Grant + Seed Blend)',
+    deck_url: ''
   })
+
   const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
     if (currentStep === 1) {
-      if (!formData.name || !formData.email || !formData.phone || !formData.company) {
-        setErrorMessage('Please fill in all mandatory founder & venture details.')
+      if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || !formData.company.trim() || !formData.location.trim()) {
+        setErrorMessage('Please fill in all required fields (Name, Email, Phone, Startup Name, and Location).')
+        return
+      }
+    }
+    if (currentStep === 2) {
+      if (!formData.one_line_pitch.trim() || formData.one_line_pitch.trim().length < 10) {
+        setErrorMessage('Please describe what your startup is building in 1-2 sentences.')
         return
       }
     }
@@ -55,8 +68,8 @@ export function FundingInquiryStepper() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.message) {
-      setErrorMessage('Please provide a brief summary of your technology and grant goals.')
+    if (!formData.deck_url.trim()) {
+      setErrorMessage('Please provide a link to your Pitch Deck, Demo Video, Notion Doc, or Website.')
       return
     }
 
@@ -73,11 +86,14 @@ export function FundingInquiryStepper() {
           email: formData.email,
           phone: formData.phone,
           company: formData.company,
-          track: formData.track,
+          location: formData.location,
+          website_or_linkedin: formData.website_or_linkedin,
           sector: formData.sector,
           stage: formData.stage,
-          deck_url: formData.deck_url,
-          message: formData.message
+          one_line_pitch: formData.one_line_pitch,
+          funding_type: formData.funding_type,
+          target_amount: formData.target_amount,
+          deck_url: formData.deck_url
         })
       })
 
@@ -86,23 +102,23 @@ export function FundingInquiryStepper() {
         setFormStatus('success')
       } else {
         setFormStatus('error')
-        setErrorMessage(data.error || 'Failed to submit advisory request. Please try again.')
+        setErrorMessage(data.error || 'Failed to submit application. Please check your details and try again.')
       }
     } catch {
       setFormStatus('error')
-      setErrorMessage('Network error. Please try again.')
+      setErrorMessage('Network connection error. Please try again.')
     }
   }
 
   return (
-    <section id="apply" className="py-16 md:py-24 px-4 sm:px-6 md:px-12 w-full bg-[#f2f2f2] text-[#111111] scroll-mt-16">
+    <section id="apply" className="py-12 sm:py-16 md:py-24 px-3.5 sm:px-6 md:px-12 w-full bg-[#f2f2f2] text-[#111111] scroll-mt-16">
       <div className="max-w-7xl mx-auto">
         
-        {/* Two-Column Card Container (Light Theme) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 bg-white border border-black/10 rounded-3xl overflow-hidden shadow-xl">
+        {/* Two-Column Card Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 bg-white border border-black/10 rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl">
           
-          {/* LEFT COLUMN: Visual & Trust Indicators (5 Cols) */}
-          <div className="lg:col-span-5 relative bg-[#fafaf8] p-8 sm:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-black/10 min-h-[420px] lg:min-h-[640px]">
+          {/* LEFT COLUMN: Clean Brand Narrative (5 Cols) */}
+          <div className="lg:col-span-5 relative bg-[#fafaf8] p-6 sm:p-10 md:p-12 flex flex-col justify-between overflow-hidden border-b lg:border-b-0 lg:border-r border-black/10 min-h-auto lg:min-h-[640px]">
             
             {/* Background Graphic Asset with Soft Light Wash */}
             <div className="absolute inset-0 z-0">
@@ -112,49 +128,45 @@ export function FundingInquiryStepper() {
                 fill
                 className="object-cover opacity-20 filter contrast-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#fafaf8] via-[#fafaf8]/85 to-[#fafaf8]/40" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#fafaf8] via-[#fafaf8]/90 to-[#fafaf8]/50" />
             </div>
 
             {/* Top Badge & Header */}
-            <div className="relative z-10 space-y-4">
-          
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#111111] leading-tight">
-                Request Grant & Funding Advisory
+            <div className="relative z-10 space-y-4 my-auto py-4">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 border border-black/10 text-xs font-mono font-bold uppercase tracking-wider text-neutral-800">
+                <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                <span>Founder Application &bull; 2026</span>
+              </div>
+
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#111111] leading-tight">
+                Apply for Funding & Grant Advisory
               </h2>
 
               <p className="text-xs sm:text-sm text-[#555555] leading-relaxed max-w-sm">
-                Get your technology readiness level (TRL) audited by Dr. Melwin’s capital desk to unlock non-dilutive government schemes and matching angel syndicate pools.
+                Submit your startup details for non-dilutive government scheme mapping, grant proposal structuring, and private syndicate co-investment review.
               </p>
-            </div>
 
-            {/* Middle Feature Highlights */}
-            <div className="relative z-10 my-auto py-6 space-y-3">
-              <div className="flex items-center gap-3.5 bg-white border border-black/10 p-4 rounded-2xl shadow-xs">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0 border border-emerald-200">
-                  <Coins className="w-5 h-5" />
+              <div className="pt-4 space-y-2.5 text-xs text-[#444444]">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Confidential & protected under standard NDA</span>
                 </div>
-                <div>
-                  <span className="text-xs font-bold text-[#111111] block">Non-Dilutive First</span>
-                  <span className="text-[11px] text-[#666666]">Preserve equity during proof-of-concept phase</span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3.5 bg-white border border-black/10 p-4 rounded-2xl shadow-xs">
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center shrink-0 border border-blue-200">
-                  <ShieldCheck className="w-5 h-5" />
-                </div>
-                <div>
-                  <span className="text-xs font-bold text-[#111111] block">48-Hour Response SLA</span>
-                  <span className="text-[11px] text-[#666666]">Direct technical eligibility audit feedback</span>
+                <div className="flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span>Direct review by Dr. Melwin's advisory desk</span>
                 </div>
               </div>
             </div>
 
-          
+            {/* Bottom Footer Note */}
+            <div className="relative z-10 pt-4 border-t border-black/10 text-[11px] font-mono text-[#777777] flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Applications Open &bull; 48-Hour Response SLA</span>
+            </div>
 
           </div>
 
-          {/* RIGHT COLUMN: Step-Wise Form Data Collector (7 Cols) */}
+          {/* RIGHT COLUMN: Streamlined Step-Wise Form (7 Cols) */}
           <div className="lg:col-span-7 p-6 sm:p-10 md:p-12 flex flex-col justify-between bg-white">
             
             {formStatus === 'success' ? (
@@ -163,10 +175,10 @@ export function FundingInquiryStepper() {
                   <CheckCircle2 className="w-9 h-9" />
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-black text-[#111111]">
-                  Venture Submitted for Review!
+                  Application Received!
                 </h3>
                 <p className="text-[#555555] max-w-md mx-auto text-xs sm:text-sm leading-relaxed">
-                  Thank you for submitting your details. Dr. Melwin's capital advisory desk will audit your venture against active grant parameters and get in touch with actionable next steps within 48 hours.
+                  Thank you for submitting your startup information. Dr. Melwin's team will evaluate your applicable government grant options and investor fit, reaching out within 48 hours.
                 </p>
                 <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                   <button
@@ -179,16 +191,19 @@ export function FundingInquiryStepper() {
                         email: '',
                         phone: '',
                         company: '',
-                        track: 'Government Grants (SISFS / BIRAC / MeitY)',
-                        sector: 'HealthTech / BioTech / MedTech',
-                        stage: 'Proof of Concept / Prototype',
-                        deck_url: '',
-                        message: ''
+                        location: '',
+                        website_or_linkedin: '',
+                        sector: 'AI, Software & SaaS',
+                        stage: '🛠️ Prototype / Working Demo Built',
+                        one_line_pitch: '',
+                        funding_type: '🌐 Both Grants & Private Funding',
+                        target_amount: '₹20 Lakhs – ₹50 Lakhs (Grant + Seed Blend)',
+                        deck_url: ''
                       })
                     }}
                     className="bg-[#111111] text-white px-6 py-3 rounded-full font-bold text-xs hover:bg-black transition-colors shadow-sm"
                   >
-                    Submit Another Venture
+                    Submit Another Application
                   </button>
                   <Link
                     href="/"
@@ -208,10 +223,10 @@ export function FundingInquiryStepper() {
                       STEP {currentStep} OF 3 &bull;{' '}
                       <strong className="text-[#111111]">
                         {currentStep === 1
-                          ? 'Founder & Venture Details'
+                          ? 'You & Your Startup'
                           : currentStep === 2
-                          ? 'Funding Track & Sector'
-                          : 'Technology & Grant Goals'}
+                          ? 'What You Are Building'
+                          : 'Funding Goals & Pitch Deck'}
                       </strong>
                     </span>
                     <span className="text-emerald-700 font-bold">
@@ -242,7 +257,7 @@ export function FundingInquiryStepper() {
                 <form onSubmit={currentStep === 3 ? handleSubmit : handleNext} className="space-y-5">
                   <AnimatePresence mode="wait">
                     
-                    {/* STEP 1: Founder & Venture Details */}
+                    {/* STEP 1: Founder & Startup Basics */}
                     {currentStep === 1 && (
                       <motion.div
                         key="step1"
@@ -253,9 +268,9 @@ export function FundingInquiryStepper() {
                         className="space-y-4"
                       >
                         <div className="space-y-1">
-                          <h4 className="text-lg font-bold text-[#111111]">Founder & Entity Information</h4>
+                          <h4 className="text-lg font-bold text-[#111111]">Founder & Startup Information</h4>
                           <p className="text-xs text-[#666666]">
-                            Tell us who you are and where your startup is incorporated.
+                            Tell us who you are and where your venture is based.
                           </p>
                         </div>
 
@@ -278,12 +293,12 @@ export function FundingInquiryStepper() {
                           {/* Email */}
                           <div className="space-y-1.5 text-left">
                             <label className="text-xs font-semibold text-[#333333]">
-                              Official Email <span className="text-rose-500">*</span>
+                              Email Address <span className="text-rose-500">*</span>
                             </label>
                             <input
                               type="email"
                               required
-                              placeholder="e.g. anand@biocure.io"
+                              placeholder="e.g. anand@startup.com"
                               value={formData.email}
                               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                               className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
@@ -293,7 +308,7 @@ export function FundingInquiryStepper() {
                           {/* Phone */}
                           <div className="space-y-1.5 text-left">
                             <label className="text-xs font-semibold text-[#333333]">
-                              Phone / WhatsApp <span className="text-rose-500">*</span>
+                              Phone / WhatsApp Number <span className="text-rose-500">*</span>
                             </label>
                             <input
                               type="tel"
@@ -305,17 +320,46 @@ export function FundingInquiryStepper() {
                             />
                           </div>
 
-                          {/* Company */}
+                          {/* Startup Name */}
                           <div className="space-y-1.5 text-left">
                             <label className="text-xs font-semibold text-[#333333]">
-                              Startup / Company Name <span className="text-rose-500">*</span>
+                              Startup / Project Name <span className="text-rose-500">*</span>
                             </label>
                             <input
                               type="text"
                               required
-                              placeholder="e.g. BioCure Therapeutics Pvt Ltd"
+                              placeholder="e.g. BioCure Health"
                               value={formData.company}
                               onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
+                            />
+                          </div>
+
+                          {/* Location */}
+                          <div className="space-y-1.5 text-left">
+                            <label className="text-xs font-semibold text-[#333333]">
+                              City & Country <span className="text-rose-500">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              required
+                              placeholder="e.g. Bengaluru, India (or Dubai, UAE)"
+                              value={formData.location}
+                              onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
+                            />
+                          </div>
+
+                          {/* Website or LinkedIn */}
+                          <div className="space-y-1.5 text-left">
+                            <label className="text-xs font-semibold text-[#333333]">
+                              Website or LinkedIn (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              placeholder="e.g. yourstartup.com or linkedin.com/in/..."
+                              value={formData.website_or_linkedin}
+                              onChange={(e) => setFormData({ ...formData, website_or_linkedin: e.target.value })}
                               className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
                             />
                           </div>
@@ -323,7 +367,7 @@ export function FundingInquiryStepper() {
                       </motion.div>
                     )}
 
-                    {/* STEP 2: Funding Track & Sector Focus */}
+                    {/* STEP 2: What You Are Building & Progress */}
                     {currentStep === 2 && (
                       <motion.div
                         key="step2"
@@ -334,85 +378,71 @@ export function FundingInquiryStepper() {
                         className="space-y-4"
                       >
                         <div className="space-y-1">
-                          <h4 className="text-lg font-bold text-[#111111]">Target Track & Industry Focus</h4>
+                          <h4 className="text-lg font-bold text-[#111111]">What You Are Building</h4>
                           <p className="text-xs text-[#666666]">
-                            Select the capital avenues you wish to explore.
+                            Help us understand your product and current progress.
                           </p>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Track Selection */}
-                          <div className="space-y-1.5 text-left sm:col-span-2">
-                            <label className="text-xs font-semibold text-[#333333]">
-                              Target Funding / Grant Track
-                            </label>
-                            <select
-                              value={formData.track}
-                              onChange={(e) => setFormData({ ...formData, track: e.target.value })}
-                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
-                            >
-                              <option value="Government Grants (SISFS / BIRAC / MeitY)">Government Grants (SISFS / BIRAC / MeitY)</option>
-                              <option value="MSME & Innovation Prototyping Schemes">MSME & Innovation Prototyping Schemes</option>
-                              <option value="Global Incubator / Accelerator Applications">Global Incubator / Accelerator (YC / Techstars)</option>
-                              <option value="Angel Syndicate & Investor Matching Layer">Angel Syndicate & Investor Matching Layer</option>
-                              <option value="Comprehensive Capital Readiness Audit">Comprehensive Capital Readiness Audit (All Tracks)</option>
-                            </select>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Sector */}
+                            <div className="space-y-1.5 text-left">
+                              <label className="text-xs font-semibold text-[#333333]">
+                                Industry / Sector <span className="text-rose-500">*</span>
+                              </label>
+                              <select
+                                value={formData.sector}
+                                onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                                className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
+                              >
+                                <option value="AI, Software & SaaS">AI, Software & SaaS</option>
+                                <option value="HealthTech, BioTech & MedTech">HealthTech, BioTech & MedTech</option>
+                                <option value="Hardware, Robotics & DeepTech">Hardware, Robotics & DeepTech</option>
+                                <option value="CleanTech, EV & Energy">CleanTech, EV & Energy</option>
+                                <option value="FinTech & Web3">FinTech & Web3</option>
+                                <option value="Consumer, D2C & EdTech">Consumer, D2C & EdTech</option>
+                                <option value="Other / Multi-Sector">Other / Multi-Sector</option>
+                              </select>
+                            </div>
+
+                            {/* Stage */}
+                            <div className="space-y-1.5 text-left">
+                              <label className="text-xs font-semibold text-[#333333]">
+                                Current Stage <span className="text-rose-500">*</span>
+                              </label>
+                              <select
+                                value={formData.stage}
+                                onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
+                                className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
+                              >
+                                <option value="💡 Idea / Concept Phase">💡 Idea / Concept Phase</option>
+                                <option value="🛠️ Prototype / Working Demo Built">🛠️ Prototype / Working Demo Built</option>
+                                <option value="🚀 Launched with Early Users">🚀 Launched with Early Users</option>
+                                <option value="📈 Generating Paying Customers / Revenue">📈 Generating Paying Customers / Revenue</option>
+                              </select>
+                            </div>
                           </div>
 
-                          {/* Sector Selection */}
+                          {/* One-Line Pitch */}
                           <div className="space-y-1.5 text-left">
                             <label className="text-xs font-semibold text-[#333333]">
-                              Industry Sector
+                              What does your startup do? <span className="text-rose-500">*</span>
                             </label>
-                            <select
-                              value={formData.sector}
-                              onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
-                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
-                            >
-                              <option value="HealthTech / BioTech / MedTech">HealthTech / BioTech / MedTech</option>
-                              <option value="Artificial Intelligence / DeepTech / SaaS">Artificial Intelligence / DeepTech / SaaS</option>
-                              <option value="Logistics / Hardware / Robotics">Logistics / Hardware / Robotics</option>
-                              <option value="FinTech / Web3 / LegalTech">FinTech / Web3 / LegalTech</option>
-                              <option value="ClimateTech / Clean Energy / AgriTech">ClimateTech / Clean Energy / AgriTech</option>
-                              <option value="Consumer / D2C / EdTech">Consumer / D2C / EdTech</option>
-                            </select>
-                          </div>
-
-                          {/* Current Stage */}
-                          <div className="space-y-1.5 text-left">
-                            <label className="text-xs font-semibold text-[#333333]">
-                              Current Readiness Stage
-                            </label>
-                            <select
-                              value={formData.stage}
-                              onChange={(e) => setFormData({ ...formData, stage: e.target.value })}
-                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
-                            >
-                              <option value="Idea / Concept Phase">Idea / Concept Phase</option>
-                              <option value="Proof of Concept / Prototype">Proof of Concept / Prototype</option>
-                              <option value="MVP with Early Beta Traction">MVP with Early Beta Traction</option>
-                              <option value="Market Ready / Paying Customers">Market Ready / Paying Customers</option>
-                            </select>
-                          </div>
-
-                          {/* Pitch Deck / Link */}
-                          <div className="space-y-1.5 text-left sm:col-span-2">
-                            <label className="text-xs font-semibold text-[#333333]">
-                              Pitch Deck / Website / Demo Link (Optional)
-                            </label>
-                            <input
-                              type="url"
-                              placeholder="https://drive.google.com/... or https://yourstartup.com"
-                              value={formData.deck_url}
-                              onChange={(e) => setFormData({ ...formData, deck_url: e.target.value })}
-                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
+                            <textarea
+                              required
+                              rows={3}
+                              placeholder="In 1-2 simple sentences, what problem do you solve and what is your product/solution?"
+                              value={formData.one_line_pitch}
+                              onChange={(e) => setFormData({ ...formData, one_line_pitch: e.target.value })}
+                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors resize-none"
                             />
                           </div>
                         </div>
                       </motion.div>
                     )}
 
-                    {/* STEP 3: Technology Innovation & Goals */}
+                    {/* STEP 3: Funding Goals & Pitch Deck */}
                     {currentStep === 3 && (
                       <motion.div
                         key="step3"
@@ -423,40 +453,85 @@ export function FundingInquiryStepper() {
                         className="space-y-4"
                       >
                         <div className="space-y-1">
-                          <h4 className="text-lg font-bold text-[#111111]">Innovation Summary & Capital Goals</h4>
+                          <h4 className="text-lg font-bold text-[#111111]">Funding Goal & Presentation</h4>
                           <p className="text-xs text-[#666666]">
-                            Briefly outline your technology, patents/IP if any, and target grant timeline.
+                            Share your funding objectives and a link to your deck or product.
                           </p>
                         </div>
 
-                        {/* Summary / Notes */}
-                        <div className="space-y-1.5 text-left">
-                          <label className="text-xs font-semibold text-[#333333]">
-                            Summary of Technology & Current Traction <span className="text-rose-500">*</span>
-                          </label>
-                          <textarea
-                            required
-                            rows={4}
-                            placeholder="Briefly state your core novelty, prototype readiness level, patents/IP filed, and how much funding or runway extension you aim to secure..."
-                            value={formData.message}
-                            onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                            className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors resize-none"
-                          />
-                        </div>
+                        <div className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {/* Funding Type */}
+                            <div className="space-y-1.5 text-left">
+                              <label className="text-xs font-semibold text-[#333333]">
+                                Support Needed <span className="text-rose-500">*</span>
+                              </label>
+                              <select
+                                value={formData.funding_type}
+                                onChange={(e) => setFormData({ ...formData, funding_type: e.target.value })}
+                                className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
+                              >
+                                <option value="🏛️ Government Grants (SISFS, BIRAC, MeitY, MSME)">🏛️ Government Grants</option>
+                                <option value="🤝 Angel & Seed Syndicate Investment">🤝 Angel & Seed Syndicate</option>
+                                <option value="🌐 Both Grants & Private Funding">🌐 Both Grants & Private Funding</option>
+                                <option value="🧭 Seeking Advisory on the Best Options">🧭 Seeking Advisory on Options</option>
+                              </select>
+                            </div>
 
-                        {/* Quick Recap Pill */}
-                        <div className="bg-[#f8f9fa] border border-black/10 p-4 rounded-2xl text-xs space-y-1.5 text-[#444444]">
-                          <div className="flex justify-between">
-                            <span className="text-[#777777]">Founder:</span>
-                            <span className="font-semibold text-[#111111]">{formData.name || '—'}</span>
+                            {/* Target Amount */}
+                            <div className="space-y-1.5 text-left">
+                              <label className="text-xs font-semibold text-[#333333]">
+                                Target Funding Amount <span className="text-rose-500">*</span>
+                              </label>
+                              <select
+                                value={formData.target_amount}
+                                onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
+                                className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] focus:outline-none focus:border-black focus:bg-white transition-colors"
+                              >
+                                <option value="Up to ₹20 Lakhs (Early Grant Focus)">Up to ₹20 Lakhs</option>
+                                <option value="₹20 Lakhs – ₹50 Lakhs (Grant + Seed Blend)">₹20 Lakhs – ₹50 Lakhs</option>
+                                <option value="₹50 Lakhs – ₹1.5 Crore (Angel / Syndicate Seed)">₹50 Lakhs – ₹1.5 Crore</option>
+                                <option value="₹1.5 Crore+ (Growth Capital)">₹1.5 Crore+</option>
+                                <option value="Exploring Options / Not Sure">Exploring Options / Open</option>
+                              </select>
+                            </div>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#777777]">Company:</span>
-                            <span className="font-semibold text-[#111111]">{formData.company || '—'}</span>
+
+                          {/* Pitch Deck / Presentation Link */}
+                          <div className="space-y-1.5 text-left">
+                            <div className="flex items-center justify-between">
+                              <label className="text-xs font-semibold text-[#333333] flex items-center gap-1.5">
+                                <LinkIcon className="w-3.5 h-3.5 text-neutral-600" />
+                                <span>Pitch Deck, One-Pager, or Demo Link <span className="text-rose-500">*</span></span>
+                              </label>
+                            </div>
+                            <input
+                              type="url"
+                              required
+                              placeholder="e.g. https://docsend.com/... or https://drive.google.com/... or your website"
+                              value={formData.deck_url}
+                              onChange={(e) => setFormData({ ...formData, deck_url: e.target.value })}
+                              className="w-full bg-[#f8f9fa] border border-black/15 rounded-xl px-4 py-3 text-sm text-[#111111] placeholder-neutral-400 focus:outline-none focus:border-black focus:bg-white transition-colors"
+                            />
+                            <p className="text-[11px] text-neutral-500">
+                              💡 Don't have a formal deck yet? A simple Google Drive folder, Notion page, demo video, or website link works great!
+                            </p>
                           </div>
-                          <div className="flex justify-between">
-                            <span className="text-[#777777]">Selected Track:</span>
-                            <span className="font-semibold text-emerald-700 truncate max-w-[240px]">{formData.track}</span>
+
+                          {/* Quick Summary Box */}
+                          <div className="bg-[#f8f9fa] border border-black/10 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl text-xs space-y-1.5 text-[#444444]">
+                            <div className="flex justify-between">
+                              <span className="text-[#777777]">Applicant:</span>
+                              <span className="font-semibold text-[#111111] truncate max-w-[200px]">{formData.name} &bull; {formData.company}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[#777777]">Sector:</span>
+                              <span className="font-semibold text-emerald-700 truncate max-w-[220px]">{formData.sector}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-[#777777]">Target:</span>
+                              <span className="font-semibold text-neutral-900 truncate max-w-[220px]">{formData.target_amount}</span>
+                            </div>
                           </div>
                         </div>
                       </motion.div>
@@ -472,24 +547,24 @@ export function FundingInquiryStepper() {
                   )}
 
                   {/* Step Navigation Controls */}
-                  <div className="pt-4 border-t border-black/10 flex items-center justify-between gap-3">
+                  <div className="pt-4 border-t border-black/10 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3">
                     {currentStep > 1 ? (
                       <button
                         type="button"
                         onClick={handleBack}
-                        className="inline-flex items-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-[#111111] px-5 py-3 rounded-full text-xs font-semibold transition-colors border border-black/10"
+                        className="inline-flex items-center justify-center gap-2 bg-neutral-100 hover:bg-neutral-200 text-[#111111] px-5 py-3 rounded-full text-xs font-semibold transition-colors border border-black/10 w-full sm:w-auto"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Previous Step</span>
                       </button>
                     ) : (
-                      <div />
+                      <div className="hidden sm:block" />
                     )}
 
                     {currentStep < 3 ? (
                       <button
                         type="submit"
-                        className="inline-flex items-center gap-2 bg-[#111111] hover:bg-black text-white px-7 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02]"
+                        className="inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-7 py-3 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02] w-full sm:w-auto"
                       >
                         <span>Continue to Next Step</span>
                         <ChevronRight className="w-4 h-4" />
@@ -498,16 +573,16 @@ export function FundingInquiryStepper() {
                       <button
                         type="submit"
                         disabled={formStatus === 'submitting'}
-                        className="inline-flex items-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 rounded-full text-xs font-bold transition-all shadow-lg hover:scale-[1.02] disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-8 py-3.5 rounded-full text-xs font-bold transition-all shadow-lg hover:scale-[1.02] disabled:opacity-50 w-full sm:w-auto"
                       >
                         {formStatus === 'submitting' ? (
                           <>
                             <Loader2 className="w-4 h-4 animate-spin" />
-                            <span>Evaluating Submission...</span>
+                            <span>Submitting Application...</span>
                           </>
                         ) : (
                           <>
-                            <span>Submit for Funding Review</span>
+                            <span>Submit Application</span>
                             <Send className="w-4 h-4" />
                           </>
                         )}

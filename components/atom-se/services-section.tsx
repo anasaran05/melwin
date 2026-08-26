@@ -50,6 +50,14 @@ const atomSeProjects: Project[] = [
     category: 'Venture Ecosystem',
   },
   {
+    title: 'Prapanjj • Executive Creative Portfolio',
+    description: 'High-impact personal portfolio, visual direction showcase, interactive project gallery, and custom brand storytelling platform.',
+    year: '2024',
+    link: 'https://prapanjj.buildwithmelwin.com/',
+    image: '/images/atom-se%20images/prapanjj.webp',
+    category: 'Creative Portfolio',
+  },
+  {
     title: 'Internal Tools & Performance Automations',
     description: 'Custom operational bots, automated lead routing, CRM synchronizers, and algorithmic workflows engineered to supercharge company throughput.',
     year: '2024',
@@ -73,14 +81,14 @@ export function AtomSeServicesSection() {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white border border-black/10 text-[11px] font-mono font-bold uppercase tracking-wider text-[#111111] shadow-xs">
               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>PRODUCTION SHOWCASE &bull; SELECTED WORK</span>
+              <span>OUR CLIENTS &bull; SELECTED WORK</span>
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-[#111111] tracking-tight leading-[1.05]">
-              What We Build, <br className="hidden sm:inline" />
-              <span className="text-[#2142e8] underline decoration-wavy decoration-black/20">Ship &amp; Scale.</span>
+              Our Clients &amp; <br className="hidden sm:inline" />
+              <span className="text-[#2142e8] underline decoration-wavy decoration-black/20">Selected Work.</span>
             </h2>
             <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-xl font-medium">
-              Explore our live product ecosystem, AI automation pipelines, venture platforms, and high-performance software.
+              Explore our client projects, live product ecosystems, AI automation pipelines, and high-performance software.
             </p>
           </div>
 

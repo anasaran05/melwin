@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       } else if (type === 'funding_grants') {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
-        mappedMessage = `Company: ${inquiryData.company || 'N/A'} | Track: ${inquiryData.track || 'N/A'} | Sector: ${inquiryData.sector || 'N/A'} | Deck/URL: ${inquiryData.deck_url || 'N/A'} | Phone: ${inquiryData.phone || 'N/A'} | Summary: ${inquiryData.message || 'N/A'}`
+        mappedMessage = `Company: ${inquiryData.company || 'N/A'} | Sector: ${inquiryData.sector || 'N/A'} | Stage: ${inquiryData.stage || 'N/A'} | Pitch: ${inquiryData.one_line_pitch || 'N/A'} | Support Needed: ${inquiryData.funding_type || 'N/A'} | Target Amount: ${inquiryData.target_amount || 'N/A'} | Deck/Demo: ${inquiryData.deck_url || 'N/A'} | Website/LinkedIn: ${inquiryData.website_or_linkedin || 'N/A'} | Location: ${inquiryData.location || 'N/A'} | Phone: ${inquiryData.phone || 'N/A'}`
       } else if (type === 'digital_growth') {
         mappedName = inquiryData.name || 'Unknown'
         mappedEmail = inquiryData.email || ''
@@ -204,16 +204,20 @@ export async function POST(request: NextRequest) {
             { name: 'Founder Bio / Links', value: inquiryData.message || 'N/A', inline: false },
           ]
         } else if (type === 'funding_grants') {
-          title = '💰 Funding & Grants Advisory Request'
+          title = '🚀 Funding & Grants Founder Application'
           fields = [
             { name: 'Founder Name', value: inquiryData.name || 'N/A', inline: true },
             { name: 'Email', value: inquiryData.email || 'N/A', inline: true },
             { name: 'Phone / WhatsApp', value: inquiryData.phone || 'N/A', inline: true },
-            { name: 'Company / Startup', value: inquiryData.company || 'N/A', inline: true },
-            { name: 'Support Track', value: inquiryData.track || 'N/A', inline: true },
+            { name: 'Startup / Project', value: inquiryData.company || 'N/A', inline: true },
+            { name: 'Location', value: inquiryData.location || 'N/A', inline: true },
+            { name: 'Website / LinkedIn', value: inquiryData.website_or_linkedin || 'N/A', inline: true },
             { name: 'Industry Sector', value: inquiryData.sector || 'N/A', inline: true },
-            { name: 'Pitch Deck / Website', value: inquiryData.deck_url || 'N/A', inline: false },
-            { name: 'Venture Summary', value: inquiryData.message || 'N/A', inline: false },
+            { name: 'Current Stage', value: inquiryData.stage || 'N/A', inline: true },
+            { name: 'Support Needed', value: inquiryData.funding_type || 'N/A', inline: true },
+            { name: 'Target Funding Amount', value: inquiryData.target_amount || 'N/A', inline: true },
+            { name: 'Pitch Deck / Demo Link', value: inquiryData.deck_url || 'N/A', inline: false },
+            { name: 'What They Are Building', value: inquiryData.one_line_pitch || 'N/A', inline: false },
           ]
         } else if (type === 'digital_growth') {
           title = '📈 Digital Growth & Marketing Inquiry'
@@ -387,15 +391,19 @@ export async function POST(request: NextRequest) {
                   `<b>City:</b> ${inquiryData.city || 'N/A'}\n` +
                   `<b>Bio / Links:</b> ${inquiryData.message || 'N/A'}`
         } else if (type === 'funding_grants') {
-           text = `💰 <b>Funding & Grants Inquiry</b>\n\n` +
-                  `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +
+           text = `🚀 <b>Funding & Grants Founder Application</b>\n\n` +
+                  `<b>Founder:</b> ${inquiryData.name || 'N/A'}\n` +
+                  `<b>Startup:</b> ${inquiryData.company || 'N/A'}\n` +
                   `<b>Email:</b> ${inquiryData.email || 'N/A'}\n` +
                   `<b>Phone:</b> ${inquiryData.phone || 'N/A'}\n` +
-                  `<b>Company:</b> ${inquiryData.company || 'N/A'}\n` +
-                  `<b>Track:</b> ${inquiryData.track || 'N/A'}\n` +
+                  `<b>Location:</b> ${inquiryData.location || 'N/A'}\n` +
+                  `<b>Website/LinkedIn:</b> ${inquiryData.website_or_linkedin || 'N/A'}\n` +
                   `<b>Sector:</b> ${inquiryData.sector || 'N/A'}\n` +
-                  `<b>Pitch Deck / URL:</b> ${inquiryData.deck_url || 'N/A'}\n` +
-                  `<b>Summary:</b> ${inquiryData.message || 'N/A'}`
+                  `<b>Stage:</b> ${inquiryData.stage || 'N/A'}\n` +
+                  `<b>Support Needed:</b> ${inquiryData.funding_type || 'N/A'}\n` +
+                  `<b>Target Amount:</b> ${inquiryData.target_amount || 'N/A'}\n` +
+                  `<b>Deck / Demo:</b> ${inquiryData.deck_url || 'N/A'}\n` +
+                  `<b>Pitch:</b> ${inquiryData.one_line_pitch || 'N/A'}`
         } else if (type === 'digital_growth') {
            text = `📈 <b>Digital Growth Inquiry</b>\n\n` +
                   `<b>Name:</b> ${inquiryData.name || 'N/A'}\n` +

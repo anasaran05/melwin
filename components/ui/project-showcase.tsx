@@ -7,7 +7,7 @@ import { ArrowUpRight } from "lucide-react"
 export interface Project {
   title: string
   description: string
-  year: string
+  year?: string
   link: string
   image: string
   category?: string
@@ -78,9 +78,9 @@ export function ProjectShowcase({
         {title}
       </h2>
 
-      {/* Floating Cursor-Follower Preview Box */}
+      {/* Floating Cursor-Follower Preview Box (Desktop Only) */}
       <div
-        className="pointer-events-none fixed z-50 left-0 top-0 overflow-hidden rounded-2xl shadow-2xl"
+        className="hidden md:block pointer-events-none fixed z-50 left-0 top-0 overflow-hidden rounded-2xl shadow-2xl"
         style={{
           transform: `translate3d(${smoothPosition.x + 24}px, ${smoothPosition.y - 120}px, 0)`,
           opacity: isVisible ? 1 : 0,
@@ -127,36 +127,46 @@ export function ProjectShowcase({
                 `}
               />
 
-              <div className="relative flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0 pr-4">
-                  {/* Title with animated underline */}
-                  <div className="inline-flex items-center gap-2">
-                    <h3 className="text-[#111111] font-semibold text-lg sm:text-xl tracking-tight">
-                      <span className="relative">
-                        {project.title}
-                        {/* Animated underline */}
-                        <span
-                          className={`
-                            absolute left-0 -bottom-0.5 h-px bg-black
-                            transition-all duration-300 ease-out
-                            ${hoveredIndex === index ? "w-full" : "w-0"}
-                          `}
-                        />
-                      </span>
-                    </h3>
+              <div className="relative flex flex-col md:flex-row md:items-start justify-between gap-3 md:gap-4">
+                <div className="flex-1 min-w-0 md:pr-4">
+                  {/* Top row with Title and Mobile Badge */}
+                  <div className="flex items-start justify-between gap-3">
+                    {/* Title with animated underline */}
+                    <div className="inline-flex items-center gap-2">
+                      <h3 className="text-[#111111] font-semibold text-lg sm:text-xl tracking-tight">
+                        <span className="relative">
+                          {project.title}
+                          {/* Animated underline */}
+                          <span
+                            className={`
+                              absolute left-0 -bottom-0.5 h-px bg-black
+                              transition-all duration-300 ease-out
+                              ${hoveredIndex === index ? "w-full" : "w-0"}
+                            `}
+                          />
+                        </span>
+                      </h3>
 
-                    {/* Arrow that slides in */}
-                    <ArrowUpRight
-                      className={`
-                        w-4 h-4 text-neutral-400
-                        transition-all duration-300 ease-out
-                        ${
-                          hoveredIndex === index
-                            ? "opacity-100 translate-x-0 translate-y-0 text-black"
-                            : "opacity-0 -translate-x-2 translate-y-2"
-                        }
-                      `}
-                    />
+                      {/* Arrow that slides in */}
+                      <ArrowUpRight
+                        className={`
+                          w-4 h-4 text-neutral-400
+                          transition-all duration-300 ease-out
+                          ${
+                            hoveredIndex === index
+                              ? "opacity-100 translate-x-0 translate-y-0 text-black"
+                              : "opacity-0 -translate-x-2 translate-y-2"
+                          }
+                        `}
+                      />
+                    </div>
+
+                    {/* Category badge (Mobile top-right) */}
+                    {project.category && (
+                      <span className="inline-block md:hidden text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-white border border-black/10 text-neutral-800 shadow-2xs shrink-0">
+                        {project.category}
+                      </span>
+                    )}
                   </div>
 
                   {/* Description with fade effect */}
@@ -169,24 +179,26 @@ export function ProjectShowcase({
                   >
                     {project.description}
                   </p>
+
+                  {/* Mobile Inline Screenshot Card */}
+                  <div className="block md:hidden mt-3.5 w-full relative h-48 sm:h-56 rounded-xl overflow-hidden bg-neutral-900 border border-black/10 shadow-sm group-hover:scale-[1.01] transition-transform duration-300">
+                    <img
+                      src={project.image || "/placeholder.svg"}
+                      alt={project.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+                  </div>
                 </div>
 
-                {/* Year / Category badge */}
-                <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                {/* Category badge (Desktop right column) */}
+                <div className="hidden md:flex items-center gap-2 shrink-0 pt-0.5">
                   {project.category && (
-                    <span className="hidden sm:inline-block text-[11px] font-mono px-2.5 py-1 rounded-full bg-white border border-black/10 text-neutral-800 shadow-2xs">
+                    <span className="text-[11px] font-mono px-2.5 py-1 rounded-full bg-white border border-black/10 text-neutral-800 shadow-2xs">
                       {project.category}
                     </span>
                   )}
-                  <span
-                    className={`
-                      text-xs font-mono text-neutral-400 tabular-nums
-                      transition-all duration-300 ease-out
-                      ${hoveredIndex === index ? "text-[#111111] font-bold" : ""}
-                    `}
-                  >
-                    {project.year}
-                  </span>
                 </div>
               </div>
             </div>

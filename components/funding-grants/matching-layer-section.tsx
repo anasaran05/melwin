@@ -55,7 +55,7 @@ function MatchFlickerLetter({
       }}
       onMouseLeave={() => setIsHovered(false)}
       onClick={triggerFlicker}
-      className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 select-none py-4 sm:py-6 md:py-8 ${
+      className={`relative flex items-center justify-center cursor-pointer transition-colors duration-150 select-none py-2.5 sm:py-6 md:py-8 ${
         isHovered
           ? 'bg-[#111111] text-white'
           : 'bg-[#f7f7f2] text-black hover:bg-[#eaeae2]'
@@ -64,7 +64,7 @@ function MatchFlickerLetter({
       <span
         className={`font-black tracking-tighter leading-none transition-transform duration-100 ${
           isFlickering ? 'scale-110 text-emerald-400' : 'scale-100 text-black'
-        } ${isHovered && !isFlickering ? 'text-white' : ''} text-3xl sm:text-5xl md:text-6xl lg:text-7xl`}
+        } ${isHovered && !isFlickering ? 'text-white' : ''} text-xl sm:text-5xl md:text-6xl lg:text-7xl`}
       >
         {displayChar}
       </span>
@@ -89,6 +89,7 @@ interface MatchmakingCardData {
   statsHighlight: string
   statsLabel: string
   iconEmoji: string
+  footnote?: string
 }
 
 const matchmakingCards: MatchmakingCardData[] = [
@@ -107,9 +108,10 @@ const matchmakingCards: MatchmakingCardData[] = [
       'Verified customer retention & pilot contracts',
       'Clean cap table structuring & SAFE notes'
     ],
-    statsHighlight: '100+',
+    statsHighlight: '100+*',
     statsLabel: 'Active Angel & Micro-VC Network',
-    iconEmoji: '💼'
+    iconEmoji: '💼',
+    footnote: '*Investor network size is indicative and subject to ongoing verification and availability.'
   },
   {
     id: 'm2',
@@ -120,11 +122,11 @@ const matchmakingCards: MatchmakingCardData[] = [
     btnBg: 'bg-white text-[#d96620] hover:bg-amber-50',
     tag: 'Co-Investment Syndicates',
     title: 'Co-Investment Syndicates & Matching Capital',
-    summary: 'Combine government non-dilutive grants with angel co-investment checks to reach 18–24 months of runway with minimal dilution.',
+    summary: 'Explore non-dilutive government schemes alongside private co-investment options with strategic consideration for founder dilution.',
     features: [
       'Grant-backed angel co-investment rounds',
       '18 to 24-month runway optimization',
-      'Zero early equity dilution strategies'
+      'exploring grant and private investment options with consideration for founder dilution.'
     ],
     statsHighlight: '₹2.5 Cr',
     statsLabel: 'Max Check Size Syndicated',
@@ -157,15 +159,15 @@ const matchmakingCards: MatchmakingCardData[] = [
     accentBg: 'bg-white/20 text-white border-white/30',
     btnBg: 'bg-white text-[#0c6b4b] hover:bg-emerald-50',
     tag: 'Direct Founder Desk',
-    title: 'Zero Equity Friction & Speed to Term Sheet',
-    summary: 'Fast-track founder-to-investor introductions with pre-aligned valuations and term sheet templates to close rounds in weeks, not months.',
+    title: 'Fundraising Support & Investor Matching',
+    summary: 'Structured founder-to-investor introductions and support with fundraising materials and transaction preparation, subject to investor interest and deal timelines.',
     features: [
       'Pre-aligned valuation benchmarks',
       'Direct partner-level pitch dry-runs',
-      'Accelerated 3-week closing cycle'
+      'Structured fundraising materials & transaction preparation'
     ],
-    statsHighlight: '3 Weeks',
-    statsLabel: 'Average Term Sheet Cycle',
+    statsHighlight: 'Varies by investor and transaction',
+    statsLabel: 'Target / Indicative Term Sheet Timeline',
     iconEmoji: '⚡'
   }
 ]
@@ -209,7 +211,7 @@ export function MatchingLayerSection() {
         {matchmakingCards.map((card) => (
           <div
             key={card.id}
-            className={`${card.themeBg} ${card.textColor} p-8 sm:p-12 md:p-14 min-h-[520px] sm:min-h-[600px] flex flex-col justify-between relative overflow-hidden group border-b-2 border-black last:border-b-0 md:last:border-b-2`}
+            className={`${card.themeBg} ${card.textColor} p-6 sm:p-8 md:p-10 lg:p-12 min-h-[580px] sm:min-h-[640px] md:min-h-[680px] flex flex-col justify-between relative overflow-hidden group border-b-2 border-black last:border-b-0 md:last:border-b-2`}
           >
             {/* Subtle Geometric Background Watermark */}
             <div 
@@ -223,7 +225,7 @@ export function MatchingLayerSection() {
             </div>
 
             {/* Top Row: Tag + Plus Button */}
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 space-y-3">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
                   <CheckCircle2 className="w-4 h-4 shrink-0" />
@@ -241,37 +243,48 @@ export function MatchingLayerSection() {
               </div>
 
               {/* Title */}
-              <h3 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tight leading-[1.1] pt-2">
+              <h3 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight leading-[1.1] pt-1">
                 {card.title}
               </h3>
             </div>
 
             {/* Center Visual Emblem Box */}
-            <div className="relative z-10 py-6 my-auto flex flex-col items-center justify-center text-center">
-              <div className="w-44 h-44 sm:w-52 sm:h-52 rounded-3xl bg-white/95 text-black shadow-2xl p-6 border-2 border-black flex flex-col justify-between transform group-hover:scale-105 transition-transform duration-500">
-                <div className="flex justify-between items-center">
+            <div className="relative z-10 py-4 my-auto flex flex-col items-center justify-center text-center">
+              <div className="w-48 h-56 sm:w-56 sm:h-64 rounded-2xl bg-white/95 text-black shadow-2xl p-4 sm:p-5 border-2 border-black flex flex-col justify-between transform group-hover:scale-105 transition-transform duration-500 overflow-hidden">
+                <div className="flex justify-between items-center border-b border-neutral-100 pb-1.5">
                   <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500">
                     SYNDICATE TRACK
                   </span>
-                  <span className="text-2xl">{card.iconEmoji}</span>
+                  <span className="text-xl">{card.iconEmoji}</span>
                 </div>
 
-                <div className="text-center my-auto space-y-1">
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-400 block">
+                <div className="text-center my-auto space-y-1 py-1">
+                  <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-neutral-400 block line-clamp-2">
                     {card.statsLabel}
                   </span>
-                  <div className="text-2xl sm:text-3xl font-black text-black tracking-tight leading-tight">
+                  <div className={`text-black tracking-tight leading-tight line-clamp-3 ${
+                    card.statsHighlight.length <= 10
+                      ? 'text-2xl sm:text-3xl font-black'
+                      : card.statsHighlight.length <= 25
+                      ? 'text-base sm:text-lg font-extrabold'
+                      : 'text-xs sm:text-sm font-bold'
+                  }`}>
                     {card.statsHighlight}
                   </div>
+                  {card.footnote && (
+                    <p className="text-[8px] sm:text-[9px] font-mono text-neutral-500 leading-tight pt-1 px-1 line-clamp-2">
+                      {card.footnote}
+                    </p>
+                  )}
                 </div>
 
-                <div className="pt-2 border-t border-neutral-200 flex items-center justify-between text-[10px] font-mono font-bold text-neutral-600">
+                <div className="pt-2 border-t border-neutral-200 flex items-center justify-between text-[9px] sm:text-[10px] font-mono font-bold text-neutral-600">
                   <span>DR. MELWIN DESK</span>
                   <span className="text-emerald-600 font-bold">&bull; ACTIVE</span>
                 </div>
               </div>
 
-              <p className={`text-xs sm:text-sm md:text-base ${card.subtextColor} max-w-md mx-auto pt-5 line-clamp-2 leading-relaxed font-medium`}>
+              <p className={`text-xs sm:text-sm md:text-base ${card.subtextColor} max-w-md mx-auto pt-3 line-clamp-2 leading-relaxed font-medium`}>
                 {card.summary}
               </p>
             </div>
@@ -329,15 +342,22 @@ export function MatchingLayerSection() {
                 </div>
 
                 <div className="space-y-4 py-6 overflow-y-auto max-h-[50vh] pr-1">
-                  <div className="bg-[#f8f8f6] p-4 rounded-2xl border border-black/5 text-xs font-mono flex items-center justify-between">
-                    <div>
-                      <span className="text-neutral-500 block">Focus Metric:</span>
-                      <span className="font-bold text-emerald-700 text-sm">{activeModalCard.statsHighlight}</span>
+                  <div className="bg-[#f8f8f6] p-4 rounded-2xl border border-black/5 text-xs font-mono space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-neutral-500 block">Focus Metric:</span>
+                        <span className="font-bold text-emerald-700 text-sm">{activeModalCard.statsHighlight}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-neutral-500 block">Deliverable:</span>
+                        <span className="font-bold text-neutral-900">{activeModalCard.statsLabel}</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="text-neutral-500 block">Deliverable:</span>
-                      <span className="font-bold text-neutral-900">{activeModalCard.statsLabel}</span>
-                    </div>
+                    {activeModalCard.footnote && (
+                      <p className="text-[10px] text-neutral-500 border-t border-black/5 pt-1.5 leading-snug">
+                        {activeModalCard.footnote}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
