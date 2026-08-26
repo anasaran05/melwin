@@ -23,17 +23,14 @@ export function AtomSeWhyChooseSection() {
         
         {/* Section Header */}
         <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-neutral-200/70 border border-neutral-300/80 text-[11px] font-mono font-bold uppercase tracking-wider text-neutral-800">
-            <Laptop className="w-3.5 h-3.5 text-neutral-900" />
-            <span>ENGINEERING PHILOSOPHY &amp; EXECUTION</span>
-          </div>
+          
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#111111] tracking-tight leading-[1.12]">
-            From back-of-the-napkin concepts to rock-solid production software.
+            We build modern websites and custom software.
           </h2>
 
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed pt-1">
-            Most businesses get bogged down hiring disconnected freelancers, navigating bloated legacy agencies, or relying on fragile no-code setups that crumble under scale. At <strong className="text-neutral-900 font-semibold">Atom SE</strong>, we pair agile startup speed with enterprise-grade software engineering.
+            Whether you need a high-converting website, a scalable web application, or custom software for your business, we handle design, development, and deployment from start to finish.
           </p>
         </div>
 
@@ -45,8 +42,8 @@ export function AtomSeWhyChooseSection() {
             <CardHeader className="pb-3">
               <CardHeading
                 icon={Code2}
-                title="Full-Stack Web & App Architecture"
-                description="Bespoke Next.js & TypeScript platforms engineered with sub-second page loads."
+                title="Lightning-Fast Websites & Custom Apps"
+                description="Engineered to load in under a second, convert visitors, and work flawlessly on every screen."
               />
             </CardHeader>
 
@@ -56,7 +53,7 @@ export function AtomSeWhyChooseSection() {
                   <DualModeImage
                     darkSrc="/images/atom-se%20images/fullstack.jpg"
                     lightSrc="/images/atom-se%20images/fullstack.jpg"
-                    alt="Next.js Fullstack Platform Architecture"
+                    alt="Lightning-Fast Web & App Development"
                     width={1207}
                     height={929}
                   />
@@ -65,7 +62,7 @@ export function AtomSeWhyChooseSection() {
             </div>
 
             <div className="p-6 pt-0 flex flex-wrap gap-1.5">
-              {['Next.js 16', 'TypeScript', 'Tailwind CSS', 'PostgreSQL', 'Type-Safe APIs'].map((tag) => (
+              {['Sub-Second Load Speed', 'Mobile & Desktop Ready', 'SEO & Google Optimized', 'Custom Database', 'Secure & Scalable'].map((tag) => (
                 <span
                   key={tag}
                   className="text-[11px] font-mono font-medium text-neutral-700 bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200/60"
@@ -81,8 +78,8 @@ export function AtomSeWhyChooseSection() {
             <CardHeader className="pb-3">
               <CardHeading
                 icon={Sparkles}
-                title="Applied AI & Autonomous Pipelines"
-                description="Integrate LLMs, multi-agent workflows, and real-time scrapers into operations."
+                title="Smart AI & Business Automation"
+                description="Put repetitive tasks on autopilot with custom AI assistants, automated lead workflows, and smart integrations."
               />
             </CardHeader>
 
@@ -92,7 +89,7 @@ export function AtomSeWhyChooseSection() {
                   <DualModeImage
                     darkSrc="/images/atom-se%20images/applied%20ai.jpg"
                     lightSrc="/images/atom-se%20images/applied%20ai.jpg"
-                    alt="AI Automation & Pipeline Platform"
+                    alt="AI Automation & Business Systems"
                     width={1207}
                     height={929}
                   />
@@ -101,7 +98,7 @@ export function AtomSeWhyChooseSection() {
             </div>
 
             <div className="p-6 pt-0 flex flex-wrap gap-1.5">
-              {['Claude & GPT-4o', 'Autonomous Agents', 'Vector Search', 'Cron Pipelines'].map((tag) => (
+              {['AI Customer Assistants', 'Automated Lead Routing', 'CRM & Payment Sync', 'Time-Saving Custom Tools'].map((tag) => (
                 <span
                   key={tag}
                   className="text-[11px] font-mono font-medium text-neutral-700 bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200/60"
@@ -118,10 +115,10 @@ export function AtomSeWhyChooseSection() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-xs font-mono font-bold text-neutral-500 uppercase tracking-wider">
                   <Server className="w-4 h-4 text-emerald-600" />
-                  <span>TIER-1 CLOUD &amp; HIGH-AVAILABILITY TOPOLOGY</span>
+                  <span>BULLETPROOF RELIABILITY &amp; SECURITY</span>
                 </div>
                 <h3 className="text-xl sm:text-2xl font-bold text-neutral-900">
-                  Global Edge CDN, Automated CI/CD, and 99.99% Uptime SLA.
+                  Always Online, Hacker-Protected &amp; Backed by 99.99% Uptime.
                 </h3>
               </div>
 
@@ -131,27 +128,27 @@ export function AtomSeWhyChooseSection() {
             </div>
 
             <p className="max-w-2xl text-sm sm:text-base text-neutral-600 leading-relaxed mb-8">
-              Every production app is deployed across multi-region edge networks with isolated database clusters, automated rollbacks, and DDoS mitigation.
+              Your software and websites stay fast, secure, and always accessible worldwide. Includes enterprise SSL encryption, automated daily backups, and instant disaster recovery.
             </p>
 
             <div className="flex justify-center flex-wrap gap-6 sm:gap-10 overflow-hidden py-4 border-t border-b border-neutral-100">
               <CircularUI
-                label="AWS Core"
+                label="Global Speed"
                 circles={[{ pattern: 'border' }, { pattern: 'border' }]}
               />
 
               <CircularUI
-                label="GCP Mesh"
+                label="Bank-Grade Security"
                 circles={[{ pattern: 'none' }, { pattern: 'primary' }]}
               />
 
               <CircularUI
-                label="Cloudflare"
+                label="Daily Backups"
                 circles={[{ pattern: 'blue' }, { pattern: 'none' }]}
               />
 
               <CircularUI
-                label="Global Edge"
+                label="24/7 Monitoring"
                 circles={[{ pattern: 'primary' }, { pattern: 'none' }]}
                 className="hidden sm:block"
               />

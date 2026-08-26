@@ -45,7 +45,8 @@ export function Footer() {
                 { name: 'Atom SE (Tech)', href: '/atom-se' },
                 { name: 'Funding & Grants', href: '/funding-grants' },
                 { name: 'Jobs & Talent', href: '#', isLocked: true },
-                { name: 'Biz Registrations', href: '#', isLocked: true }
+                { name: 'Business Registrations', href: '#', isLocked: true },
+                { name: 'Academy', href: '#', isLocked: true }
               ].map((link) => (
                 link.isLocked ? (
                   <span

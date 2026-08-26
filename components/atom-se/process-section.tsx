@@ -24,49 +24,46 @@ export interface ProcessStep {
 const steps: ProcessStep[] = [
   {
     number: '01',
-    timeline: 'Days 1 – 3',
-    title: 'Discovery & System Blueprint',
-    desc: 'We listen to your vision, plan out every page and feature, and create interactive visual mockups so you can see and click through your product before we write any code.',
+    timeline: 'Phase 1',
+    title: 'Planning & Design',
+    desc: 'We map out your vision, structure the pages, and create interactive mockups so you can see and approve the design before building starts.',
     deliverables: [
-      'Interactive UI designs & wireframes',
-      'Feature roadmap & timeline',
-      'System & database blueprint'
+      'Interactive UI Wireframes & Mockups',
+      'Clear Scope & Project Timeline'
     ],
     icon: FileCode2,
   },
   {
     number: '02',
-    timeline: 'Weeks 1 – 3',
-    title: 'Rapid Building & Live Previews',
-    desc: 'Our engineers build your website or application in fast weekly stages. You receive a private preview link updated regularly so you can test real working features as they are built.',
+    timeline: 'Phase 2',
+    title: 'Building & Live Previews',
+    desc: 'We build your website or software in fast weekly stages and provide private preview links so you can test working features in real time.',
     deliverables: [
-      'Private live staging demo link',
-      'Clean, high-performance codebase',
-      'Payment, auth & database integration'
+      'Weekly Progress Updates',
+      'Private Live Staging Demo'
     ],
     icon: Layers,
   },
   {
     number: '03',
-    timeline: 'Days 18 – 21',
-    title: 'Testing, Speed Tuning & Security',
-    desc: 'We test every button, form, and page across iPhones, Androids, tablets, and laptops. We tune your speed so pages open instantly in under a second and lock down security.',
+    timeline: 'Phase 3',
+    title: 'Testing & Speed Tuning',
+    desc: 'We test every page and form across mobile phones, tablets, and computers to ensure instant loading speeds and solid security.',
     deliverables: [
-      'Sub-second page load optimization',
-      '100% mobile & tablet responsiveness',
-      'Security & spam protection audit'
+      'Mobile & Tablet Responsiveness',
+      'Speed & Security Optimization'
     ],
     icon: ShieldCheck,
   },
   {
     number: '04',
-    timeline: 'Day 22 & Beyond',
-    title: 'Go-Live & 100% IP Handover',
-    desc: 'We connect your domain and launch your project live to the world with zero downtime. You get full 100% ownership of all source code and files, backed by 30 days of post-launch warranty.',
+    timeline: 'Phase 4',
+    title: 'Launch & Full Handover',
+    desc: 'We connect your domain and launch your product live. You get 100% full ownership of all source code and files, backed by post-launch support.',
     deliverables: [
-      'Zero-downtime production launch',
-      '100% source code & asset ownership',
-      '30-day post-launch support & monitoring'
+      'Live Domain Launch',
+      '100% Code & Asset Ownership',
+      'Post-Launch Support'
     ],
     icon: Rocket,
   },
@@ -84,11 +81,11 @@ export function AtomSeProcessSection() {
           </p>
 
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#111111] leading-[1.12]">
-            Up and running in four simple steps
+            Up and running in 4 simple steps
           </h2>
 
           <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
-            Designed for clear momentum. Go from your initial concept to a live, production-grade product without technical confusion or hidden surprises.
+            A clear, straightforward process to take you from initial idea to a live, working product.
           </p>
         </div>
 

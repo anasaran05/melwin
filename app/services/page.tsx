@@ -15,7 +15,8 @@ import {
   Briefcase,
   FileText,
   X,
-  Cpu
+  Cpu,
+  GraduationCap
 } from 'lucide-react'
 
 interface ServiceItem {
@@ -129,10 +130,10 @@ const servicesData: ServiceItem[] = [
       'Founder-first hiring agreements'
     ]
   },
-  // 6. Biz Registrations & Legal Compliance (Locked)
+  // 6. Business Registrations & Legal Compliance (Locked)
   {
     id: 'business-services',
-    title: 'Biz Registrations & Legal Compliance',
+    title: 'Business Registrations & Legal Compliance',
     subtitle: 'Company Incorporation, GST, IP & CA Filings',
     category: 'Legal & Business',
     description: 'Hassle-free company registration (Pvt Ltd / LLP), monthly GST returns, trademark IP protection, founder vesting agreements, and bookkeeping.',
@@ -146,6 +147,25 @@ const servicesData: ServiceItem[] = [
       'Monthly GST & TDS returns with zero penalties',
       'Co-founder agreements, NDAs & ESOP drafting',
       'Dedicated CA advisor for startup audits'
+    ]
+  },
+  // 7. Startup Academy (Locked)
+  {
+    id: 'startup-academy',
+    title: 'Startup Academy & Operator Cohorts',
+    subtitle: 'Practical Masterclasses, Playbooks & Growth Frameworks',
+    category: 'Education & Learning',
+    description: 'Actionable sprint cohorts, fundraising masterclasses, customer acquisition playbooks, and video case studies tailored for early-stage founders.',
+    isOpen: false,
+    tag: 'AVAILABLE SOON',
+    statusBadge: 'LOCKED',
+    icon: GraduationCap,
+    lockedReason: 'Curriculum development and guest mentor onboarding is underway. This service will launch soon!',
+    highlights: [
+      'Zero-to-One Founder Masterclasses',
+      'Proven Growth & Distribution Playbooks',
+      'Pitch Deck & Term Sheet Breakdown Workshops',
+      'Private Live Q&A Sessions with Top Operators'
     ]
   }
 ]
