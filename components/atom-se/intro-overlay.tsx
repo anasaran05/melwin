@@ -19,8 +19,10 @@ export function AtomSeIntroOverlay({ isVisible, onDismiss }: AtomSeIntroOverlayP
             opacity: 0,
             transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1] }
           }}
-          className="fixed inset-0 z-[9999] bg-[#f2f2f2] flex items-center justify-center overflow-hidden cursor-pointer"
+          className="fixed inset-0 z-[9999] bg-[#f2f2f2] flex items-center justify-center overflow-hidden cursor-pointer touch-none select-none overscroll-none"
           onClick={onDismiss}
+          onTouchMove={(e) => e.preventDefault()}
+          onWheel={(e) => e.preventDefault()}
         >
           {/* Subtle grain texture */}
           <div className="grain-overlay" />

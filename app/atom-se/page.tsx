@@ -16,26 +16,44 @@ export default function AtomSePage() {
   const [introState, setIntroState] = useState<'animating' | 'done'>('animating')
 
   useEffect(() => {
-    // Hold cinematic intro reveal, then auto dismiss
+    // Scroll to top on mount
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+
+    // Prevent body scroll during entry intro animation
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    // Hold cinematic intro reveal, then auto dismiss and restore scroll
     const timer = setTimeout(() => {
       setIntroState('done')
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+      document.body.style.overflow = originalOverflow || ''
     }, 2800)
 
-    return () => clearTimeout(timer)
+    return () => {
+      clearTimeout(timer)
+      document.body.style.overflow = originalOverflow || ''
+    }
   }, [])
 
+  const handleDismissIntro = () => {
+    setIntroState('done')
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+    document.body.style.overflow = ''
+  }
+
   return (
-    <main className="font-sans min-h-screen relative overflow-x-hidden bg-[#f2f2f2] text-[#111111]">
+    <main className="font-sans min-h-screen relative overflow-x-clip bg-[#f2f2f2] text-[#111111]">
       {/* Background texture */}
       <div className="grain-overlay" />
 
       {/* Cinematic Logo Splash Intro */}
       <AtomSeIntroOverlay 
         isVisible={introState === 'animating'} 
-        onDismiss={() => setIntroState('done')} 
+        onDismiss={handleDismissIntro} 
       />
 
-      {/* Top Navbar with Atom SE Logo on top-left, Navigation links & CTA */}
+      {/* Global Floating Smart Navbar (Scroll up to show, scroll down to hide) */}
       <AtomSeNavbar />
 
       {/* Hero Section */}

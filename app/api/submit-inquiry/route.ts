@@ -116,7 +116,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Send Discord webhook notification
-    const discordWebhookUrl = process.env.DISCORD_WEBHOOK_URL
+    const discordWebhookUrl = type === 'atom_se'
+      ? (process.env.ATOM_SE_DISCORD_WEBHOOK_URL || 'https://discord.com/api/webhooks/1542076272929415168/tub8-8WiueReq7UNLM5POx6AER62trQ6v-VwtBX6Hoxht5YUBhahopYcFfF7APuDWv6U')
+      : process.env.DISCORD_WEBHOOK_URL
+
     if (discordWebhookUrl) {
       try {
         let title = ''
@@ -305,7 +308,9 @@ export async function POST(request: NextRequest) {
 
     // Send Telegram notification
     const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN
-    const telegramChatId = process.env.TELEGRAM_CHAT_ID
+    const telegramChatId = type === 'atom_se'
+      ? (process.env.ATOM_SE_TELEGRAM_CHAT_ID || '-5320775646')
+      : process.env.TELEGRAM_CHAT_ID
 
     if (telegramBotToken && telegramChatId) {
       try {

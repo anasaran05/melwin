@@ -4,138 +4,166 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { 
   FileCode2, 
-  GitPullRequest, 
+  Layers, 
   ShieldCheck, 
   Rocket, 
-  CheckCircle2,
+  Check, 
   ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 
 export interface ProcessStep {
   number: string
-  phase: string
-  title: string
   timeline: string
+  title: string
   desc: string
   deliverables: string[]
   icon: React.ComponentType<{ className?: string }>
 }
 
-const engineeringSteps: ProcessStep[] = [
+const steps: ProcessStep[] = [
   {
     number: '01',
-    phase: 'PHASE 01',
     timeline: 'Days 1 – 3',
     title: 'Discovery & System Blueprint',
-    desc: 'We define the functional requirements, design the database schemas, map API contracts, and establish a high-fidelity visual prototype.',
-    deliverables: ['System Architecture Diagram', 'Interactive Wireframe / UI Mockup', 'Milestone & Sprint Schedule'],
+    desc: 'We listen to your vision, plan out every page and feature, and create interactive visual mockups so you can see and click through your product before we write any code.',
+    deliverables: [
+      'Interactive UI designs & wireframes',
+      'Feature roadmap & timeline',
+      'System & database blueprint'
+    ],
     icon: FileCode2,
   },
   {
     number: '02',
-    phase: 'PHASE 02',
     timeline: 'Weeks 1 – 3',
-    title: 'Rapid Agile Sprints & Staging',
-    desc: 'Our senior engineers construct your codebase in fast iterative sprints with a password-protected live staging environment updated daily.',
-    deliverables: ['Daily / Weekly Working Demos', 'Clean, Type-Safe Codebase', 'Database & API Integrations'],
-    icon: GitPullRequest,
+    title: 'Rapid Building & Live Previews',
+    desc: 'Our engineers build your website or application in fast weekly stages. You receive a private preview link updated regularly so you can test real working features as they are built.',
+    deliverables: [
+      'Private live staging demo link',
+      'Clean, high-performance codebase',
+      'Payment, auth & database integration'
+    ],
+    icon: Layers,
   },
   {
     number: '03',
-    phase: 'PHASE 03',
     timeline: 'Days 18 – 21',
-    title: 'Hardening & Performance QA',
-    desc: 'Stress testing, cross-browser responsiveness, SEO metadata formatting, and optimization to lock in 100/100 Core Web Vitals.',
-    deliverables: ['100/100 PageSpeed Guarantee', 'Security & Auth Audit', 'Cross-Device Responsiveness'],
+    title: 'Testing, Speed Tuning & Security',
+    desc: 'We test every button, form, and page across iPhones, Androids, tablets, and laptops. We tune your speed so pages open instantly in under a second and lock down security.',
+    deliverables: [
+      'Sub-second page load optimization',
+      '100% mobile & tablet responsiveness',
+      'Security & spam protection audit'
+    ],
     icon: ShieldCheck,
   },
   {
     number: '04',
-    phase: 'PHASE 04',
     timeline: 'Day 22 & Beyond',
-    title: 'Production Deploy & IP Handover',
-    desc: 'Zero-downtime deployment to your production domain, transfer of all GitHub repositories, DNS setup, and 30-day post-launch warranty.',
-    deliverables: ['Production Cloud Deployment', '100% Repository & IP Ownership', 'Post-Launch Support & Monitoring'],
+    title: 'Go-Live & 100% IP Handover',
+    desc: 'We connect your domain and launch your project live to the world with zero downtime. You get full 100% ownership of all source code and files, backed by 30 days of post-launch warranty.',
+    deliverables: [
+      'Zero-downtime production launch',
+      '100% source code & asset ownership',
+      '30-day post-launch support & monitoring'
+    ],
     icon: Rocket,
   },
 ]
 
 export function AtomSeProcessSection() {
   return (
-    <section id="process" className="py-16 md:py-24 px-4 sm:px-6 md:px-12 w-full border-t border-black/[0.04] bg-white">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <section id="process" className="py-20 md:py-32 px-4 sm:px-6 md:px-12 w-full bg-white text-[#111111] relative border-t border-b border-black/[0.05]">
+      <div className="max-w-4xl mx-auto space-y-16">
         
-        {/* Header */}
-        <div className="max-w-3xl mx-auto text-center space-y-3">
-          <span className="text-[11px] font-mono font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-neutral-100 text-neutral-800 border border-neutral-200">
-            THE ATOM SE EXECUTION MODEL
-          </span>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#111111] tracking-tight leading-[1.15]">
-            How We Take Your Project Live.
+        {/* Section Header */}
+        <div className="space-y-4 text-center max-w-2xl mx-auto">
+          <p className="text-xs font-mono font-bold uppercase tracking-[0.2em] text-neutral-500">
+            HOW WE WORK
+          </p>
+
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-[#111111] leading-[1.12]">
+            Up and running in four simple steps
           </h2>
-          <p className="text-sm sm:text-base text-neutral-600">
-            A transparent, sprint-driven engineering process designed for zero friction and rapid go-to-market execution.
+
+          <p className="text-base sm:text-lg text-neutral-600 leading-relaxed">
+            Designed for clear momentum. Go from your initial concept to a live, production-grade product without technical confusion or hidden surprises.
           </p>
         </div>
 
-        {/* 4 Steps Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {engineeringSteps.map((step, index) => {
-            const Icon = step.icon
-            return (
-              <motion.div
-                key={step.number}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.4, delay: index * 0.1 }}
-                className="bg-[#f9f9f9] rounded-3xl p-6 sm:p-7 border border-black/10 shadow-sm hover:shadow-md hover:border-black/20 transition-all flex flex-col justify-between"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-2xl font-black text-neutral-300 font-mono">
-                      {step.number}
-                    </span>
-                    <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-neutral-200 text-neutral-700">
-                      {step.timeline}
-                    </span>
+        {/* Vertical Timeline Stepper */}
+        <div className="relative pl-4 sm:pl-8">
+          
+          {/* Vertical Connecting Track Line */}
+          <div className="absolute left-[31px] sm:left-[47px] top-6 bottom-10 w-[2px] bg-neutral-200" />
+
+          <div className="space-y-10 sm:space-y-12">
+            {steps.map((step, index) => {
+              const Icon = step.icon
+              return (
+                <motion.div
+                  key={step.number}
+                  initial={{ opacity: 0, x: -16 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="relative flex items-start gap-5 sm:gap-7 group"
+                >
+                  {/* Timeline Node Box */}
+                  <div className="relative z-10 flex-shrink-0 size-12 sm:size-14 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center shadow-sm group-hover:border-black group-hover:shadow-md transition-all duration-300">
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-neutral-700 group-hover:text-black transition-colors" />
                   </div>
 
-                  <div className="p-2.5 w-fit rounded-xl bg-white border border-black/10 text-neutral-900">
-                    <Icon className="w-5 h-5" />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <h3 className="text-base font-bold text-neutral-900">{step.title}</h3>
-                    <p className="text-xs text-neutral-600 leading-relaxed">{step.desc}</p>
-                  </div>
-                </div>
-
-                <div className="pt-4 mt-5 border-t border-black/[0.06] space-y-1.5">
-                  <span className="text-[10px] font-mono font-bold text-neutral-400 uppercase tracking-wider block">
-                    Deliverables
-                  </span>
-                  {step.deliverables.map((item, i) => (
-                    <div key={i} className="flex items-center gap-1.5 text-[11px] text-neutral-700">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600 flex-shrink-0" />
-                      <span className="truncate">{item}</span>
+                  {/* Content Column */}
+                  <div className="space-y-3 pt-1 flex-1">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <span className="text-xs font-mono font-bold text-neutral-600 px-2 py-0.5 rounded bg-neutral-100 border border-neutral-200/80">
+                        {step.number}
+                      </span>
+                      <span className="text-xs font-mono font-semibold text-blue-700 px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-200">
+                        {step.timeline}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            )
-          })}
+
+                    <h3 className="text-xl sm:text-2xl font-bold text-[#111111] tracking-tight">
+                      {step.title}
+                    </h3>
+
+                    <p className="text-sm sm:text-base text-neutral-600 leading-relaxed max-w-2xl font-normal">
+                      {step.desc}
+                    </p>
+
+                    {/* Deliverables tags */}
+                    <div className="pt-2 flex flex-wrap gap-2">
+                      {step.deliverables.map((item, i) => (
+                        <div 
+                          key={i} 
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-50 border border-neutral-200/80 text-xs text-neutral-700 font-medium"
+                        >
+                          <Check className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </div>
 
-        {/* CTA Banner */}
-        <div className="text-center pt-4">
+        {/* Action CTA Bar */}
+        <div className="pt-8 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-neutral-600">
+            Have a project in mind? We can map out your blueprint in under 24 hours.
+          </p>
           <Link
             href="#project-form"
-            className="inline-flex items-center gap-2 bg-neutral-950 hover:bg-black text-white px-8 py-3.5 rounded-full font-bold text-xs sm:text-sm transition-all shadow-md hover:scale-105"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] text-white hover:bg-black px-6 py-3 rounded-full font-bold text-sm transition-all shadow-md hover:scale-105 active:scale-95"
           >
-            <span>Book Your Architecture Blueprint Session</span>
-            <ArrowRight className="w-4 h-4 text-amber-400" />
+            <span>Start Your Blueprint</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
@@ -143,3 +171,5 @@ export function AtomSeProcessSection() {
     </section>
   )
 }
+
+export default AtomSeProcessSection

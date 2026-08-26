@@ -84,6 +84,12 @@ export function ManagerSidebar({ activeClientId, onOpenCreateClient, onClose }: 
       icon: Film,
       active: pathname === '/dashboard/manager/analytics',
     },
+    {
+      name: 'Atom SE Pricing & Scopes',
+      href: '/dashboard/manager/atom-se-pricing',
+      icon: CreditCard,
+      active: pathname === '/dashboard/manager/atom-se-pricing',
+    },
   ];
 
   // 2. BMF FOUNDERS CLUB MODULE NAVIGATION

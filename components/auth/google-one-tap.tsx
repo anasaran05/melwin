@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import Script from 'next/script'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 
 declare global {
@@ -47,12 +47,22 @@ export function GoogleOneTap({
   onSuccess
 }: GoogleOneTapProps) {
   const router = useRouter()
+  const pathname = usePathname()
   const [scriptLoaded, setScriptLoaded] = useState(false)
   const [isInitializing, setIsInitializing] = useState(false)
 
+  const isBmfPage = pathname?.startsWith('/bmf') || false
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   useEffect(() => {
+    // If navigating away from BMF pages, dismiss any open Google One Tap prompt
+    if (!isBmfPage) {
+      if (typeof window !== 'undefined' && window.google?.accounts?.id?.cancel) {
+        window.google.accounts.id.cancel()
+      }
+      return
+    }
+
     if (!scriptLoaded || isInitializing) return
 
     async function initializeGoogleOneTap() {
@@ -136,7 +146,12 @@ export function GoogleOneTap({
     }
 
     initializeGoogleOneTap()
-  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isInitializing])
+  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isInitializing, isBmfPage, pathname])
+
+  // Only load the external script and initialize on BMF Club routes
+  if (!isBmfPage) {
+    return null
+  }
 
   return (
     <Script
@@ -148,3 +163,4 @@ export function GoogleOneTap({
 }
 
 export default GoogleOneTap
+

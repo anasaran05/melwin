@@ -29,9 +29,9 @@ export function AtomSeFooter() {
           <a href="#showcase" className="hover:text-black transition-colors">Showcase & Capabilities</a>
           <a href="#why-atom-se" className="hover:text-black transition-colors">Engineering</a>
           <a href="#process" className="hover:text-black transition-colors">Process</a>
-          <Link href="/atom-se/pricing" className="hover:text-black font-semibold text-neutral-900 transition-colors">
-            Pricing & Scope
-          </Link>
+          <a href="#project-form" className="hover:text-black font-semibold text-neutral-900 transition-colors">
+            Get Quotation
+          </a>
           <a href="#project-form" className="hover:text-black transition-colors font-semibold text-black">Start Project</a>
           <Link href="/" className="hover:text-black transition-colors text-neutral-400">
             Dr. Melwin's Home
