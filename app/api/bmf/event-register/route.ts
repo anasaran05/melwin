@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       registrationStatus,
+      ticketCode,
       message:
         registrationStatus === 'waitlisted'
           ? 'Event capacity has been reached. You have been placed on the priority waitlist.'

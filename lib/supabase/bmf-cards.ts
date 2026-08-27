@@ -369,6 +369,35 @@ export async function saveOrUpgradeCard(card: Partial<BmfCard>): Promise<{ succe
   }
 }
 
+export function generateCardNumber(): string {
+  const mid = Math.floor(1000 + Math.random() * 9000)
+  const suffix = Math.floor(1000 + Math.random() * 9000)
+  return `4592  8820  ${mid}  ${suffix}`
+}
+
+export function generateNfcUid(): string {
+  return `BMF-NFC-${Math.floor(10000 + Math.random() * 90000)}`
+}
+
+export async function adminIssueCard(
+  cardData: Partial<BmfCard>
+): Promise<{ success: boolean; card?: BmfCard; error?: string }> {
+  try {
+    const res = await fetch('/api/bmf/admin-issue-card', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cardData),
+    })
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      return { success: false, error: data.error || 'Failed to issue pass card' }
+    }
+    return { success: true, card: data.card }
+  } catch (err: any) {
+    return { success: false, error: err.message || 'Error issuing pass card' }
+  }
+}
+
 export async function fetchAllCardsForAdmin(): Promise<BmfCard[]> {
   try {
     const supabase = getSupabaseBrowserClient()
@@ -396,3 +425,4 @@ export async function fetchAllCardsForAdmin(): Promise<BmfCard[]> {
     return []
   }
 }
+

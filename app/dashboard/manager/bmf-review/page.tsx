@@ -28,6 +28,7 @@ import {
 } from '@/lib/supabase/bmf-intros'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
+import { AdminIssueCardModal } from '@/components/bmf-club/admin-issue-card-modal'
 import { 
   CheckCircle2, 
   XCircle, 
@@ -37,30 +38,32 @@ import {
   ShieldCheck, 
   ExternalLink, 
   Search, 
-  RefreshCw,
-  Send,
-  Calendar,
-  Users,
-  Plus,
-  Trash2,
-  Edit,
-  Clock,
-  MapPin,
-  Flame,
-  Check,
-  Layers,
-  Ticket,
-  CreditCard,
-  Lock,
-  Zap,
-  Eye,
-  Award,
-  ShieldAlert,
+  RefreshCw, 
+  Send, 
+  Calendar, 
+  Users, 
+  Plus, 
+  Trash2, 
+  Edit, 
+  Clock, 
+  MapPin, 
+  Flame, 
+  Check, 
+  Layers, 
+  Ticket, 
+  CreditCard, 
+  Lock, 
+  Zap, 
+  Eye, 
+  Award, 
+  ShieldAlert, 
   Download,
-  Handshake,
-  Mail,
-  Phone,
-  MessageSquare
+  ArrowLeft,
+  ArrowRight, 
+  Handshake, 
+  Mail, 
+  Phone, 
+  MessageSquare 
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -95,6 +98,8 @@ function BmfAdminReviewContent() {
   const [previewCard, setPreviewCard] = useState<BmfCard | null>(null)
   const [rejectModalCard, setRejectModalCard] = useState<BmfCard | null>(null)
   const [cardRejectFeedback, setCardRejectFeedback] = useState('')
+  const [isIssueCardModalOpen, setIsIssueCardModalOpen] = useState(false)
+  const [preselectedMemberForCard, setPreselectedMemberForCard] = useState<BmfMember | null>(null)
 
   // Warm Intros State
   const [intros, setIntros] = useState<BmfIntroRequest[]>([])
@@ -107,15 +112,19 @@ function BmfAdminReviewContent() {
   const [registrations, setRegistrations] = useState<BmfEventRegistration[]>([])
   const [selectedEventId, setSelectedEventId] = useState<string>('all')
   const [isEventModalOpen, setIsEventModalOpen] = useState(false)
-  const [eventForm, setEventForm] = useState<Partial<BmfEvent>>({
+  const [eventModalStep, setEventModalStep] = useState(1)
+  const [eventForm, setEventForm] = useState<Partial<BmfEvent> & { tagsString?: string }>({
+    id: '',
     title: '',
+    slug: '',
     tagline: '',
     description: '',
+    cover_image: '',
     event_date: '',
     event_time: '6:30 PM - 9:30 PM IST',
     location_type: 'in_person',
     location_venue: '',
-    location_city: 'Bangalore',
+    location_city: 'Bengaluru',
     category: 'Closed-Door Dinner',
     total_capacity: 18,
     registered_count: 0,
@@ -127,6 +136,8 @@ function BmfAdminReviewContent() {
     pricing_type: 'members_only',
     price_inr: 0,
     requirements: '',
+    tags: [],
+    tagsString: '',
   })
   const [isSavingEvent, setIsSavingEvent] = useState(false)
   const [activeRegActionId, setActiveRegActionId] = useState<string | null>(null)
@@ -265,39 +276,78 @@ function BmfAdminReviewContent() {
     }
   }
 
+  const handleCardIssued = (newCard: BmfCard) => {
+    setCards((prev) => [newCard, ...prev.filter((c) => c.id !== newCard.id)])
+  }
+
   // Event actions
+  const handleOpenCreateEvent = () => {
+    setEventForm({
+      id: '',
+      title: '',
+      slug: '',
+      tagline: '',
+      description: '',
+      cover_image: '',
+      event_date: '',
+      event_time: '',
+      location_type: 'in_person',
+      location_venue: '',
+      location_city: '',
+      category: '',
+      total_capacity: 18,
+      registered_count: 0,
+      is_published: true,
+      status: 'upcoming',
+      cta_type: 'internal_form',
+      external_cta_url: '',
+      external_cta_text: 'Request Invitation',
+      pricing_type: 'members_only',
+      price_inr: 0,
+      requirements: '',
+      tags: [],
+      tagsString: '',
+    })
+    setEventModalStep(1)
+    setIsEventModalOpen(true)
+  }
+
+  const handleOpenEditEvent = (event: BmfEvent) => {
+    setEventForm({
+      ...event,
+      tagsString: (event.tags || []).join(', '),
+    })
+    setEventModalStep(1)
+    setIsEventModalOpen(true)
+  }
+
   const handleSaveEvent = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSavingEvent(true)
     try {
-      const res = await saveBmfEvent(eventForm)
+      const parsedTags = eventForm.tagsString
+        ? eventForm.tagsString.split(',').map((t) => t.trim()).filter(Boolean)
+        : (eventForm.tags || [])
+
+      const payload: Partial<BmfEvent> = {
+        ...eventForm,
+        tags: parsedTags,
+        total_capacity: Number(eventForm.total_capacity) || 18,
+        registered_count: Number(eventForm.registered_count) || 0,
+        price_inr: Number(eventForm.price_inr) || 0,
+      }
+      delete (payload as any).tagsString
+
+      const res = await saveBmfEvent(payload)
       if (res.success && res.event) {
         setEvents((prev) => [res.event!, ...prev.filter((item) => item.id !== res.event!.id)])
         setIsEventModalOpen(false)
-        setEventForm({
-          title: '',
-          tagline: '',
-          description: '',
-          event_date: '',
-          event_time: '6:30 PM - 9:30 PM IST',
-          location_type: 'in_person',
-          location_venue: '',
-          location_city: 'Bangalore',
-          category: 'Closed-Door Dinner',
-          total_capacity: 18,
-          registered_count: 0,
-          is_published: true,
-          status: 'upcoming',
-          cta_type: 'internal_form',
-          external_cta_url: '',
-          external_cta_text: 'Request Invitation',
-          pricing_type: 'members_only',
-          price_inr: 0,
-          requirements: '',
-        })
+      } else {
+        alert(res.error || 'Failed to save event.')
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
+      alert(err.message || 'Error saving event.')
     } finally {
       setIsSavingEvent(false)
     }
@@ -780,7 +830,19 @@ function BmfAdminReviewContent() {
                         onClick={() => handleMemberAction(member.id, 'toggle_verify')}
                         className={`hover:underline cursor-pointer ${member.is_verified ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
                       >
-                        {member.is_verified ? '✓ Verified Badge' : '+ Verify Founder'}
+                        {member.is_verified ? '✓ Verified Badge' : '+ Verify'}
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPreselectedMemberForCard(member)
+                          setIsIssueCardModalOpen(true)
+                        }}
+                        className="hover:underline cursor-pointer text-amber-600 font-semibold flex items-center gap-1"
+                      >
+                        <CreditCard className="w-3 h-3 text-amber-500" />
+                        <span>+ Issue Pass</span>
                       </button>
 
                       <button
@@ -788,7 +850,7 @@ function BmfAdminReviewContent() {
                         onClick={() => handleMemberAction(member.id, 'toggle_featured')}
                         className={`hover:underline cursor-pointer ${member.is_featured ? 'text-amber-600 font-bold' : 'text-slate-500'}`}
                       >
-                        {member.is_featured ? '★ Featured Spotlight' : '+ Spotlight'}
+                        {member.is_featured ? '★ Spotlight' : '+ Spotlight'}
                       </button>
                     </div>
 
@@ -879,7 +941,7 @@ function BmfAdminReviewContent() {
             </div>
           </div>
 
-          {/* Filter Bar */}
+          {/* Filter Bar & Quick Create */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 border border-slate-200/80 rounded-full w-full sm:w-auto overflow-x-auto">
               <button
@@ -916,26 +978,55 @@ function BmfAdminReviewContent() {
               </button>
             </div>
 
-            <div className="relative w-full sm:w-72">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search cardholders, tiers, ventures..."
-                value={cardSearch}
-                onChange={(e) => setCardSearch(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-full pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
-              />
+            <div className="flex items-center gap-2.5 w-full sm:w-auto">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search cardholders, tiers..."
+                  value={cardSearch}
+                  onChange={(e) => setCardSearch(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-full pl-9 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs"
+                />
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  setPreselectedMemberForCard(null)
+                  setIsIssueCardModalOpen(true)
+                }}
+                className="bg-amber-500 hover:bg-amber-600 text-black font-bold text-xs px-4 py-2 rounded-full flex items-center gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer shrink-0 transition-all active:scale-95"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Issue Pass Card</span>
+              </Button>
             </div>
           </div>
 
           {/* Card Applications List */}
           {filteredCards.length === 0 ? (
-            <div className="p-12 rounded-2xl bg-white border border-slate-200/80 text-center space-y-3 shadow-xs">
-              <CreditCard className="w-10 h-10 text-slate-400 mx-auto" />
-              <h3 className="text-base font-bold text-slate-900">No Pass Card Applications Found</h3>
-              <p className="text-xs text-slate-500">
-                Applications submitted by founders from their studio dashboard will appear here for review.
-              </p>
+            <div className="p-12 rounded-3xl bg-white border border-slate-200/80 text-center space-y-4 shadow-xs">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600">
+                <CreditCard className="w-8 h-8" />
+              </div>
+              <div className="max-w-md mx-auto space-y-1.5">
+                <h3 className="text-base font-bold text-slate-900">No Pass Card Applications Found</h3>
+                <p className="text-xs text-slate-500">
+                  Applications submitted by founders from their studio dashboard will appear here. As an admin, you can also manually create and issue bespoke metal passes directly.
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => {
+                  setPreselectedMemberForCard(null)
+                  setIsIssueCardModalOpen(true)
+                }}
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs px-6 py-2.5 rounded-full inline-flex items-center gap-2 shadow-lg shadow-amber-500/20 cursor-pointer transition-all active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Issue First Pass Card Now</span>
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1065,6 +1156,28 @@ function BmfAdminReviewContent() {
                           <span>3D Card Preview</span>
                         </button>
 
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const matchedMember = members.find((m) => m.id === c.member_id || m.user_id === c.user_id)
+                            setPreselectedMemberForCard(matchedMember || {
+                              id: c.member_id || c.id,
+                              full_name: c.card_holder_name,
+                              company_name: c.company_name,
+                              role: '',
+                              category: '',
+                              is_approved: true,
+                              is_verified: true,
+                              is_featured: false,
+                              created_at: c.created_at || '',
+                            } as BmfMember)
+                            setIsIssueCardModalOpen(true)
+                          }}
+                          className="text-[11px] font-mono text-amber-600 hover:text-amber-700 font-bold hover:underline cursor-pointer"
+                        >
+                          ⚙ Edit & Re-Issue
+                        </button>
+
                         <select
                           value={c.card_tier}
                           onChange={(e) => handleCardAction(c.id, 'set_tier', undefined, e.target.value as CardTier)}
@@ -1090,55 +1203,112 @@ function BmfAdminReviewContent() {
       {/* ========================================================= */}
       {mainTab === 'events' && (
         <div className="space-y-6 text-left animate-in fade-in-0 duration-300">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
             <div>
               <h2 className="text-xl font-bold text-slate-900">Curated Founder Gatherings & Dinners</h2>
-              <p className="text-xs text-slate-500 font-medium">Publish closed-door masterminds and route CTAs internally or externally.</p>
+              <p className="text-xs text-slate-500 font-medium">Publish, edit, and manage closed-door masterminds, dinners, retreats, and demo days.</p>
             </div>
 
             <Button
-              onClick={() => setIsEventModalOpen(true)}
+              onClick={handleOpenCreateEvent}
               className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Publish Gathering</span>
+              <span>+ Publish Gathering</span>
             </Button>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map((event) => (
-              <div key={event.id} className="bg-white border border-slate-200/90 rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono uppercase bg-emerald-50 text-emerald-700 px-2.5 py-0.5 rounded-full border border-emerald-200 font-bold">
+              <div key={event.id} className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden flex flex-col justify-between shadow-xs hover:shadow-md transition-all">
+                {/* Event Cover Image / Graphic Banner */}
+                {event.cover_image ? (
+                  <div className="w-full h-36 bg-slate-900 relative overflow-hidden shrink-0">
+                    <img
+                      src={event.cover_image}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <span className="absolute top-3 left-3 text-[10px] font-mono font-bold uppercase bg-white/90 text-slate-900 px-2.5 py-0.5 rounded-full shadow-xs">
                       {event.category}
                     </span>
-                    <span className="text-xs font-mono text-slate-400">{event.event_date}</span>
+                    <span className={`absolute top-3 right-3 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full ${
+                      event.status === 'upcoming'
+                        ? 'bg-emerald-500 text-white'
+                        : event.status === 'sold_out'
+                        ? 'bg-rose-500 text-white'
+                        : 'bg-slate-700 text-slate-200'
+                    }`}>
+                      {event.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2.5 py-0.5 rounded-full font-bold">
+                      {event.category}
+                    </span>
+                    <span className={`text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full ${
+                      event.status === 'upcoming'
+                        ? 'bg-emerald-500/30 text-emerald-200'
+                        : event.status === 'sold_out'
+                        ? 'bg-rose-500/30 text-rose-200'
+                        : 'bg-slate-700 text-slate-300'
+                    }`}>
+                      {event.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-5 space-y-3 flex-1 flex flex-col justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs font-mono text-slate-500">
+                      <span className="font-semibold text-slate-700">{event.event_date}</span>
+                      <span>{event.event_time || '6:30 PM IST'}</span>
+                    </div>
+
+                    <h3 className="text-base font-bold text-slate-900 line-clamp-2">{event.title}</h3>
+                    {event.tagline && (
+                      <p className="text-xs text-slate-500 line-clamp-2 italic">&ldquo;{event.tagline}&rdquo;</p>
+                    )}
+                    
+                    <div className="pt-2 text-xs font-mono text-slate-500 space-y-1.5 border-t border-slate-100">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span className="truncate">{event.location_city} ({event.location_venue || 'Private Venue'}) &bull; <strong className="uppercase text-slate-700">{event.location_type?.replace('_', ' ')}</strong></span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>Capacity: <strong>{event.total_capacity || 18}</strong> &bull; Registered: <strong className="text-emerald-600">{event.registered_count || 0}</strong></span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] pt-1">
+                        <span className="text-slate-400">Pricing: <strong className="text-slate-800 uppercase">{event.pricing_type?.replace('_', ' ') || 'Free'}</strong></span>
+                        <span className="text-slate-400">CTA: <strong className="text-slate-800">{event.cta_type === 'external_link' ? 'External Link' : 'Internal RSVP'}</strong></span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900">{event.title}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2">{event.tagline || event.description}</p>
-                  
-                  <div className="pt-2 text-xs font-mono text-slate-500 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{event.location_city} ({event.location_venue || 'Private Venue'})</span>
+                  <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditEvent(event)}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+                      >
+                        <Edit className="w-3 h-3" />
+                        <span>Edit Details</span>
+                      </button>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <Users className="w-3.5 h-3.5 text-slate-400" />
-                      <span>Capacity: {event.total_capacity || 18} Founders &bull; {event.registered_count || 0} Registered</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-slate-400">CTA: {event.cta_type}</span>
-                  <button
-                    onClick={() => handleDeleteEvent(event.id)}
-                    className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteEvent(event.id)}
+                      title="Delete Gathering"
+                      className="text-slate-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer rounded-lg hover:bg-rose-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -1494,84 +1664,498 @@ function BmfAdminReviewContent() {
       )}
 
       {/* ========================================================= */}
-      {/* CREATE EVENT MODAL */}
+      {/* FULL-FEATURED CREATE / EDIT EVENT STEP WIZARD MODAL */}
       {/* ========================================================= */}
       {isEventModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl text-left my-8 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-              <h3 className="text-lg font-bold text-slate-900">Publish New Founder Gathering</h3>
-              <button onClick={() => setIsEventModalOpen(false)} className="text-slate-400 hover:text-slate-900 cursor-pointer">
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in-0 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-3xl w-full space-y-6 shadow-2xl text-left my-auto max-h-[92vh] overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {eventForm.id ? 'Edit Founder Gathering' : 'Publish New Founder Gathering'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-mono">
+                    {eventForm.id ? `Editing ID: ${eventForm.id}` : 'Step-based creator for masterminds, dinners & conclaves'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsEventModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+              >
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveEvent} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1 sm:col-span-2">
-                  <label className="text-xs font-semibold text-slate-700">Gathering Title *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. AI Infra Closed-Door Dinner"
-                    value={eventForm.title}
-                    onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
-                  />
+            {/* Step Progress Tracker */}
+            <div className="grid grid-cols-4 gap-2 pt-1 pb-3 border-b border-slate-100">
+              {[
+                { id: 1, title: 'Identity & Banner', desc: 'Title & Category' },
+                { id: 2, title: 'Date & Location', desc: 'Logistics' },
+                { id: 3, title: 'Access & CTA', desc: 'Pricing & Capacity' },
+                { id: 4, title: 'Agenda & Review', desc: 'Publish' },
+              ].map((step) => {
+                const isCurrent = eventModalStep === step.id
+                const isDone = eventModalStep > step.id
+                return (
+                  <div
+                    key={step.id}
+                    onClick={() => {
+                      if (step.id < eventModalStep) setEventModalStep(step.id)
+                    }}
+                    className={`cursor-pointer transition-all ${
+                      step.id < eventModalStep ? 'hover:opacity-80' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-mono font-bold transition-all shrink-0 ${
+                          isCurrent
+                            ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
+                            : isDone
+                            ? 'bg-emerald-100 text-emerald-800 font-bold'
+                            : 'bg-slate-100 text-slate-400'
+                        }`}
+                      >
+                        {isDone ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : step.id}
+                      </div>
+                      <div className="hidden sm:block min-w-0">
+                        <span
+                          className={`text-[11px] font-bold block truncate leading-tight ${
+                            isCurrent ? 'text-slate-900' : isDone ? 'text-slate-700' : 'text-slate-400'
+                          }`}
+                        >
+                          {step.title}
+                        </span>
+                        <span className="text-[9px] font-mono text-slate-400 block truncate">
+                          {step.desc}
+                        </span>
+                      </div>
+                    </div>
+                    {/* Progress Bar */}
+                    <div
+                      className={`h-0.5 w-full mt-2 rounded-full transition-all ${
+                        isCurrent
+                          ? 'bg-emerald-600'
+                          : isDone
+                          ? 'bg-emerald-300'
+                          : 'bg-slate-100'
+                      }`}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+
+            <form onSubmit={handleSaveEvent} className="space-y-5">
+              
+              {/* STEP 1: IDENTITY & COVER BANNER */}
+              {eventModalStep === 1 && (
+                <div className="space-y-4 animate-in fade-in-0 duration-200">
+                  <div className="space-y-1 border-b border-slate-100 pb-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 font-bold">
+                      Step 01 / 04
+                    </span>
+                    <h4 className="text-base font-bold text-slate-900">Gathering Identity & Category</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Gathering Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. INNOVEST 3.0 – Startup Demo Day & Investor Conclave"
+                        value={eventForm.title}
+                        onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-700">Slug (URL identifier)</label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (eventForm.title) {
+                              setEventForm({
+                                ...eventForm,
+                                slug: eventForm.title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-'),
+                              })
+                            }
+                          }}
+                          className="text-[10px] font-mono text-emerald-600 hover:underline cursor-pointer"
+                        >
+                          Auto-generate
+                        </button>
+                      </div>
+                      <input
+                        type="text"
+                        placeholder="e.g. innovest-3-startup-demo-day-2026"
+                        value={eventForm.slug || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, slug: e.target.value })}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-mono shadow-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Category *</label>
+                      <select
+                        value={eventForm.category}
+                        onChange={(e) => setEventForm({ ...eventForm, category: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer"
+                      >
+                        <option value="Closed-Door Dinner">Closed-Door Dinner</option>
+                        <option value="Private Mastermind">Private Mastermind</option>
+                        <option value="Demo Day & Conclave">Demo Day & Conclave</option>
+                        <option value="Founder Meetup">Founder Meetup</option>
+                        <option value="Ecosystem Mixer">Ecosystem Mixer</option>
+                        <option value="Technical Workshop">Technical Workshop</option>
+                        <option value="Private Retreat">Private Retreat</option>
+                        <option value="Investor Fireside">Investor Fireside</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Short Tagline / Hook</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Startup pitches, live product demos, and funding connections with leading VCs."
+                        value={eventForm.tagline || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, tagline: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-2 pt-2 border-t border-slate-100">
+                      <label className="text-xs font-semibold text-slate-700">Cover Image URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://images.unsplash.com/..."
+                        value={eventForm.cover_image || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, cover_image: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 font-mono shadow-xs"
+                      />
+
+                      {/* Preset quick image buttons */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <span className="text-[10px] font-mono text-slate-400">Presets:</span>
+                        {[
+                          { label: 'Demo Day', url: 'https://images.unsplash.com/photo-1511578314322-379afb476865?q=80&w=1200&auto=format&fit=crop' },
+                          { label: 'Meetup', url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=1200&auto=format&fit=crop' },
+                          { label: 'Dining Lounge', url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop' },
+                          { label: 'Mixer', url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop' },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => setEventForm({ ...eventForm, cover_image: preset.url })}
+                            className="text-[10px] font-mono bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg text-slate-700 transition-colors"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">Event Date *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. March 28, 2026"
-                    value={eventForm.event_date}
-                    onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
-                  />
+              {/* STEP 2: DATE, TIME & LOCATION */}
+              {eventModalStep === 2 && (
+                <div className="space-y-4 animate-in fade-in-0 duration-200">
+                  <div className="space-y-1 border-b border-slate-100 pb-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 font-bold">
+                      Step 02 / 04
+                    </span>
+                    <h4 className="text-base font-bold text-slate-900">Date, Time & Venue Logistics</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Event Date *</label>
+                      <input
+                        type="date"
+                        required
+                        value={eventForm.event_date}
+                        onChange={(e) => setEventForm({ ...eventForm, event_date: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Time Window</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 6:30 PM - 9:30 PM IST"
+                        value={eventForm.event_time || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, event_time: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Location Type *</label>
+                      <select
+                        value={eventForm.location_type}
+                        onChange={(e) => setEventForm({ ...eventForm, location_type: e.target.value as any })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-mono"
+                      >
+                        <option value="in_person">In-Person</option>
+                        <option value="virtual">Virtual</option>
+                        <option value="hybrid">Hybrid</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">City / Region *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Bengaluru, Chennai, SF"
+                        value={eventForm.location_city}
+                        onChange={(e) => setEventForm({ ...eventForm, location_city: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Venue / Meeting URL</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Koramangala Founder House or Meet Link"
+                        value={eventForm.location_venue || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, location_venue: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                      />
+                    </div>
+                  </div>
                 </div>
+              )}
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-700">City / Location *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Bangalore (Indiranagar)"
-                    value={eventForm.location_city}
-                    onChange={(e) => setEventForm({ ...eventForm, location_city: e.target.value })}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
-                  />
+              {/* STEP 3: ACCESS, PRICING & CTA */}
+              {eventModalStep === 3 && (
+                <div className="space-y-4 animate-in fade-in-0 duration-200">
+                  <div className="space-y-1 border-b border-slate-100 pb-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 font-bold">
+                      Step 03 / 04
+                    </span>
+                    <h4 className="text-base font-bold text-slate-900">Capacity, Pricing & CTA Routing</h4>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Pricing Type *</label>
+                      <select
+                        value={eventForm.pricing_type}
+                        onChange={(e) => setEventForm({ ...eventForm, pricing_type: e.target.value as any })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-mono"
+                      >
+                        <option value="members_only">Members Only</option>
+                        <option value="free">Free for All</option>
+                        <option value="paid">Paid Ticket</option>
+                        <option value="invite_only">Invite Only</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Price (INR)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        placeholder="0"
+                        value={eventForm.price_inr || 0}
+                        onChange={(e) => setEventForm({ ...eventForm, price_inr: Number(e.target.value) })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Total Capacity *</label>
+                      <input
+                        type="number"
+                        min={1}
+                        required
+                        value={eventForm.total_capacity || 18}
+                        onChange={(e) => setEventForm({ ...eventForm, total_capacity: Number(e.target.value) })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Status *</label>
+                      <select
+                        value={eventForm.status}
+                        onChange={(e) => setEventForm({ ...eventForm, status: e.target.value as any })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-mono"
+                      >
+                        <option value="upcoming">Upcoming</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="sold_out">Sold Out</option>
+                        <option value="closed">Closed</option>
+                        <option value="past">Past</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1 pt-2">
+                      <label className="text-xs font-semibold text-slate-700">CTA Mechanism *</label>
+                      <select
+                        value={eventForm.cta_type}
+                        onChange={(e) => setEventForm({ ...eventForm, cta_type: e.target.value as any })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs cursor-pointer font-mono"
+                      >
+                        <option value="internal_form">Internal RSVP Pass</option>
+                        <option value="external_link">External URL (Unstop/Luma)</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-2 space-y-1 pt-2">
+                      <label className="text-xs font-semibold text-slate-700">CTA Button Label Text</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Request Invitation / Apply via Unstop"
+                        value={eventForm.external_cta_text || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, external_cta_text: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                      />
+                    </div>
+
+                    {eventForm.cta_type === 'external_link' && (
+                      <div className="sm:col-span-4 space-y-1">
+                        <label className="text-xs font-semibold text-slate-700">External Registration Link URL *</label>
+                        <input
+                          type="url"
+                          placeholder="https://unstop.com/... or https://lu.ma/..."
+                          value={eventForm.external_cta_url || ''}
+                          onChange={(e) => setEventForm({ ...eventForm, external_cta_url: e.target.value })}
+                          className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-slate-700">Event Description</label>
-                <textarea
-                  rows={3}
-                  placeholder="Describe the format, focus areas, and attendees..."
-                  value={eventForm.description}
-                  onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 resize-none shadow-xs"
-                />
-              </div>
+              {/* STEP 4: AGENDA, CRITERIA & REVIEW */}
+              {eventModalStep === 4 && (
+                <div className="space-y-4 animate-in fade-in-0 duration-200">
+                  <div className="space-y-1 border-b border-slate-100 pb-2">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 font-bold">
+                      Step 04 / 04
+                    </span>
+                    <h4 className="text-base font-bold text-slate-900">Agenda, Requirements & Review</h4>
+                  </div>
 
-              <div className="pt-3 border-t border-slate-200 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsEventModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-500 hover:text-slate-900 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <Button
-                  type="submit"
-                  disabled={isSavingEvent}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-full cursor-pointer shadow-xs"
-                >
-                  {isSavingEvent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                  <span>Publish Gathering</span>
-                </Button>
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Full Description & Agenda</label>
+                      <textarea
+                        rows={3}
+                        placeholder="Describe the format, discussion agenda, mentor/investor lineup, and takeaways..."
+                        value={eventForm.description || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 resize-none shadow-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Eligibility / Prerequisites</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Founders with shipped products, Series A+ operators, Angel investors"
+                        value={eventForm.requirements || ''}
+                        onChange={(e) => setEventForm({ ...eventForm, requirements: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">Tags (Comma-separated)</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Bangalore, AI, Funding, Pitching, Demo Day"
+                        value={eventForm.tagsString !== undefined ? eventForm.tagsString : (eventForm.tags || []).join(', ')}
+                        onChange={(e) => setEventForm({ ...eventForm, tagsString: e.target.value })}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 focus:outline-none focus:border-emerald-500 shadow-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between mt-2">
+                      <div>
+                        <span className="text-xs font-bold text-slate-900 block">Publish Live Immediately</span>
+                        <span className="text-[11px] text-slate-500">
+                          Make visible to founders across public and studio event decks.
+                        </span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={eventForm.is_published ?? true}
+                        onChange={(e) => setEventForm({ ...eventForm, is_published: e.target.checked })}
+                        className="w-4 h-4 accent-emerald-600 cursor-pointer rounded"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Wizard Footer Navigation */}
+              <div className="pt-4 border-t border-slate-200 flex items-center justify-between sticky bottom-0 bg-white py-2">
+                {eventModalStep > 1 ? (
+                  <Button
+                    type="button"
+                    onClick={() => setEventModalStep((prev) => prev - 1)}
+                    className="px-5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-full inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
+                  </Button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEventModalOpen(false)}
+                    className="px-5 py-2 text-xs font-semibold text-slate-400 hover:text-slate-700 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                )}
+
+                {eventModalStep < 4 ? (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (eventModalStep === 1 && !eventForm.title?.trim()) {
+                        alert('Please enter a gathering title to continue.')
+                        return
+                      }
+                      if (eventModalStep === 2 && !eventForm.event_date?.trim()) {
+                        alert('Please enter an event date to continue.')
+                        return
+                      }
+                      setEventModalStep((prev) => prev + 1)
+                    }}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-6 py-2.5 rounded-full inline-flex items-center gap-2 cursor-pointer shadow-xs transition-all active:scale-95"
+                  >
+                    <span>Continue</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    disabled={isSavingEvent}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-7 py-2.5 rounded-full cursor-pointer shadow-md shadow-emerald-600/20 inline-flex items-center gap-2 transition-all active:scale-95"
+                  >
+                    {isSavingEvent ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    <span>{eventForm.id ? 'Save Changes' : 'Publish Gathering'}</span>
+                  </Button>
+                )}
               </div>
             </form>
           </div>
@@ -1625,6 +2209,21 @@ function BmfAdminReviewContent() {
           </div>
         </div>
       )}
+
+      {/* ========================================================= */}
+      {/* MANUAL EXECUTIVE PASS CARD ISSUER MODAL */}
+      {/* ========================================================= */}
+      <AdminIssueCardModal
+        isOpen={isIssueCardModalOpen}
+        onClose={() => {
+          setIsIssueCardModalOpen(false)
+          setPreselectedMemberForCard(null)
+        }}
+        members={members}
+        existingCards={cards}
+        preselectedMember={preselectedMemberForCard}
+        onCardIssued={handleCardIssued}
+      />
 
     </div>
   )

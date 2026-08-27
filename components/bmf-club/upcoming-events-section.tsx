@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   BmfEvent, 
@@ -127,9 +128,9 @@ export function UpcomingEventsSection() {
           </p>
         </div>
 
-        {/* Events List */}
+        {/* Events List (Last 5 events) */}
         <div className="space-y-4">
-          {events.map((event) => {
+          {events.slice(0, 5).map((event) => {
             const isFull = event.total_capacity > 0 && event.registered_count >= event.total_capacity
             const spotsRemaining = Math.max(0, event.total_capacity - event.registered_count)
 
@@ -224,6 +225,17 @@ export function UpcomingEventsSection() {
               </div>
             )
           })}
+        </div>
+
+        {/* Action Link to All Events */}
+        <div className="flex justify-center pt-2">
+          <Link
+            href="/bmf-club/events"
+            className="inline-flex items-center gap-2.5 bg-white hover:bg-neutral-900 text-neutral-900 hover:text-white border border-black/10 hover:border-neutral-900 px-8 py-3.5 rounded-full text-xs sm:text-sm font-black transition-all shadow-sm group cursor-pointer"
+          >
+            <span>View All Events</span>
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
 
       </div>

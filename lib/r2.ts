@@ -31,7 +31,7 @@ export function getSupabaseAdmin() {
 export interface UploadR2Options {
   fileBuffer: Buffer
   contentType: string
-  folder: 'founders' | 'companies'
+  folder: 'founders' | 'companies' | 'events'
   userId?: string
   originalFileName?: string
 }
@@ -54,7 +54,8 @@ export async function uploadToCloudflareR2({
   // Organized naming paths:
   // bmf-club/founders/{userId}/portrait_{timestamp}.{ext}
   // bmf-club/companies/{userId}/logo_{timestamp}.{ext}
-  const prefix = folder === 'founders' ? 'portrait' : 'logo'
+  // bmf-club/events/{userId}/cover_{timestamp}.{ext}
+  const prefix = folder === 'founders' ? 'portrait' : folder === 'companies' ? 'logo' : 'cover'
   const key = `bmf-club/${folder}/${sanitizedUserId}/${prefix}_${timestamp}.${ext}`
 
   // 1. Try Cloudflare R2 (Primary High-Speed CDN Storage)

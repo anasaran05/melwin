@@ -23,6 +23,8 @@ import {
   generateDefaultCard, 
   submitCardPassApplication 
 } from '@/lib/supabase/bmf-cards'
+import { BmfEvent, fetchBmfEvents, registerForEvent } from '@/lib/supabase/bmf-events'
+import { ProposeMastermindModal } from '@/components/bmf-club/propose-mastermind-modal'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
 import { ImageUploader } from '@/components/bmf-club/image-uploader'
@@ -55,8 +57,6 @@ import {
   Handshake,
   CreditCard, 
   Clock, 
-  Wifi, 
-  QrCode,
   ChevronsUpDown,
   ChevronUp,
   ChevronDown,
@@ -169,7 +169,6 @@ function BmfMemberDashboardContent() {
   
   // Executive Metal Card State
   const [card, setCard] = useState<BmfCard>(generateDefaultCard())
-  const [nfcSimulated, setNfcSimulated] = useState(false)
 
   // Card Application Form State
   const [isCardAppModalOpen, setIsCardAppModalOpen] = useState(false)
@@ -255,6 +254,14 @@ function BmfMemberDashboardContent() {
   const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
   const [isOnboardingSuccessModalOpen, setIsOnboardingSuccessModalOpen] = useState(false)
   const [onboardingError, setOnboardingError] = useState('')
+
+  // Masterminds & Events State
+  const [masterminds, setMasterminds] = useState<BmfEvent[]>([])
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false)
+  const [isProposeModalOpen, setIsProposeModalOpen] = useState(false)
+  const [eventCategoryFilter, setEventCategoryFilter] = useState('all')
+  const [rsvpdEventIds, setRsvpdEventIds] = useState<Record<string, boolean>>({})
+  const [rsvpSubmittingId, setRsvpSubmittingId] = useState<string | null>(null)
 
   // Check if current user has an active / approved BMF Club Pass
   const hasActivePass = card?.approval_status === 'approved' || profile.role === 'admin'
@@ -458,9 +465,13 @@ function BmfMemberDashboardContent() {
           }
         }
 
-        // Fetch jobs
-        const memberJobs = await fetchMemberJobs()
+        // Fetch jobs and curated masterminds
+        const [memberJobs, activeEvents] = await Promise.all([
+          fetchMemberJobs(),
+          fetchBmfEvents(),
+        ])
         setJobs(memberJobs)
+        setMasterminds(activeEvents)
       } catch (err) {
         console.error('Error loading dashboard data:', err)
         setIsAuthenticated(false)
@@ -471,6 +482,43 @@ function BmfMemberDashboardContent() {
 
     checkAuthAndLoadData()
   }, [router, destination])
+
+  const handleRsvpForEvent = async (event: BmfEvent) => {
+    if (!hasActivePass) {
+      setPassModalFeature('event')
+      setIsPassModalOpen(true)
+      return
+    }
+    if (event.cta_type === 'external_link' && event.external_cta_url) {
+      window.open(event.external_cta_url, '_blank')
+      return
+    }
+    setRsvpSubmittingId(event.id)
+    try {
+      const res = await registerForEvent({
+        event_id: event.id,
+        user_id: profile.user_id || profile.id,
+        full_name: profile.full_name,
+        email: profile.email || `${profile.id}@bmfclub.vip`,
+        phone: profile.whatsapp_number || profile.phone_number || '',
+        company_name: profile.company_name,
+        role: profile.role,
+        linkedin_url: profile.linkedin_url || '',
+        notes: `RSVP pass requested by ${profile.full_name} (${profile.company_name})`,
+      })
+      if (res.success) {
+        setRsvpdEventIds((prev) => ({ ...prev, [event.id]: true }))
+      }
+    } catch (err) {
+      console.error('RSVP Error:', err)
+    } finally {
+      setRsvpSubmittingId(null)
+    }
+  }
+
+  const handleMastermindProposed = (newEvent: BmfEvent) => {
+    setMasterminds((prev) => [newEvent, ...prev.filter((e) => e.id !== newEvent.id)])
+  }
 
   // Universal Auth Handlers
   const handleGoogleSignIn = async () => {
@@ -1005,12 +1053,6 @@ function BmfMemberDashboardContent() {
     } finally {
       setIsSubmittingCardApp(false)
     }
-  }
-
-  // NFC Tap Simulation
-  const handleSimulateNfc = () => {
-    setNfcSimulated(true)
-    setTimeout(() => setNfcSimulated(false), 3500)
   }
 
   const handleCreateJob = async (e: React.FormEvent) => {
@@ -2168,39 +2210,11 @@ function BmfMemberDashboardContent() {
                     </div>
                   </div>
 
-                  {/* Card Display (Fully Unblurred) */}
+                  {/* Card Display (Clean & Premium) */}
                   <div className="pt-2 flex flex-col items-center justify-center space-y-3">
                     <div className="w-full flex justify-center">
                       <ExecutiveMetalCard card={card} showControls={false} />
                     </div>
-                    {isCardLive && (
-                      <>
-                        {nfcSimulated && (
-                          <div className="p-3 rounded-2xl bg-emerald-950/70 border border-emerald-600/70 text-emerald-300 text-xs font-mono flex items-center gap-2 animate-in zoom-in-95 duration-200">
-                            <Wifi className="w-4 h-4 text-emerald-400 animate-pulse" />
-                            <span>NFC UID {card.nfc_uid} Verified &bull; Access Granted</span>
-                          </div>
-                        )}
-                        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleSimulateNfc}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 border border-neutral-700 text-xs font-bold text-white transition-all shadow-md cursor-pointer"
-                          >
-                            <Wifi className="w-3.5 h-3.5 text-cyan-400 rotate-90" />
-                            <span>Simulate NFC Tap</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => alert(`Digital Pass Token: ${card.card_number} (Added to Wallet)`)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
-                          >
-                            <QrCode className="w-3.5 h-3.5" />
-                            <span>Add to Wallet</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
                     {!isCardLive && (
                       <div className="pt-1 flex justify-center">
                         <button
@@ -3257,11 +3271,12 @@ function BmfMemberDashboardContent() {
               </div>
             )}
 
+            {/* Header & Propose Button */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-6">
               <div className="space-y-1">
-                <h2 className="text-2xl sm:text-3xl font-black text-white">Private Founder Masterminds</h2>
+                <h2 className="text-2xl sm:text-3xl font-black text-white">Events & Meetups</h2>
                 <p className="text-xs sm:text-sm text-neutral-400">
-                  Closed-door sessions, strategic roundtables, and VIP investor dinners across Bangalore and Silicon Valley.
+                  Dinners, workshops, and meetups hosted by club founders.
                 </p>
               </div>
 
@@ -3272,43 +3287,236 @@ function BmfMemberDashboardContent() {
                     setPassModalFeature('event')
                     setIsPassModalOpen(true)
                   } else {
-                    alert('Founder Mastermind Host Portal is active. Our concierge team will reach out to schedule your session.')
+                    setIsProposeModalOpen(true)
                   }
                 }}
-                className="bg-white hover:bg-neutral-200 text-black px-6 py-2.5 rounded-full font-bold text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="bg-white hover:bg-neutral-200 text-black px-6 py-2.5 rounded-full font-bold text-xs transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-md"
               >
                 <Plus className="w-4 h-4" />
-                <span>Propose Mastermind</span>
+                <span>Host an Event</span>
               </Button>
             </div>
 
-            {/* Empty Masterminds State */}
-            <div className="p-10 rounded-3xl bg-[#121216] border border-neutral-800 text-center space-y-4 shadow-xl">
-              <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-700/80 text-neutral-400 flex items-center justify-center mx-auto shadow-inner">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <div className="space-y-1 max-w-md mx-auto">
-                <h3 className="text-base font-bold text-white">No Active Masterminds Scheduled</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Upcoming closed-door roundtables and VIP founder sessions will appear here once announced.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (!hasActivePass) {
-                    setPassModalFeature('event')
-                    setIsPassModalOpen(true)
-                  } else {
-                    alert('Mastermind Proposal portal is active. Our concierge team will reach out to schedule your session.')
-                  }
-                }}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Propose a Session</span>
-              </button>
+            {/* Category Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
+              {[
+                { label: 'All Sessions', value: 'all' },
+                { label: 'Closed-Door Dinners', value: 'Closed-Door Dinner' },
+                { label: 'Masterminds', value: 'Mastermind' },
+                { label: 'Demo Days & Conclaves', value: 'Demo Day & Conclave' },
+                { label: 'Workshops', value: 'Technical Workshop' },
+              ].map((pill) => {
+                const isActive = eventCategoryFilter === pill.value
+                return (
+                  <button
+                    key={pill.value}
+                    type="button"
+                    onClick={() => setEventCategoryFilter(pill.value)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-mono transition-all cursor-pointer ${
+                      isActive
+                        ? 'bg-white text-black font-bold shadow-md'
+                        : 'bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:bg-neutral-800'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                )
+              })}
             </div>
+
+            {/* Live Events Grid */}
+            {(() => {
+              const filtered = masterminds.filter((m) => {
+                if (eventCategoryFilter === 'all') return true
+                return m.category?.toLowerCase().includes(eventCategoryFilter.toLowerCase())
+              })
+
+              if (filtered.length === 0) {
+                return (
+                  <div className="p-10 rounded-3xl bg-[#121216] border border-neutral-800 text-center space-y-4 shadow-xl">
+                    <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-700/80 text-neutral-400 flex items-center justify-center mx-auto shadow-inner">
+                      <Calendar className="w-6 h-6" />
+                    </div>
+                    <div className="space-y-1 max-w-md mx-auto">
+                      <h3 className="text-base font-bold text-white">No Masterminds Found in this Category</h3>
+                      <p className="text-xs text-neutral-400 leading-relaxed">
+                        Host the first closed-door roundtable or private dinner in this track for fellow BMF members.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!hasActivePass) {
+                          setPassModalFeature('event')
+                          setIsPassModalOpen(true)
+                        } else {
+                          setIsProposeModalOpen(true)
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black text-xs font-bold transition-all shadow-md cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Propose a Session</span>
+                    </button>
+                  </div>
+                )
+              }
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                  {filtered.map((event) => {
+                    const isRsvpd = Boolean(rsvpdEventIds[event.id])
+                    const isSubmittingThis = rsvpSubmittingId === event.id
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="bg-[#121216] border border-neutral-800 hover:border-neutral-700 rounded-3xl overflow-hidden flex flex-col justify-between shadow-xl transition-all group"
+                      >
+                        {/* Cover Image or Graphic */}
+                        {event.cover_image ? (
+                          <div className="w-full h-44 bg-neutral-950 relative overflow-hidden shrink-0">
+                            <img
+                              src={event.cover_image}
+                              alt={event.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#121216] via-black/40 to-transparent" />
+                            <span className="absolute top-3 left-3 text-[10px] font-mono font-bold uppercase bg-black/80 backdrop-blur-md border border-neutral-700 text-white px-3 py-1 rounded-full shadow-md">
+                              {event.category}
+                            </span>
+                            <span className={`absolute top-3 right-3 text-[10px] font-mono font-bold uppercase px-3 py-1 rounded-full border shadow-md ${
+                              event.pricing_type === 'free'
+                                ? 'bg-emerald-950/90 border-emerald-600 text-emerald-300'
+                                : event.pricing_type === 'paid'
+                                ? 'bg-sky-950/90 border-sky-600 text-sky-300'
+                                : 'bg-neutral-900/90 border-neutral-700 text-neutral-200'
+                            }`}>
+                              {event.pricing_type === 'free'
+                                ? 'FREE'
+                                : event.pricing_type === 'paid'
+                                ? `PAID • ₹${event.price_inr || 0}`
+                                : event.pricing_type === 'members_only'
+                                ? 'MEMBERS ONLY'
+                                : 'INVITE ONLY'}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="p-5 bg-gradient-to-r from-neutral-900 to-neutral-950 border-b border-neutral-800/80 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase bg-neutral-800 text-neutral-200 border border-neutral-700 px-3 py-1 rounded-full font-bold">
+                              {event.category}
+                            </span>
+                            <span className={`text-[10px] font-mono uppercase px-3 py-1 rounded-full border font-bold ${
+                              event.pricing_type === 'free'
+                                ? 'bg-emerald-950/90 border-emerald-700 text-emerald-300'
+                                : event.pricing_type === 'paid'
+                                ? 'bg-sky-950/90 border-sky-700 text-sky-300'
+                                : 'bg-neutral-800 text-neutral-300 border-neutral-700'
+                            }`}>
+                              {event.pricing_type === 'free'
+                                ? 'FREE'
+                                : event.pricing_type === 'paid'
+                                ? `PAID • ₹${event.price_inr || 0}`
+                                : event.pricing_type === 'members_only'
+                                ? 'MEMBERS ONLY'
+                                : 'INVITE ONLY'}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Event Details Body */}
+                        <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                              <span className="text-neutral-300 font-semibold flex items-center gap-1.5">
+                                <Calendar className="w-3.5 h-3.5 text-neutral-400" />
+                                {event.event_date}
+                              </span>
+                              <span>{event.event_time || '6:30 PM IST'}</span>
+                            </div>
+
+                            <div>
+                              <h3 className="text-lg font-bold text-white leading-snug group-hover:text-neutral-200 transition-colors">
+                                {event.title}
+                              </h3>
+                              {event.tagline && (
+                                <p className="text-xs text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
+                                  {event.tagline}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Location & Capacity Badges */}
+                            <div className="pt-2 text-xs font-mono text-neutral-400 space-y-1.5 border-t border-neutral-800/80">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                <span className="truncate">
+                                  {event.location_city} &bull; {event.location_venue || 'Private Venue'} ({event.location_type?.replace('_', ' ')})
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Users className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                <span>
+                                  {event.registered_count || 0} / {event.total_capacity || 18} Attending
+                                </span>
+                              </div>
+                              {event.requirements && (
+                                <div className="p-2.5 rounded-xl bg-neutral-900/90 border border-neutral-800/80 text-[11px] text-neutral-300 font-sans mt-2">
+                                  <strong className="text-neutral-400 font-mono text-[10px] uppercase block mb-0.5">Who can join</strong>
+                                  {event.requirements}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Action CTA Button */}
+                          <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between gap-3">
+                            <span className="text-[11px] font-mono text-neutral-500 uppercase">
+                              Status: <strong className="text-emerald-400">{event.status}</strong>
+                            </span>
+
+                            {isRsvpd ? (
+                              <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-950/60 border border-emerald-700/60 text-emerald-400 text-xs font-bold">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>RSVP Submitted</span>
+                              </div>
+                            ) : event.cta_type === 'external_link' ? (
+                              <Button
+                                type="button"
+                                onClick={() => handleRsvpForEvent(event)}
+                                className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-5 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                              >
+                                <span>{event.external_cta_text || 'Register Online'}</span>
+                                <ExternalLink className="w-3.5 h-3.5" />
+                              </Button>
+                            ) : (
+                              <Button
+                                type="button"
+                                disabled={isSubmittingThis}
+                                onClick={() => handleRsvpForEvent(event)}
+                                className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-5 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 transition-all"
+                              >
+                                {isSubmittingThis ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
+                                    <span>Processing...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span>Join Event</span>
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -3743,6 +3951,16 @@ function BmfMemberDashboardContent() {
             console.error('Failed to save card theme:', err)
           }
         }}
+      />
+
+      {/* ======================================================================= */}
+      {/* PROPOSE MASTERMIND / SESSION MODAL */}
+      {/* ======================================================================= */}
+      <ProposeMastermindModal
+        isOpen={isProposeModalOpen}
+        onClose={() => setIsProposeModalOpen(false)}
+        founder={profile}
+        onProposed={handleMastermindProposed}
       />
 
     </div>

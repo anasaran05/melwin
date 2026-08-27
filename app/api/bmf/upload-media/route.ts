@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     
     let fileBuffer: Buffer | null = null
     let contentType = 'image/webp'
-    let folder: 'founders' | 'companies' = 'founders'
+    let folder: 'founders' | 'companies' | 'events' = 'founders'
     let userId = 'guest'
     let originalFileName = 'image.webp'
 
@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
     } else {
       const formData = await request.formData()
       const file = formData.get('file') as File | null
-      folder = (formData.get('folder') as 'founders' | 'companies') || 'founders'
+      folder = (formData.get('folder') as 'founders' | 'companies' | 'events') || 'founders'
       userId = (formData.get('userId') as string) || 'guest'
 
       if (!file) {

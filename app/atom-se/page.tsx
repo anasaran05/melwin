@@ -59,7 +59,7 @@ export default function AtomSePage() {
       {/* Hero Section */}
       <AtomSeHeroSection ready={introState === 'done'} />
 
-      {/* Why Choose Atom SE */}
+      {/* Why Choose Atom SE (with integrated capabilities) */}
       <AtomSeWhyChooseSection />
 
       {/* Services Grid */}

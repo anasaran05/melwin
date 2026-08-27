@@ -7,6 +7,7 @@ export interface BmfEvent {
   tagline?: string
   description?: string
   cover_image?: string
+  thumbnail_url?: string
   event_date: string
   event_time?: string
   location_type: 'in_person' | 'virtual' | 'hybrid'
@@ -198,6 +199,10 @@ export async function fetchBmfEvents(): Promise<BmfEvent[]> {
       .order('created_at', { ascending: false })
 
     if (error || !data || data.length === 0) {
+      // Trigger background seed to ensure Supabase table gets populated
+      if (typeof window !== 'undefined') {
+        fetch('/api/bmf/seed-events', { method: 'POST' }).catch(() => {})
+      }
       return INITIAL_BMF_EVENTS
     }
 
@@ -235,13 +240,24 @@ export async function fetchAllEventsForAdmin(): Promise<BmfEvent[]> {
   }
 }
 
+export function slugifyEventTitle(title: string): string {
+  const base = title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return base || `event-${Date.now()}`
+}
+
 export async function saveBmfEvent(event: Partial<BmfEvent>): Promise<{ success: boolean; event?: BmfEvent; error?: string }> {
   try {
     const supabase = getSupabaseBrowserClient()
+    const rawTitle = event.title || 'New BMF Event'
     const newEvent: BmfEvent = {
       id: event.id || `event-${Date.now()}`,
-      title: event.title || 'New BMF Event',
-      slug: event.slug || `event-${Date.now()}`,
+      title: rawTitle,
+      slug: event.slug?.trim() ? event.slug.trim() : slugifyEventTitle(rawTitle),
       tagline: event.tagline || '',
       description: event.description || '',
       cover_image: event.cover_image || '',
@@ -327,7 +343,7 @@ export async function deleteBmfEvent(eventId: string): Promise<{ success: boolea
 
 export async function registerForEvent(
   registration: Omit<BmfEventRegistration, 'id' | 'status' | 'created_at' | 'updated_at'>
-): Promise<{ success: boolean; status: 'registered' | 'waitlisted'; error?: string }> {
+): Promise<{ success: boolean; status: 'registered' | 'waitlisted'; ticketCode?: string; error?: string }> {
   try {
     const response = await fetch('/api/bmf/event-register', {
       method: 'POST',
@@ -340,7 +356,7 @@ export async function registerForEvent(
       return { success: false, status: 'registered', error: data.error || 'Registration failed' }
     }
 
-    return { success: true, status: data.registrationStatus || 'registered' }
+    return { success: true, status: data.registrationStatus || 'registered', ticketCode: data.ticketCode }
   } catch (err: any) {
     return { success: false, status: 'registered', error: err.message || 'Network error during registration' }
   }

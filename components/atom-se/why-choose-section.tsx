@@ -5,7 +5,10 @@ import {
   Laptop, 
   Sparkles, 
   Code2, 
-  Server
+  Server,
+  Globe,
+  ShoppingCart,
+  LayoutGrid
 } from 'lucide-react'
 import { 
   FeatureCard, 
@@ -16,15 +19,38 @@ import {
 } from '@/components/ui/features-10'
 import { CardHeader } from '@/components/ui/card'
 
+const CORE_CAPABILITIES = [
+  { id: 'web-dev', label: 'Web development', icon: Globe },
+  { id: 'ecommerce', label: 'eCommerce', icon: ShoppingCart },
+  { id: 'app-dev', label: 'Application development', icon: LayoutGrid },
+  { id: 'ai-automation', label: 'AI Automation', icon: Sparkles },
+]
+
 export function AtomSeWhyChooseSection() {
   return (
-    <section id="why-atom-se" className="py-20 md:py-32 px-4 sm:px-6 md:px-12 w-full border-t border-b border-black/[0.05] bg-[#f8f8f8]">
-      <div className="max-w-6xl mx-auto space-y-16">
+    <section id="why-atom-se" className="py-16 md:py-24 px-4 sm:px-6 md:px-12 w-full border-t border-b border-black/[0.05] bg-[#f8f8f8]">
+      <div className="max-w-6xl mx-auto space-y-12 md:space-y-16">
         
+        {/* Integrated Capabilities Bar */}
+        <div className="flex items-center justify-center flex-wrap gap-x-8 sm:gap-x-12 md:gap-x-16 gap-y-3.5 pb-8 border-b border-black/[0.07]">
+          {CORE_CAPABILITIES.map((item) => {
+            const Icon = item.icon
+            return (
+              <div
+                key={item.id}
+                className="group flex items-center gap-2.5 sm:gap-3 text-neutral-700 hover:text-black transition-colors cursor-default"
+              >
+                <Icon className="w-4 h-4 sm:w-[18px] sm:h-[18px] text-neutral-800 transition-transform duration-200 group-hover:scale-110 stroke-[1.8]" />
+                <span className="text-xs sm:text-sm font-medium tracking-tight text-neutral-800 group-hover:text-black transition-colors whitespace-nowrap">
+                  {item.label}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+
         {/* Section Header */}
         <div className="max-w-3xl space-y-4">
-          
-
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#111111] tracking-tight leading-[1.12]">
             We build modern websites and custom software.
           </h2>

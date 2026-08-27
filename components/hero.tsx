@@ -1,10 +1,27 @@
 'use client'
 
-import { motion, useScroll, useTransform } from 'framer-motion'
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 
+const ATOM_PHRASES = [
+  'Built by Atom SE',
+  'Build Websites',
+  'Build Softwares',
+  'Build AI & Apps',
+]
+
 export function Hero() {
+  const [phraseIndex, setPhraseIndex] = useState(0)
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setPhraseIndex((prev) => (prev + 1) % ATOM_PHRASES.length)
+    }, 2000)
+    return () => clearInterval(timer)
+  }, [])
+
   const { scrollY } = useScroll()
   const imgY = useTransform(scrollY, [0, 800], [0, 750])
   const imgRotateY = useTransform(scrollY, [0, 800], [0, 360])
@@ -94,13 +111,26 @@ export function Hero() {
           <span className="text-[#666] text-[9.5px] sm:text-xs mt-0.5 sm:mt-1 block max-w-[150px] sm:max-w-[200px]">building since 2022</span>
           
           <Link 
-            href="" 
-            className="bg-white hover:bg-neutral-100 active:scale-95 text-black px-2.5 py-1 sm:px-4 sm:py-2 rounded-md shadow-xs border border-neutral-200 mt-1.5 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 w-max transition-all cursor-pointer text-[10px] sm:text-xs shrink-0 whitespace-nowrap"
+            href="/atom-se" 
+            className="group bg-white hover:bg-neutral-100 active:scale-95 text-black px-2.5 py-1 sm:px-4 sm:py-2 rounded-md shadow-xs border border-neutral-200 mt-1.5 sm:mt-3 inline-flex items-center gap-1.5 sm:gap-2 w-max transition-all cursor-pointer text-[10px] sm:text-xs shrink-0 whitespace-nowrap"
           >
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="shrink-0">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" className="shrink-0 transition-transform group-hover:scale-110">
                <path d="M12 2L2 22h20L12 2z"/>
             </svg>
-            <span>Built by Atom SE</span>
+            <span className="relative inline-flex items-center min-w-[125px] sm:min-w-[145px] h-[16px] sm:h-[18px]">
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={phraseIndex}
+                  initial={{ opacity: 0, y: 4, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -4, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="inline-block whitespace-nowrap font-semibold pr-1"
+                >
+                  {ATOM_PHRASES[phraseIndex]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
           </Link>
         </motion.div>
 
