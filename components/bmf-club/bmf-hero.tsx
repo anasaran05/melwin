@@ -28,7 +28,7 @@ const streamImages = [
   },
   {
     id: 'img-4',
-    src: 'https://media.buildwithmelwin.com/bmf-club/founders/f42ae309-5c32-4a34-bc0f-fb8f8e0d0a64/portrait_1787422210407.webp',
+    src: 'https://media.buildwithmelwin.com/bmf-club/founders/f42ae309-5c32-4a34-bc0f-fb8f8e0d0a64/portrait_1787846981204.png',
     fallbackBg: 'linear-gradient(135deg, #022c22 0%, #064e3b 100%)',
     alt: 'Verified BMF Founder',
   },
