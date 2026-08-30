@@ -60,17 +60,22 @@ export interface BmfJob {
 export const BMF_STANDARD_CATEGORIES = [
   'AI & SaaS',
   'Technology & Software',
+  'Logistics & Supply Chain',
+  'EV, Automotive & Mobility',
+  'Green Tech & Climate',
   'Healthcare & Life Sciences',
+  'BioTech & DeepTech',
   'Finance & FinTech',
   'E-commerce & Consumer Brands',
-  'Manufacturing & Industrial',
+  'Manufacturing & Robotics',
   'Education & EdTech',
   'Real Estate & Construction',
   'Food, Agriculture & Hospitality',
+  'Aerospace & Defence',
+  'Energy & Utilities',
+  'Media, Entertainment & Gaming',
+  'Cybersecurity & Infrastructure',
   'Professional & Business Services',
-  'Media, Entertainment & Creative',
-  'Green Tech',
-  'BioTech',
 ] as const
 
 export function normalizeCategory(rawCategory?: string | null): string {
@@ -88,19 +93,24 @@ export function normalizeCategory(rawCategory?: string | null): string {
 
   // Smart canonical aliases to prevent fragmented custom categories
   const lower = trimmed.toLowerCase()
-  if (lower.includes('ai') || lower.includes('saas')) return 'AI & SaaS'
-  if (lower.includes('fintech') || lower.includes('finance') || lower.includes('ledger') || lower.includes('escrow')) return 'Finance & FinTech'
-  if (lower.includes('edtech') || lower.includes('education') || lower.includes('learning')) return 'Education & EdTech'
-  if (lower.includes('green') || lower.includes('clean') || lower.includes('wind') || lower.includes('solar') || lower.includes('climate')) return 'Green Tech'
-  if (lower.includes('biotech') || lower.includes('biology') || lower.includes('gene')) return 'BioTech'
-  if (lower.includes('health') || lower.includes('pharma') || lower.includes('medical') || lower.includes('medtech')) return 'Healthcare & Life Sciences'
-  if (lower.includes('software') || lower.includes('tech') || lower.includes('developer')) return 'Technology & Software'
-  if (lower.includes('e-commerce') || lower.includes('ecommerce') || lower.includes('d2c') || lower.includes('retail')) return 'E-commerce & Consumer Brands'
-  if (lower.includes('manufactur') || lower.includes('industrial') || lower.includes('hardware')) return 'Manufacturing & Industrial'
-  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('property')) return 'Real Estate & Construction'
-  if (lower.includes('food') || lower.includes('agri') || lower.includes('hospitality')) return 'Food, Agriculture & Hospitality'
-  if (lower.includes('consulting') || lower.includes('business service') || lower.includes('professional') || lower.includes('legal') || lower.includes('agency')) return 'Professional & Business Services'
-  if (lower.includes('media') || lower.includes('entertainment') || lower.includes('creative') || lower.includes('design') || lower.includes('studio') || lower.includes('video')) return 'Media, Entertainment & Creative'
+  if (lower.includes('ai') || lower.includes('saas') || lower.includes('artificial intelligence') || lower.includes('machine learning') || lower.includes('llm')) return 'AI & SaaS'
+  if (lower.includes('logistics') || lower.includes('supply chain') || lower.includes('freight') || lower.includes('shipping') || lower.includes('warehouse') || lower.includes('warehousing') || lower.includes('trucking') || lower.includes('fleet')) return 'Logistics & Supply Chain'
+  if (lower.includes('ev') || lower.includes('electric vehicle') || lower.includes('automotive') || lower.includes('auto') || lower.includes('mobility') || lower.includes('battery')) return 'EV, Automotive & Mobility'
+  if (lower.includes('green') || lower.includes('clean') || lower.includes('cleantech') || lower.includes('climate') || lower.includes('solar') || lower.includes('wind') || lower.includes('sustainab') || lower.includes('carbon') || lower.includes('esg') || lower.includes('renewable') || lower.includes('waste')) return 'Green Tech & Climate'
+  if (lower.includes('cyber') || lower.includes('security') || lower.includes('infra') || lower.includes('devops') || lower.includes('cloud') || lower.includes('developer tool') || lower.includes('devtools')) return 'Cybersecurity & Infrastructure'
+  if (lower.includes('aerospace') || lower.includes('defense') || lower.includes('defence') || lower.includes('drone') || lower.includes('space') || lower.includes('aviation') || lower.includes('satellite')) return 'Aerospace & Defence'
+  if (lower.includes('energy') || lower.includes('utilit') || lower.includes('power') || lower.includes('oil') || lower.includes('gas') || lower.includes('grid')) return 'Energy & Utilities'
+  if (lower.includes('fintech') || lower.includes('finance') || lower.includes('banking') || lower.includes('payment') || lower.includes('ledger') || lower.includes('escrow') || lower.includes('crypto') || lower.includes('web3') || lower.includes('insurtech') || lower.includes('wealth')) return 'Finance & FinTech'
+  if (lower.includes('edtech') || lower.includes('education') || lower.includes('learning') || lower.includes('school') || lower.includes('academy') || lower.includes('training') || lower.includes('upskill')) return 'Education & EdTech'
+  if (lower.includes('biotech') || lower.includes('biology') || lower.includes('gene') || lower.includes('genom') || lower.includes('deeptech') || lower.includes('nano') || lower.includes('quantum')) return 'BioTech & DeepTech'
+  if (lower.includes('health') || lower.includes('pharma') || lower.includes('medical') || lower.includes('medtech') || lower.includes('telemedicine') || lower.includes('clinical') || lower.includes('doctor')) return 'Healthcare & Life Sciences'
+  if (lower.includes('e-commerce') || lower.includes('ecommerce') || lower.includes('d2c') || lower.includes('retail') || lower.includes('shopping') || lower.includes('consumer') || lower.includes('apparel') || lower.includes('fashion')) return 'E-commerce & Consumer Brands'
+  if (lower.includes('manufactur') || lower.includes('industrial') || lower.includes('hardware') || lower.includes('robot') || lower.includes('automation') || lower.includes('factory') || lower.includes('iot')) return 'Manufacturing & Robotics'
+  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('proptech') || lower.includes('property') || lower.includes('architecture') || lower.includes('housing') || lower.includes('civil')) return 'Real Estate & Construction'
+  if (lower.includes('food') || lower.includes('agri') || lower.includes('farming') || lower.includes('hospitality') || lower.includes('beverage') || lower.includes('restaurant') || lower.includes('kitchen')) return 'Food, Agriculture & Hospitality'
+  if (lower.includes('media') || lower.includes('entertainment') || lower.includes('creative') || lower.includes('design') || lower.includes('studio') || lower.includes('video') || lower.includes('gaming') || lower.includes('game') || lower.includes('creator') || lower.includes('ott')) return 'Media, Entertainment & Gaming'
+  if (lower.includes('consulting') || lower.includes('business service') || lower.includes('professional') || lower.includes('legal') || lower.includes('law') || lower.includes('agency') || lower.includes('hr') || lower.includes('staffing') || lower.includes('recruiting')) return 'Professional & Business Services'
+  if (lower.includes('software') || lower.includes('tech') || lower.includes('developer') || lower.includes('app')) return 'Technology & Software'
 
   // Everything else is grouped into a single "Others" bucket
   return 'Others'

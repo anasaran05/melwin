@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { 
   BmfMember, 
   BmfJob, 
+  BMF_STANDARD_CATEGORIES,
   INITIAL_BMF_MEMBERS, 
   saveBmfMemberProfile, 
   fetchMemberJobs, 
@@ -78,18 +79,7 @@ import {
   ArrowUpRight
 } from 'lucide-react'
 
-const CATEGORIES = [
-  'Technology & Software',
-  'Healthcare & Life Sciences',
-  'Finance & FinTech',
-  'E-commerce & Consumer Brands',
-  'Manufacturing & Industrial',
-  'Education & EdTech',
-  'Real Estate & Construction',
-  'Food, Agriculture & Hospitality',
-  'Professional & Business Services',
-  'Media, Entertainment & Creative',
-]
+const CATEGORIES: string[] = [...BMF_STANDARD_CATEGORIES]
 
 const STAGES = [
   'Idea / Prototyping',
@@ -248,6 +238,8 @@ function BmfMemberDashboardContent() {
     avatar_url: '',
     company_logo: '',
   })
+  const [onboardingCustomCategory, setOnboardingCustomCategory] = useState(false)
+  const [onboardingCustomCategoryInput, setOnboardingCustomCategoryInput] = useState('')
   const [onboardingPendingAvatarFile, setOnboardingPendingAvatarFile] = useState<File | null>(null)
   const [onboardingPendingLogoFile, setOnboardingPendingLogoFile] = useState<File | null>(null)
   const [isOnboardingAvatarModalOpen, setIsOnboardingAvatarModalOpen] = useState(false)
@@ -1452,10 +1444,23 @@ function BmfMemberDashboardContent() {
                     </label>
                     <select
                       required
-                      value={onboardingForm.category}
-                      onChange={(e) => setOnboardingForm({ ...onboardingForm, category: e.target.value })}
+                      value={
+                        onboardingCustomCategory
+                          ? 'Other (Specify)'
+                          : (CATEGORIES.includes(onboardingForm.category) ? onboardingForm.category : (onboardingForm.category ? 'Other (Specify)' : ''))
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value
+                        if (val === 'Other (Specify)') {
+                          setOnboardingCustomCategory(true)
+                          setOnboardingForm({ ...onboardingForm, category: onboardingCustomCategoryInput || '' })
+                        } else {
+                          setOnboardingCustomCategory(false)
+                          setOnboardingForm({ ...onboardingForm, category: val })
+                        }
+                      }}
                       className={`w-full bg-neutral-900 border ${
-                        !onboardingForm.category ? 'text-neutral-500 border-neutral-700' : 'text-white border-neutral-700 focus:border-white'
+                        !onboardingForm.category && !onboardingCustomCategory ? 'text-neutral-500 border-neutral-700' : 'text-white border-neutral-700 focus:border-white'
                       } rounded-xl px-4 py-2.5 text-xs focus:outline-none transition-colors cursor-pointer`}
                     >
                       <option value="" disabled className="text-neutral-500 bg-neutral-900">
@@ -1466,7 +1471,30 @@ function BmfMemberDashboardContent() {
                           {cat}
                         </option>
                       ))}
+                      <option value="Other (Specify)" className="text-white bg-neutral-900">
+                        Other (Specify Custom Industry)
+                      </option>
                     </select>
+
+                    {onboardingCustomCategory && (
+                      <div className="pt-2 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                        <label className="text-[11px] font-medium text-neutral-400 block mb-1">
+                          Specify Custom Industry <span className="text-sky-400">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="e.g. AgriTech, Web3, SpaceTech, Clean Energy..."
+                          value={onboardingCustomCategoryInput}
+                          onChange={(e) => {
+                            const val = e.target.value
+                            setOnboardingCustomCategoryInput(val)
+                            setOnboardingForm({ ...onboardingForm, category: val })
+                          }}
+                          className="w-full bg-neutral-900 border border-sky-500/60 focus:border-sky-400 rounded-xl px-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Location & Team Size */}
