@@ -18,10 +18,32 @@ export async function generateMetadata({ params }: ShowcasePageProps): Promise<M
   const member = await fetchBmfMemberByIdOrSlug(id) || INITIAL_BMF_MEMBERS.find((m) => m.id === id) || INITIAL_BMF_MEMBERS[0]
 
   const title = `${member.full_name} | BMF Club Founder Pass`
-  const description = `${member.role} at ${member.company_name}. ${member.tagline || member.description || 'Verified member of the BMF Executive Founder Syndicate.'}`
+  const description = `${member.role ? `${member.role} at ` : ''}${member.company_name || 'BMF Club'}. ${member.tagline || member.description || 'Verified member of the BMF Executive Founder Syndicate.'}`
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://buildwithmelwin.com'
   const ogImageUrl = `${baseUrl}/api/og/founder-card?id=${encodeURIComponent(member.id || id)}`
   const canonicalUrl = `${baseUrl}/bmf-club/showcase/${encodeURIComponent(member.id || id)}`
+
+  // Normalize direct avatar image URL for social media link previews
+  let directAvatarUrl = member.avatar_url?.trim() || ''
+  if (directAvatarUrl.includes('.r2.dev')) {
+    directAvatarUrl = directAvatarUrl.replace(/https?:\/\/[a-zA-Z0-9_-]+\.r2\.dev/, 'https://media.buildwithmelwin.com')
+  }
+
+  const imagesList = [
+    {
+      url: ogImageUrl,
+      width: 1200,
+      height: 630,
+      alt: `${member.full_name} - ${member.company_name} Founder Pass`,
+      type: 'image/png',
+    },
+    ...(directAvatarUrl ? [{
+      url: directAvatarUrl,
+      width: 800,
+      height: 800,
+      alt: `${member.full_name} Profile Photo`,
+    }] : []),
+  ]
 
   return {
     title,
@@ -31,21 +53,18 @@ export async function generateMetadata({ params }: ShowcasePageProps): Promise<M
       description,
       url: canonicalUrl,
       type: 'profile',
-      siteName: 'BMF Club',
-      images: [
-        {
-          url: ogImageUrl,
-          width: 1200,
-          height: 630,
-          alt: `${member.full_name} Founder Pass`,
-        },
-      ],
+      siteName: 'BMF Club - Executive Founder Syndicate',
+      images: imagesList,
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: [ogImageUrl],
+      images: [ogImageUrl, ...(directAvatarUrl ? [directAvatarUrl] : [])],
+      creator: '@buildwithmelwin',
+    },
+    other: {
+      'og:image:secure_url': ogImageUrl,
     },
   }
 }

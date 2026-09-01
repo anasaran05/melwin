@@ -1,19 +1,68 @@
 import { ImageResponse } from 'next/og'
 import { NextRequest } from 'next/server'
-import { INITIAL_BMF_MEMBERS, fetchBmfMemberByIdOrSlug, normalizeCategory } from '@/lib/supabase/bmf-members'
+import { createClient } from '@supabase/supabase-js'
+import { INITIAL_BMF_MEMBERS, normalizeCategory, slugifyFounderName, BmfMember } from '@/lib/supabase/bmf-members'
 
-export const runtime = 'edge'
+export const dynamic = 'force-dynamic'
+
+async function getMemberForOg(idOrSlug: string): Promise<BmfMember> {
+  const clean = decodeURIComponent(idOrSlug).trim().toLowerCase()
+  
+  // 1. Direct Supabase Query using Service Role or Anon Key
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey)
+      
+      // Query by id, user_id, or email
+      const { data: member, error } = await supabase
+        .from('bmf_members')
+        .select('*')
+        .or(`id.eq.${idOrSlug},user_id.eq.${idOrSlug}`)
+        .limit(1)
+        .maybeSingle()
+
+      if (member && !error) {
+        return member as BmfMember
+      }
+
+      // If not found directly, query members to match by slug or full_name
+      const { data: allMembers } = await supabase
+        .from('bmf_members')
+        .select('*')
+        .limit(100)
+
+      if (allMembers && allMembers.length > 0) {
+        const found = allMembers.find(
+          (m: BmfMember) =>
+            m.id?.toLowerCase() === clean ||
+            m.user_id?.toLowerCase() === clean ||
+            slugifyFounderName(m.full_name) === clean ||
+            m.full_name?.toLowerCase() === clean
+        )
+        if (found) return found as BmfMember
+      }
+    } catch (err) {
+      console.error('[OG Route Supabase Fetch Error]:', err)
+    }
+  }
+
+  // 2. Fallback to INITIAL_BMF_MEMBERS
+  const fallbackMatch = INITIAL_BMF_MEMBERS.find(
+    (m) => m.id.toLowerCase() === clean || slugifyFounderName(m.full_name) === clean
+  )
+  return fallbackMatch || INITIAL_BMF_MEMBERS[0]
+}
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const id = searchParams.get('id') || searchParams.get('founder') || 'bmf-1'
     
-    // Find member or fallback to first member
-    let member = await fetchBmfMemberByIdOrSlug(id)
-    if (!member) {
-      member = INITIAL_BMF_MEMBERS.find((m) => m.id === id) || INITIAL_BMF_MEMBERS[0]
-    }
+    // Fetch member
+    const member = await getMemberForOg(id)
 
     const fullName = member.full_name || 'BMF Founder'
     const role = member.role || 'Founding Member'
@@ -31,11 +80,15 @@ export async function GET(req: NextRequest) {
       if (clean.includes('.r2.dev')) {
         clean = clean.replace(/https?:\/\/[a-zA-Z0-9_-]+\.r2\.dev/, 'https://media.buildwithmelwin.com')
       }
+      if (clean.startsWith('/')) {
+        clean = `https://buildwithmelwin.com${clean}`
+      }
       return clean
     }
 
     const avatarUrl = normalizeUrl(member.avatar_url) || `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(fullName)}&backgroundColor=121214`
     const companyLogoUrl = normalizeUrl(member.company_logo)
+    const logoMarkUrl = 'https://buildwithmelwin.com/bwm-logo.jpg'
 
     return new ImageResponse(
       (
@@ -90,7 +143,7 @@ export async function GET(req: NextRequest) {
                 }}
               >
                 <img
-                  src={`${req.nextUrl.origin}/bwm-logo.jpg`}
+                  src={logoMarkUrl}
                   alt="BMF Logo"
                   style={{
                     width: '100%',
