@@ -214,7 +214,6 @@ export async function GET(req: NextRequest) {
                 width: '170px',
                 height: '170px',
                 borderRadius: '100px',
-                overflow: 'hidden',
                 border: '4px solid #10b981',
                 boxShadow: '0 20px 35px -10px rgba(16, 185, 129, 0.35)',
                 display: 'flex',
@@ -230,6 +229,7 @@ export async function GET(req: NextRequest) {
                 style={{
                   width: '100%',
                   height: '100%',
+                  borderRadius: '100px',
                   objectFit: 'cover',
                 }}
               />
@@ -301,6 +301,7 @@ export async function GET(req: NextRequest) {
                       style={{
                         width: '100%',
                         height: '100%',
+                        borderRadius: '6px',
                         objectFit: 'contain',
                       }}
                     />

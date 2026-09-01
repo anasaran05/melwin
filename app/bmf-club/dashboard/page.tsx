@@ -4099,6 +4099,9 @@ function BmfMemberDashboardContent() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         member={profile}
+        isOwnCard={true}
+        currentUserId={profile.user_id || profile.id}
+        currentUserEmail={profile.email}
       />
 
     </div>

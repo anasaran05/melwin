@@ -121,8 +121,8 @@ export function ShareFounderCardModal({
 
   const handleShareWhatsApp = () => {
     const text = effectiveIsOwnCard
-      ? `🌟 Discover my official BMF Club Founder Pass & Showcase Profile:\n${showcaseUrl}\n\nJoin the elite founder syndicate at buildwithmelwin.com/bmf-club`
-      : `🌟 Check out ${member.full_name}'s official BMF Club Founder Pass (${member.role} at ${member.company_name}):\n${showcaseUrl}`
+      ? `Hey guys! I’m ${member.full_name}, check out my portfolio here, let’s connect!\n${showcaseUrl}`
+      : `Hey guys! Check out ${member.full_name}'s portfolio here, let’s connect!\n${showcaseUrl}`
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
 
@@ -132,8 +132,8 @@ export function ShareFounderCardModal({
 
   const handleShareTwitter = () => {
     const text = effectiveIsOwnCard
-      ? `Proud to share my verified Founder Pass inside the @BuildWithMelwin BMF Club Syndicate!`
-      : `Check out ${member.full_name}'s Founder Pass inside the @BuildWithMelwin BMF Club Syndicate!`
+      ? `Hey guys! I’m ${member.full_name}, check out my portfolio here, let’s connect!`
+      : `Hey guys! Check out ${member.full_name}'s portfolio here, let’s connect!`
     window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(showcaseUrl)}`, '_blank')
   }
 
@@ -154,11 +154,15 @@ export function ShareFounderCardModal({
   }
 
   const handleNativeShare = async () => {
+    const text = effectiveIsOwnCard
+      ? `Hey guys! I’m ${member.full_name}, check out my portfolio here, let’s connect!`
+      : `Hey guys! Check out ${member.full_name}'s portfolio here, let’s connect!`
+
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
-          title: `${member.full_name} | BMF Club Founder Pass`,
-          text: `${member.role} at ${member.company_name}. Verified Member of BMF Executive Syndicate.`,
+          title: `${member.full_name} | Portfolio`,
+          text: text,
           url: showcaseUrl,
         })
       } catch {
