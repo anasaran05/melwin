@@ -111,8 +111,8 @@ export async function GET(req: NextRequest) {
           <div
             style={{
               position: 'absolute',
-              inset: '20px',
-              border: '2px solid rgba(255, 255, 255, 0.1)',
+              inset: '18px',
+              border: '2px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '28px',
               pointerEvents: 'none',
             }}
@@ -128,14 +128,14 @@ export async function GET(req: NextRequest) {
             }}
           >
             {/* BMF Syndicate Badge with /bwm-logo.jpg */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
               <div
                 style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: '14px',
                   overflow: 'hidden',
-                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.25)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -148,33 +148,34 @@ export async function GET(req: NextRequest) {
                   style={{
                     width: '100%',
                     height: '100%',
+                    borderRadius: '12px',
                     objectFit: 'cover',
                   }}
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: '18px', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
+                <span style={{ fontSize: '22px', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
                   BMF CLUB
                 </span>
-                <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700, letterSpacing: '0.05em' }}>
+                <span style={{ fontSize: '13px', color: '#10b981', fontWeight: 700, letterSpacing: '0.06em' }}>
                   EXECUTIVE FOUNDER SYNDICATE
                 </span>
               </div>
             </div>
 
             {/* Category & Stage Pills */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  border: '1px solid rgba(16, 185, 129, 0.35)',
-                  padding: '6px 16px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.18)',
+                  border: '1.5px solid rgba(16, 185, 129, 0.45)',
+                  padding: '8px 20px',
                   borderRadius: '100px',
                 }}
               >
-                <span style={{ fontSize: '13px', fontWeight: 800, color: '#34d399' }}>
+                <span style={{ fontSize: '16px', fontWeight: 800, color: '#34d399' }}>
                   ✦ {category}
                 </span>
               </div>
@@ -184,13 +185,13 @@ export async function GET(req: NextRequest) {
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    padding: '6px 14px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    border: '1.5px solid rgba(255, 255, 255, 0.2)',
+                    padding: '8px 18px',
                     borderRadius: '100px',
                   }}
                 >
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#e2e8f0' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: '#f1f5f9' }}>
                     {stage}
                   </span>
                 </div>
@@ -203,19 +204,19 @@ export async function GET(req: NextRequest) {
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '36px',
+              gap: '40px',
               width: '100%',
-              margin: '20px 0',
+              margin: '16px 0',
             }}
           >
-            {/* Circular Founder Avatar */}
+            {/* Enlarged Circular Founder Avatar */}
             <div
               style={{
-                width: '170px',
-                height: '170px',
-                borderRadius: '100px',
-                border: '4px solid #10b981',
-                boxShadow: '0 20px 35px -10px rgba(16, 185, 129, 0.35)',
+                width: '210px',
+                height: '210px',
+                borderRadius: '110px',
+                border: '5px solid #10b981',
+                boxShadow: '0 25px 45px -10px rgba(16, 185, 129, 0.45)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -229,7 +230,7 @@ export async function GET(req: NextRequest) {
                 style={{
                   width: '100%',
                   height: '100%',
-                  borderRadius: '100px',
+                  borderRadius: '110px',
                   objectFit: 'cover',
                 }}
               />
@@ -245,10 +246,10 @@ export async function GET(req: NextRequest) {
               }}
             >
               {/* Founder Name & Verification */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span
                   style={{
-                    fontSize: '40px',
+                    fontSize: '50px',
                     fontWeight: 900,
                     letterSpacing: '-0.03em',
                     color: '#ffffff',
@@ -261,10 +262,10 @@ export async function GET(req: NextRequest) {
                   style={{
                     backgroundColor: '#10b981',
                     color: '#000000',
-                    fontSize: '13px',
+                    fontSize: '15px',
                     fontWeight: 900,
-                    padding: '2px 8px',
-                    borderRadius: '6px',
+                    padding: '4px 10px',
+                    borderRadius: '8px',
                     letterSpacing: '0.05em',
                   }}
                 >
@@ -277,21 +278,21 @@ export async function GET(req: NextRequest) {
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '12px',
-                  marginTop: '8px',
+                  gap: '14px',
+                  marginTop: '10px',
                 }}
               >
                 {companyLogoUrl && (
                   <div
                     style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '8px',
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
                       backgroundColor: '#ffffff',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: '2px',
+                      padding: '3px',
                       flexShrink: 0,
                     }}
                   >
@@ -301,14 +302,14 @@ export async function GET(req: NextRequest) {
                       style={{
                         width: '100%',
                         height: '100%',
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         objectFit: 'contain',
                       }}
                     />
                   </div>
                 )}
-                <span style={{ fontSize: '20px', fontWeight: 700, color: '#34d399' }}>
-                  {role} <span style={{ color: '#94a3b8', fontWeight: 400 }}>at</span> <span style={{ color: '#ffffff' }}>{company}</span>
+                <span style={{ fontSize: '26px', fontWeight: 800, color: '#34d399' }}>
+                  {role} <span style={{ color: '#94a3b8', fontWeight: 500 }}>at</span> <span style={{ color: '#ffffff' }}>{company}</span>
                 </span>
               </div>
 
@@ -316,18 +317,18 @@ export async function GET(req: NextRequest) {
               <div
                 style={{
                   display: 'flex',
-                  marginTop: '12px',
-                  borderLeft: '3px solid #10b981',
-                  paddingLeft: '14px',
+                  marginTop: '14px',
+                  borderLeft: '4px solid #10b981',
+                  paddingLeft: '16px',
                 }}
               >
                 <span
                   style={{
-                    fontSize: '16px',
-                    color: '#cbd5e1',
+                    fontSize: '22px',
+                    color: '#e2e8f0',
                     fontStyle: 'italic',
-                    lineHeight: 1.4,
-                    maxHeight: '48px',
+                    lineHeight: 1.35,
+                    maxHeight: '64px',
                     overflow: 'hidden',
                   }}
                 >
@@ -343,24 +344,24 @@ export async function GET(req: NextRequest) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.12)',
               paddingTop: '16px',
               width: '100%',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px' }}>📍 Location:</span>
-                <span style={{ color: '#ffffff', fontSize: '13px', fontWeight: 700 }}>{location}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '16px' }}>📍 Location:</span>
+                <span style={{ color: '#ffffff', fontSize: '16px', fontWeight: 700 }}>{location}</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ color: '#94a3b8', fontSize: '13px' }}>⚡ Syndicate:</span>
-                <span style={{ color: '#34d399', fontSize: '13px', fontWeight: 700 }}>Verified Member</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#94a3b8', fontSize: '16px' }}>⚡ Syndicate:</span>
+                <span style={{ color: '#34d399', fontSize: '16px', fontWeight: 700 }}>Verified Member</span>
               </div>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#60a5fa', fontSize: '14px', fontWeight: 800 }}>
+              <span style={{ color: '#60a5fa', fontSize: '17px', fontWeight: 800 }}>
                 buildwithmelwin.com/bmf-club
               </span>
             </div>
