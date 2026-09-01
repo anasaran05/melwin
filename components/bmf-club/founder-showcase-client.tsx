@@ -10,7 +10,9 @@ import {
   normalizeCategory, 
   BMF_STANDARD_CATEGORIES,
   fetchBmfMembers,
-  getSupabaseBrowserClient
+  getSupabaseBrowserClient,
+  isProfileEligibleForShowcase,
+  getProfileMissingFields
 } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url } from '@/lib/image-utils'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
@@ -40,7 +42,8 @@ import {
   ShieldCheck,
   LayoutDashboard,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Lock
 } from 'lucide-react'
 
 interface FounderShowcaseClientProps {
@@ -117,6 +120,14 @@ export function FounderShowcaseClient({
   const isFeatured = Boolean(activeFounder.is_featured)
   const cardTheme = isFeatured ? getCardTheme(activeFounder.card_theme) : getCardTheme('obsidian')
 
+  const isShowcaseActive = isProfileEligibleForShowcase(activeFounder)
+  const missingFields = getProfileMissingFields(activeFounder)
+  const isOwnProfile = Boolean(
+    (currentUserId && activeFounder.user_id && currentUserId === activeFounder.user_id) ||
+    (currentUserId && activeFounder.id && currentUserId === activeFounder.id) ||
+    (currentUserEmail && activeFounder.email && currentUserEmail.trim().toLowerCase() === activeFounder.email.trim().toLowerCase())
+  )
+
   // Smooth Interactive Swap when clicking a peer card
   const handleSwapFounder = (clickedMember: BmfMember) => {
     setActiveFounder(clickedMember)
@@ -133,6 +144,7 @@ export function FounderShowcaseClient({
   
   const filteredPeers = allMembers.filter((m) => {
     if (m.id === activeFounder.id) return false
+    if (!isProfileEligibleForShowcase(m)) return false
     
     // Category match
     if (selectedCategory !== 'All') {
@@ -202,7 +214,7 @@ export function FounderShowcaseClient({
         </div>
 
         {/* ========================================================================= */}
-        {/* 1. TOP SPOTLIGHT HERO: LinkedIn + Instagram Hybrid Profile Card           */}
+        {/* 1. TOP SPOTLIGHT HERO: Public Showcase Profile with Lock Badge if Pending */}
         {/* ========================================================================= */}
         <section className="relative rounded-3xl bg-white border border-black/10 p-6 sm:p-10 md:p-12 overflow-hidden shadow-sm">
           {/* Ambient Soft Emerald Glow */}
@@ -220,13 +232,44 @@ export function FounderShowcaseClient({
               transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
               className="relative space-y-6 sm:space-y-8"
             >
+              {/* Incomplete Profile / Locked Verification Notice */}
+              {!isShowcaseActive && (
+                <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
+                      <Lock className="w-4 h-4 text-amber-700" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-800">
+                          Profile Incomplete • Verification Pending
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-amber-950/80 leading-normal">
+                        {isOwnProfile
+                          ? `Your founder pass is locked because your venture profile is incomplete. Please add your ${missingFields.join(', ')} in the dashboard to unlock full verified status.`
+                          : 'This founder profile has not yet completed verified venture details (company logo & venture info).'}
+                      </p>
+                    </div>
+                  </div>
+                  {isOwnProfile && (
+                    <Link
+                      href="/bmf-club/dashboard"
+                      className="inline-flex items-center justify-center gap-1.5 bg-[#111111] hover:bg-black text-white px-4 py-2 rounded-xl text-xs font-bold shrink-0 shadow-xs transition-all active:scale-95"
+                    >
+                      <LayoutDashboard className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>Complete Profile →</span>
+                    </Link>
+                  )}
+                </div>
+              )}
               {/* Header Row: Circular Avatar + Info (Left) + Prominent Company Badge (Right) */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 sm:gap-7">
-                {/* Left Side: Avatar + Details */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-6 flex-1 min-w-0">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-7">
+                {/* Left Side: Avatar + Details (Side-by-side on all screens including mobile) */}
+                <div className="flex flex-row items-start sm:items-center gap-3.5 sm:gap-6 flex-1 min-w-0">
                   {/* Circular Profile Avatar */}
                   <div className="relative shrink-0">
-                    <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-neutral-100 ring-4 ring-black/5 shadow-md">
+                    <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full overflow-hidden bg-neutral-100 ring-3 sm:ring-4 ring-black/5 shadow-md">
                       {activeFounder.avatar_url ? (
                         <img
                           src={normalizeR2Url(activeFounder.avatar_url)}
@@ -235,7 +278,7 @@ export function FounderShowcaseClient({
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-200 to-neutral-300 text-neutral-800">
-                          <span className="text-3xl sm:text-4xl font-black text-emerald-600">
+                          <span className="text-2xl sm:text-4xl font-black text-emerald-600">
                             {activeFounder.full_name.charAt(0)}
                           </span>
                         </div>
@@ -243,13 +286,13 @@ export function FounderShowcaseClient({
                     </div>
                     {isFeatured && (
                       <div 
-                        className="absolute -bottom-1 -right-1 bg-white rounded-full p-1 shadow-md ring-2 ring-white"
+                        className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 sm:p-1 shadow-md ring-2 ring-white"
                         title="Verified Spotlight Founder"
                       >
                         <svg 
                           viewBox="0 0 24 24" 
                           aria-label="Verified Spotlight Founder" 
-                          className="w-5 h-5 sm:w-6 sm:h-6 text-[#1d9bf0] fill-current"
+                          className="w-4 h-4 sm:w-6 sm:h-6 text-[#1d9bf0] fill-current"
                         >
                           <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.75 4.75l-4-4 1.41-1.41 2.59 2.58 6.59-6.58 1.41 1.41-8 8z" />
                         </svg>
@@ -257,36 +300,15 @@ export function FounderShowcaseClient({
                     )}
                   </div>
 
-                  {/* Name, Role & Badges */}
-                  <div className="space-y-2 flex-1 min-w-0">
-                    {/* Category & Status Pills */}
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                      <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-900 border border-emerald-500/25 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-mono font-bold">
-                        <Sparkles className="w-3 h-3 text-emerald-600" />
-                        <span>{activeFounder.category || 'DeepTech & AI'}</span>
-                      </span>
-
-                      {activeFounder.stage && (
-                        <span className="inline-flex items-center gap-1 bg-black/5 text-neutral-700 border border-black/10 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-mono font-medium">
-                          {activeFounder.stage}
-                        </span>
-                      )}
-
-                      {isFeatured && (
-                        <span className="inline-flex items-center gap-1 bg-sky-500/10 text-sky-800 border border-sky-500/25 px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-mono font-semibold">
-                          <ShieldCheck className="w-3 h-3 text-[#1d9bf0]" />
-                          <span>Spotlight</span>
-                        </span>
-                      )}
-                    </div>
-
+                  {/* Name & Role */}
+                  <div className="space-y-1 sm:space-y-1.5 flex-1 min-w-0">
                     {/* Founder Name */}
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#111111] leading-tight">
+                    <h1 className="text-xl sm:text-3xl md:text-4xl font-black tracking-tight text-[#111111] leading-tight">
                       {activeFounder.full_name}
                     </h1>
 
                     {/* Founder Role */}
-                    <p className="text-sm sm:text-base md:text-lg font-bold text-emerald-700">
+                    <p className="text-xs sm:text-base md:text-lg font-bold text-emerald-700">
                       {activeFounder.role}
                     </p>
                   </div>
@@ -294,9 +316,9 @@ export function FounderShowcaseClient({
 
                 {/* Right Side: Clean Unboxed Company Identity */}
                 {activeFounder.company_name && (
-                  <div className="flex items-center gap-3 shrink-0 self-start md:self-center">
+                  <div className="flex items-center gap-3 shrink-0 self-start md:self-center pt-1 md:pt-0">
                     {activeFounder.company_logo ? (
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 sm:w-14 sm:h-14 flex items-center justify-center shrink-0">
                         <img
                           src={normalizeR2Url(activeFounder.company_logo)}
                           alt={activeFounder.company_name}
@@ -304,15 +326,15 @@ export function FounderShowcaseClient({
                         />
                       </div>
                     ) : (
-                      <div className="w-10 h-10 flex items-center justify-center shrink-0 text-neutral-400">
-                        <Building2 className="w-6 h-6" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center shrink-0 text-neutral-400">
+                        <Building2 className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-400 block font-bold">
+                      <span className="text-[9px] sm:text-[10px] font-mono uppercase tracking-wider text-neutral-400 block font-bold">
                         Company
                       </span>
-                      <h4 className="text-sm sm:text-base font-bold text-[#111111]">
+                      <h4 className="text-xs sm:text-base font-bold text-[#111111]">
                         {activeFounder.company_name}
                       </h4>
                     </div>
@@ -328,6 +350,27 @@ export function FounderShowcaseClient({
                   </p>
                 </div>
               )}
+
+              {/* Category & Stage Badges (Placed after Quotes) */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-900 border border-emerald-500/25 px-2.5 py-1 rounded-full text-xs font-mono font-bold">
+                  <Sparkles className="w-3 h-3 text-emerald-600" />
+                  <span>{activeFounder.category || 'DeepTech & AI'}</span>
+                </span>
+
+                {activeFounder.stage && (
+                  <span className="inline-flex items-center gap-1 bg-black/5 text-neutral-700 border border-black/10 px-2.5 py-1 rounded-full text-xs font-mono font-medium">
+                    {activeFounder.stage}
+                  </span>
+                )}
+
+                {isFeatured && (
+                  <span className="inline-flex items-center gap-1 bg-sky-500/10 text-sky-800 border border-sky-500/25 px-2.5 py-1 rounded-full text-xs font-mono font-semibold">
+                    <ShieldCheck className="w-3 h-3 text-[#1d9bf0]" />
+                    <span>Spotlight</span>
+                  </span>
+                )}
+              </div>
 
               {/* Dedicated About Section with 3-Line Clamp & Read More */}
               {activeFounder.description && (
@@ -354,7 +397,7 @@ export function FounderShowcaseClient({
               )}
 
               {/* Stats & Meta Strip */}
-              {(activeFounder.location || activeFounder.team_size || activeFounder.metrics || activeFounder.website_url) && (
+              {(activeFounder.location || activeFounder.team_size || activeFounder.metrics) && (
                 <div className="flex flex-wrap items-center gap-3 sm:gap-6 p-3.5 sm:p-4 rounded-2xl bg-[#f8f8fa] border border-black/10 text-xs sm:text-sm">
                   {activeFounder.location && (
                     <div className="flex items-center gap-1.5 text-neutral-700">
@@ -376,20 +419,6 @@ export function FounderShowcaseClient({
                       <span className="font-bold">{activeFounder.metrics}</span>
                     </div>
                   )}
-
-                  {activeFounder.website_url && (
-                    <a
-                      href={activeFounder.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 text-emerald-600 hover:text-emerald-700 font-medium ml-auto"
-                    >
-                      <Globe className="w-3.5 h-3.5" />
-                      <span className="truncate max-w-[180px] sm:max-w-none">
-                        {activeFounder.website_url.replace(/^https?:\/\//, '')}
-                      </span>
-                    </a>
-                  )}
                 </div>
               )}
 
@@ -397,14 +426,36 @@ export function FounderShowcaseClient({
               <div className="pt-2 flex flex-wrap items-center justify-between gap-3 sm:gap-4 border-t border-black/5">
                 <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
                   {/* Approach / Request Warm Intro */}
-                  <button
-                    type="button"
-                    onClick={() => setIsIntroModalOpen(true)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-black shadow-sm transition-all active:scale-95 cursor-pointer"
-                  >
-                    <Handshake className="w-4 h-4 text-emerald-400" />
-                    <span>Approach Founder</span>
-                  </button>
+                  {!isShowcaseActive ? (
+                    isOwnProfile ? (
+                      <Link
+                        href="/bmf-club/dashboard"
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-black px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-black shadow-sm transition-all active:scale-95 cursor-pointer"
+                      >
+                        <Lock className="w-4 h-4" />
+                        <span>Complete Profile to Unlock Approach</span>
+                      </Link>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled
+                        title="This founder has not yet completed their verified venture profile."
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-200 text-neutral-500 border border-neutral-300 px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-bold opacity-80 cursor-not-allowed"
+                      >
+                        <Lock className="w-4 h-4 text-neutral-400" />
+                        <span>Not Approachable</span>
+                      </button>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsIntroModalOpen(true)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-6 py-2.5 sm:py-3 rounded-full text-xs sm:text-sm font-black shadow-sm transition-all active:scale-95 cursor-pointer"
+                    >
+                      <Handshake className="w-4 h-4 text-emerald-400" />
+                      <span>Approach Founder</span>
+                    </button>
+                  )}
 
                   {/* Share Card CTA */}
                   <button

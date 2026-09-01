@@ -14,8 +14,14 @@ import {
   deleteBmfJob, 
   getSupabaseBrowserClient, 
   ensureOrFetchUserProfile,
-  saveFounderContactDetails
+  saveFounderContactDetails,
+  isProfileEligibleForShowcase,
+  getProfileMissingFields
 } from '@/lib/supabase/bmf-members'
+import { 
+  generateHighResFounderCardPng, 
+  downloadDataUrlAsFile 
+} from '@/lib/qr-card-generator'
 import { 
   BmfCard, 
   CardTier, 
@@ -251,6 +257,22 @@ function BmfMemberDashboardContent() {
   const [isOnboardingSubmitting, setIsOnboardingSubmitting] = useState(false)
   const [isOnboardingSuccessModalOpen, setIsOnboardingSuccessModalOpen] = useState(false)
   const [onboardingError, setOnboardingError] = useState('')
+  const [isDownloadingDashboardPass, setIsDownloadingDashboardPass] = useState(false)
+
+  const handleDownloadDashboardPass = async () => {
+    try {
+      setIsDownloadingDashboardPass(true)
+      const pngDataUrl = await generateHighResFounderCardPng(profile)
+      if (pngDataUrl) {
+        const slugName = (profile.full_name || 'founder').toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        downloadDataUrlAsFile(pngDataUrl, `bmf-founder-pass-${slugName}.png`)
+      }
+    } catch (err) {
+      console.error('Failed to download founder pass:', err)
+    } finally {
+      setIsDownloadingDashboardPass(false)
+    }
+  }
 
   // Masterminds & Events State
   const [masterminds, setMasterminds] = useState<BmfEvent[]>([])
@@ -2227,35 +2249,64 @@ function BmfMemberDashboardContent() {
                   <MemberFlipCard member={profile} />
                   
                   {/* Action Buttons for Founder Card */}
-                  <div className="flex flex-col sm:flex-row items-center gap-2 mt-1 w-full max-w-[280px]">
-                    <button
-                      type="button"
-                      onClick={() => setIsShareModalOpen(true)}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black px-4 py-2.5 rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                    >
-                      
-                      <span>Share Card</span>
-                    </button>
+                  <div className="flex flex-col gap-2 mt-1 w-full max-w-[290px]">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsShareModalOpen(true)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black px-3.5 py-2.5 rounded-xl text-xs font-black shadow-md shadow-emerald-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Share</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDownloadDashboardPass}
+                        disabled={isDownloadingDashboardPass || !isProfileEligibleForShowcase(profile)}
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white hover:bg-neutral-200 text-black px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isDownloadingDashboardPass ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Download className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isDownloadingDashboardPass ? 'Exporting...' : 'Download'}</span>
+                      </button>
+                    </div>
                     
                     <button
                       type="button"
                       onClick={() => setActiveTab('profile')}
-                      className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 hover:border-neutral-600 text-neutral-200 hover:text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-sm"
+                      className="w-full inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 border border-neutral-700/80 hover:border-neutral-600 text-neutral-200 hover:text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer shadow-sm"
                     >
-                     
-                      <span>Edit Card</span>
+                      <Sliders className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Edit Profile Details</span>
                     </button>
                   </div>
 
-                  {/* Direct Link to Live Showcase Page */}
-                  <Link
-                    href={`/bmf-club/showcase/${profile.id || 'bmf-1'}`}
-                    target="_blank"
-                    className="inline-flex items-center gap-1 text-[11px] font-mono text-neutral-400 hover:text-emerald-400 transition-colors"
-                  >
-                    <span>View Public Showcase Page</span>
-                    <ArrowUpRight className="w-3 h-3" />
-                  </Link>
+                  {/* Direct Link to Live Showcase Page or Incomplete Status */}
+                  {!isProfileEligibleForShowcase(profile) ? (
+                    <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 text-left text-xs text-amber-300 max-w-[290px] space-y-1 mt-1">
+                      <div className="flex items-center gap-1.5 font-bold text-amber-200">
+                        <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Showcase & Pass Locked</span>
+                      </div>
+                      <p className="text-[11px] text-amber-200/80 leading-relaxed">
+                        Add your {getProfileMissingFields(profile).join(', ')} in Edit Profile to unlock your live showcase & card downloads.
+                      </p>
+                    </div>
+                  ) : (
+                    <Link
+                      href={`/bmf-club/showcase/${profile.id || 'bmf-1'}`}
+                      target="_blank"
+                      className="inline-flex items-center gap-1 text-[11px] font-mono text-emerald-400 hover:text-emerald-300 transition-colors"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>View Verified Showcase Page</span>
+                      <ArrowUpRight className="w-3 h-3" />
+                    </Link>
+                  )}
                 </div>
               </div>
 

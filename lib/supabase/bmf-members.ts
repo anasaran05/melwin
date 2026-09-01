@@ -509,6 +509,61 @@ export function getProfileQualityScore(member: BmfMember): number {
   return score
 }
 
+/**
+ * Determines whether a member profile has completed all required venture details
+ * (valid Company Name, Company Logo, Portrait Photo, and Role) to be eligible
+ * for public showcase activation and card downloads.
+ */
+export function isProfileEligibleForShowcase(member?: BmfMember | null): boolean {
+  if (!member) return false
+  
+  // Explicit administrative rejection check
+  if (member.is_approved === false || member.review_status === 'rejected') {
+    return false
+  }
+
+  // 1. Valid Company Name (non-placeholder)
+  const hasValidCompany = isCustomCompanyName(member.company_name)
+
+  // 2. Valid Company Logo (non-placeholder)
+  const hasValidLogo = isCustomCompanyLogo(member.company_logo)
+
+  // 3. Valid Founder Name & Role
+  const hasValidName = Boolean(member.full_name && member.full_name.trim().length >= 2)
+  const hasValidRole = Boolean(member.role && member.role.trim().length >= 2)
+
+  // 4. Valid Founder Avatar
+  const hasValidAvatar = Boolean(member.avatar_url && member.avatar_url.trim() !== '')
+
+  return hasValidCompany && hasValidLogo && hasValidName && hasValidRole && hasValidAvatar
+}
+
+/**
+ * Returns a list of missing required fields for incomplete profiles to guide the founder.
+ */
+export function getProfileMissingFields(member?: BmfMember | null): string[] {
+  if (!member) return ['Full Profile Details']
+  const missing: string[] = []
+
+  if (!isCustomCompanyName(member.company_name)) {
+    missing.push('Company Name')
+  }
+  if (!isCustomCompanyLogo(member.company_logo)) {
+    missing.push('Company Logo')
+  }
+  if (!member.avatar_url || member.avatar_url.trim() === '' || member.avatar_url.includes('api.dicebear.com')) {
+    missing.push('Profile Photo')
+  }
+  if (!member.role || member.role.trim().length < 2) {
+    missing.push('Founder Role')
+  }
+  if (!member.description || member.description.trim().length < 10) {
+    missing.push('Founder Bio')
+  }
+
+  return missing
+}
+
 export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
   return [...members].sort((a, b) => {
     // 1. Explicit priority_order (1 is highest priority e.g. President / Pinned)

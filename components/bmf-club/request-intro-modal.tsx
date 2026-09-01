@@ -20,12 +20,15 @@ import {
   ExternalLink,
   Copy,
   Check,
-  AlertCircle
+  AlertCircle,
+  Lock
 } from 'lucide-react'
 import { 
   BmfMember, 
   getSupabaseBrowserClient, 
-  ensureOrFetchUserProfile 
+  ensureOrFetchUserProfile,
+  isProfileEligibleForShowcase,
+  getProfileMissingFields
 } from '@/lib/supabase/bmf-members'
 import { DotLottieReact } from '@lottiefiles/dotlottie-react'
 import handshakeLoopData from '@/public/assets/Handshake Loop.json'
@@ -211,6 +214,13 @@ export function RequestIntroModal({ isOpen, onClose, member }: RequestIntroModal
 
   if (!isOpen || !member || !mounted) return null
 
+  const isSenderVerified = Boolean(
+    currentMemberProfile && isProfileEligibleForShowcase(currentMemberProfile)
+  )
+  const missingSenderFields = currentMemberProfile 
+    ? getProfileMissingFields(currentMemberProfile) 
+    : ['Company Name', 'Company Logo', 'Role', 'Profile Avatar']
+
   const activePurposeObj = PURPOSES.find(p => p.id === purpose) || PURPOSES[3]
   const remainingApproaches = Math.max(0, DAILY_APPROACH_LIMIT - dailyUsed)
   const isDailyLimitReached = remainingApproaches <= 0
@@ -351,6 +361,11 @@ Sent via BMF Founders Club Showcase Directory`
 
     if (isSelfIntro) {
       setErrorMsg('You cannot request an introduction to your own profile.')
+      return
+    }
+
+    if (!isSenderVerified) {
+      setErrorMsg('You must complete your own venture profile details (company logo & name) in the dashboard before approaching founders.')
       return
     }
 
@@ -664,6 +679,59 @@ ${name} (${email})`
                       <span>Sign In & Continue</span>
                     </button>
                   </form>
+                </div>
+              </div>
+            ) : !isSenderVerified ? (
+              /* ========================================================================= */
+              /* SENDER PROFILE INCOMPLETE: MUST COMPLETE PROFILE BEFORE APPROACHING       */
+              /* ========================================================================= */
+              <div className="py-6 px-2 text-center space-y-5">
+                <div className="w-16 h-16 rounded-3xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 mx-auto shadow-lg shadow-amber-500/10">
+                  <Lock className="w-8 h-8 text-amber-400" />
+                </div>
+
+                <div className="space-y-2 max-w-md mx-auto">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 text-xs font-mono font-bold">
+                    <span>Verification Required</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-black text-white tracking-tight">
+                    Complete Your Profile to Approach
+                  </h3>
+                  <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                    To maintain the highest level of network trust and ensure reciprocal founder value, all syndicate members must complete their own venture profile before approaching verified founders like <strong className="text-white">{member.full_name}</strong>.
+                  </p>
+                </div>
+
+                {/* Missing Requirements List */}
+                <div className="p-4 rounded-2xl bg-neutral-900/80 border border-amber-500/25 text-left max-w-sm mx-auto space-y-2.5">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-amber-300 font-bold block">
+                    Required Details to Complete:
+                  </span>
+                  <ul className="space-y-1.5 text-xs text-neutral-300">
+                    {missingSenderFields.map((field) => (
+                      <li key={field} className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
+                        <span>{field}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Action CTA to Dashboard */}
+                <div className="pt-2 max-w-sm mx-auto space-y-2">
+                  <a
+                    href="/bmf-club/dashboard"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-black px-6 py-3 rounded-xl text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <span>Complete Profile in Dashboard →</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={handleResetAndClose}
+                    className="w-full py-2 text-xs text-neutral-500 hover:text-neutral-300 transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 </div>
               </div>
             ) : (

@@ -18,7 +18,7 @@ import {
   Linkedin,
   Twitter
 } from 'lucide-react'
-import { BmfMember } from '@/lib/supabase/bmf-members'
+import { BmfMember, isProfileEligibleForShowcase, getProfileMissingFields } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url } from '@/lib/image-utils'
 import { 
   getFounderShowcaseUrl, 
@@ -100,6 +100,9 @@ export function ShareFounderCardModal({
     (currentUserEmail && member.email && currentUserEmail.trim().toLowerCase() === member.email.trim().toLowerCase())
   )
 
+  const isEligible = isProfileEligibleForShowcase(member)
+  const missingFields = getProfileMissingFields(member)
+
   const showcaseUrl = getFounderShowcaseUrl(member)
   const isFeatured = Boolean(member.is_featured)
   const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
@@ -118,23 +121,36 @@ export function ShareFounderCardModal({
 
   const handleShareWhatsApp = () => {
     const text = effectiveIsOwnCard
-      ? `Check out my official BMF Club Founder Pass & Venture Profile 🚀:\n${showcaseUrl}`
-      : `Check out ${member.full_name}’s official BMF Club Founder Pass & Venture Profile (${member.role} at ${member.company_name}) 🚀:\n${showcaseUrl}`
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`
-    window.open(waUrl, '_blank')
+      ? `🌟 Discover my official BMF Club Founder Pass & Showcase Profile:\n${showcaseUrl}\n\nJoin the elite founder syndicate at buildwithmelwin.com/bmf-club`
+      : `🌟 Check out ${member.full_name}'s official BMF Club Founder Pass (${member.role} at ${member.company_name}):\n${showcaseUrl}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const handleShareLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(showcaseUrl)}`, '_blank')
   }
 
   const handleShareTwitter = () => {
     const text = effectiveIsOwnCard
-      ? `Excited to be spotlighted in the @BMFClub Executive Founder Syndicate! Explore my verified founder pass & venture:\n${showcaseUrl}`
-      : `Check out ${member.full_name} (${member.role} at ${member.company_name}) in the @BMFClub Executive Founder Syndicate! Explore their verified founder pass:\n${showcaseUrl}`
-    const xUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`
-    window.open(xUrl, '_blank')
+      ? `Proud to share my verified Founder Pass inside the @BuildWithMelwin BMF Club Syndicate!`
+      : `Check out ${member.full_name}'s Founder Pass inside the @BuildWithMelwin BMF Club Syndicate!`
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(showcaseUrl)}`, '_blank')
   }
 
-  const handleShareLinkedIn = () => {
-    const liUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(showcaseUrl)}`
-    window.open(liUrl, '_blank')
+  const handleDownloadCard = async () => {
+    if (!effectiveIsOwnCard) return
+    try {
+      setIsGeneratingDownload(true)
+      const pngDataUrl = await generateHighResFounderCardPng(member)
+      if (pngDataUrl) {
+        const slugName = member.full_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+        downloadDataUrlAsFile(pngDataUrl, `bmf-founder-pass-${slugName}.png`)
+      }
+    } catch (err) {
+      console.error('Failed to generate high-res card:', err)
+    } finally {
+      setIsGeneratingDownload(false)
+    }
   }
 
   const handleNativeShare = async () => {
@@ -142,38 +158,30 @@ export function ShareFounderCardModal({
       try {
         await navigator.share({
           title: `${member.full_name} | BMF Club Founder Pass`,
-          text: effectiveIsOwnCard
-            ? `Check out my verified founder pass & venture showcase:`
-            : `Check out ${member.full_name}'s verified founder pass & venture showcase (${member.role} at ${member.company_name}):`,
+          text: `${member.role} at ${member.company_name}. Verified Member of BMF Executive Syndicate.`,
           url: showcaseUrl,
         })
       } catch {
-        // Ignored if cancelled
+        // User cancelled or not supported
       }
     } else {
       handleCopyLink()
     }
   }
 
-  const handleDownloadCard = async () => {
-    if (isGeneratingDownload) return
-    setIsGeneratingDownload(true)
-    try {
-      const cardPng = await generateHighResFounderCardPng(member)
-      if (cardPng) {
-        const cleanName = member.full_name.toLowerCase().replace(/\s+/g, '-')
-        downloadDataUrlAsFile(cardPng, `bmf-founder-pass-${cleanName}.png`)
-      }
-    } catch (err) {
-      console.error('Failed to download card:', err)
-    } finally {
-      setIsGeneratingDownload(false)
-    }
-  }
-
   return createPortal(
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        {/* Backdrop */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md"
+        />
+
+        {/* Modal Window */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -190,7 +198,7 @@ export function ShareFounderCardModal({
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-4 h-4" />
@@ -213,8 +221,19 @@ export function ShareFounderCardModal({
             </p>
           </div>
 
+          {/* Incomplete Profile Alert for Owner */}
+          {effectiveIsOwnCard && !isEligible && (
+            <div className="mt-4 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2.5 text-xs text-amber-300">
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <div>
+                <strong className="font-bold text-amber-200 block">Profile Incomplete</strong>
+                <span>Please complete your {missingFields.join(', ')} in the Dashboard to unlock full card downloads & public showcase verification.</span>
+              </div>
+            </div>
+          )}
+
           {/* Card Summary Badge */}
-          <div className="mt-5 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between gap-3">
+          <div className="mt-4 p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               {member.avatar_url ? (
                 <img
@@ -250,7 +269,7 @@ export function ShareFounderCardModal({
               <button
                 type="button"
                 onClick={() => setShowQrExpanded(!showQrExpanded)}
-                className="w-12 h-12 p-1 bg-white rounded-xl shadow-md shrink-0 hover:scale-105 transition-transform"
+                className="w-12 h-12 p-1 bg-white rounded-xl shadow-md shrink-0 hover:scale-105 transition-transform cursor-pointer"
                 title="View Full QR Code"
               >
                 <img src={qrCodeUrl} alt="QR Code" className="w-full h-full object-contain" />
@@ -274,14 +293,13 @@ export function ShareFounderCardModal({
           )}
 
           {/* Social Share Grid */}
-          <div className="mt-5 space-y-3">
-            
+          <div className="mt-4 space-y-2.5">
             <div className="grid grid-cols-3 gap-2.5">
               {/* WhatsApp */}
               <button
                 type="button"
                 onClick={handleShareWhatsApp}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] transition-all hover:scale-[1.02] active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-[#25D366]/10 hover:bg-[#25D366]/20 border border-[#25D366]/30 text-[#25D366] transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
                 <IconWhatsApp className="w-5 h-5" />
                 <span className="text-xs font-bold">WhatsApp</span>
@@ -291,7 +309,7 @@ export function ShareFounderCardModal({
               <button
                 type="button"
                 onClick={handleShareLinkedIn}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 text-[#60a5fa] transition-all hover:scale-[1.02] active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-[#0A66C2]/10 hover:bg-[#0A66C2]/20 border border-[#0A66C2]/30 text-[#60a5fa] transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
                 <Linkedin className="w-5 h-5" />
                 <span className="text-xs font-bold">LinkedIn</span>
@@ -301,7 +319,7 @@ export function ShareFounderCardModal({
               <button
                 type="button"
                 onClick={handleShareTwitter}
-                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/20 text-white transition-all hover:scale-[1.02] active:scale-95"
+                className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl bg-white/5 hover:bg-white/15 border border-white/20 text-white transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
                 <Twitter className="w-5 h-5" />
                 <span className="text-xs font-bold">Twitter / X</span>
@@ -309,7 +327,7 @@ export function ShareFounderCardModal({
             </div>
           </div>
 
-          {/* Showcase Link & Direct Page Navigation */}
+          {/* Showcase Link */}
           <div className="mt-4 space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider block">
@@ -342,26 +360,42 @@ export function ShareFounderCardModal({
             </div>
           </div>
 
-          {/* Action Row: Download Pass with QR + Native Web Share */}
-          <div className="mt-6 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center gap-3">
-            <button
-              type="button"
-              onClick={handleDownloadCard}
-              disabled={isGeneratingDownload}
-              className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-5 py-3 rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
-            >
-              {isGeneratingDownload ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin text-black" />
-                  <span>Generating High-Res Pass...</span>
-                </>
-              ) : (
-                <>
-                  <Download className="w-4 h-4" />
-                  <span>Download Pass with QR (PNG)</span>
-                </>
-              )}
-            </button>
+          {/* Action Row: Owner-Only Download Pass or More Options */}
+          <div className="mt-5 pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center gap-3">
+            {effectiveIsOwnCard ? (
+              <button
+                type="button"
+                onClick={handleDownloadCard}
+                disabled={isGeneratingDownload || !isEligible}
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 disabled:bg-neutral-800 disabled:text-neutral-500 text-black px-5 py-3 rounded-2xl text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+              >
+                {isGeneratingDownload ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-black" />
+                    <span>Generating High-Res Pass...</span>
+                  </>
+                ) : !isEligible ? (
+                  <>
+                    <Sparkles className="w-4 h-4 text-neutral-500" />
+                    <span>Complete Profile to Download Pass</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    <span>Download Pass with QR (PNG)</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-black px-5 py-3 rounded-2xl text-xs sm:text-sm font-black transition-all active:scale-95 cursor-pointer"
+              >
+                <Copy className="w-4 h-4" />
+                <span>{copied ? 'Showcase Link Copied!' : 'Copy Showcase Link'}</span>
+              </button>
+            )}
 
             <button
               type="button"
