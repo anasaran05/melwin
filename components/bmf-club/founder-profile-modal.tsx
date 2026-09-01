@@ -26,6 +26,7 @@ import {
 import { BmfMember } from '@/lib/supabase/bmf-members'
 import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { getCardTheme } from '@/lib/card-themes'
+import { ShareFounderCardModal } from '@/components/bmf-club/share-founder-card-modal'
 
 interface FounderProfileModalProps {
   isOpen: boolean
@@ -55,6 +56,7 @@ export function FounderProfileModal({
 }: FounderProfileModalProps) {
   const [mounted, setMounted] = useState(false)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -108,14 +110,9 @@ export function FounderProfileModal({
   )
   const logoUrl = isCustomLogo ? normalizeR2Url(member.company_logo) : ''
 
-  const handleCopyProfileLink = (e: React.MouseEvent) => {
+  const handleOpenShare = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (typeof window !== 'undefined') {
-      const url = `${window.location.origin}/bmf-club/directory?search=${encodeURIComponent(member.full_name || '')}`
-      navigator.clipboard.writeText(url)
-      setCopiedLink(true)
-      setTimeout(() => setCopiedLink(false), 2000)
-    }
+    setIsShareModalOpen(true)
   }
 
   return createPortal(
@@ -158,15 +155,11 @@ export function FounderProfileModal({
             <div className="absolute top-3.5 right-3.5 sm:top-4 sm:right-4 z-30 flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleCopyProfileLink}
+                onClick={handleOpenShare}
                 title="Share founder profile"
                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white/80 hover:text-white transition-all border border-white/10 cursor-pointer"
               >
-                {copiedLink ? (
-                  <Check className="w-4 h-4 text-emerald-400" />
-                ) : (
-                  <Share2 className="w-4 h-4" />
-                )}
+                <Share2 className="w-4 h-4 text-amber-400" />
               </button>
 
               <button
@@ -486,6 +479,14 @@ export function FounderProfileModal({
             </div>
 
           </motion.div>
+
+          {/* Share Founder Card Modal */}
+          <ShareFounderCardModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            member={member}
+            isOwnCard={isOwnCard}
+          />
         </div>
       )}
     </AnimatePresence>,

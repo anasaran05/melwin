@@ -775,6 +775,72 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
   }
 }
 
+export function slugifyFounderName(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/[\s_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export async function fetchBmfMemberByIdOrSlug(idOrSlug: string): Promise<BmfMember | null> {
+  if (!idOrSlug) return null
+  const clean = decodeURIComponent(idOrSlug).trim().toLowerCase()
+
+  // 1. Check in initial fallback members first if exact ID match
+  const fallbackMatch = INITIAL_BMF_MEMBERS.find(
+    (m) => m.id.toLowerCase() === clean || slugifyFounderName(m.full_name) === clean
+  )
+
+  try {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('bmf_current_member')
+        if (stored) {
+          const parsed = JSON.parse(stored) as BmfMember
+          if (parsed.id?.toLowerCase() === clean || parsed.user_id?.toLowerCase() === clean || slugifyFounderName(parsed.full_name) === clean) {
+            return parsed
+          }
+        }
+      }
+      return fallbackMatch || null
+    }
+
+    // Try Supabase lookup by id, user_id, or full_name ilike
+    const { data: member, error } = await supabase
+      .from('bmf_members')
+      .select('*')
+      .or(`id.eq.${idOrSlug},user_id.eq.${idOrSlug}`)
+      .limit(1)
+      .maybeSingle()
+
+    if (member && !error) {
+      return member as BmfMember
+    }
+
+    // Try finding by name slug
+    const { data: allApproved } = await supabase
+      .from('bmf_members')
+      .select('*')
+      .eq('is_approved', true)
+
+    if (allApproved && allApproved.length > 0) {
+      const match = allApproved.find(
+        (m: BmfMember) => slugifyFounderName(m.full_name) === clean || m.id.toLowerCase() === clean
+      )
+      if (match) return match as BmfMember
+    }
+
+    return fallbackMatch || null
+  } catch (err) {
+    console.error('Error fetching member by id or slug:', err)
+    return fallbackMatch || null
+  }
+}
+
+
 async function ensureHostedMediaUrl(url: string | undefined, folder: 'founders' | 'companies', userId: string): Promise<string | undefined> {
   if (!url || !url.startsWith('data:image/')) {
     return url

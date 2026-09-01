@@ -8,6 +8,7 @@ import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
 import { getCardTheme } from '@/lib/card-themes'
 import { RequestIntroModal } from '@/components/bmf-club/request-intro-modal'
 import { FounderProfileModal } from '@/components/bmf-club/founder-profile-modal'
+import { ShareFounderCardModal } from '@/components/bmf-club/share-founder-card-modal'
 import { 
   Linkedin, 
   Twitter, 
@@ -17,7 +18,8 @@ import {
   TrendingUp, 
   ArrowUpRight,
   Building2,
-  Sparkles
+  Sparkles,
+  Share2
 } from 'lucide-react'
 
 interface MemberFlipCardProps {
@@ -47,6 +49,7 @@ export function MemberFlipCard({
   const [isFlipped, setIsFlipped] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const isFeatured = Boolean(member.is_featured)
   const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
 
@@ -346,6 +349,18 @@ export function MemberFlipCard({
                     <Globe className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
                   </a>
                 )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsShareModalOpen(true)
+                  }}
+                  className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 flex items-center justify-center transition-colors border border-white/10 shrink-0"
+                  aria-label="Share Founder Pass"
+                  title="Share Founder Pass"
+                >
+                  <Share2 className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                </button>
               </div>
 
               {isOwnCard ? (
@@ -394,6 +409,16 @@ export function MemberFlipCard({
             setIsIntroModalOpen(true)
           }
         }}
+      />
+
+      {/* Share Founder Pass Modal */}
+      <ShareFounderCardModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        member={member}
+        isOwnCard={isOwnCard}
+        currentUserId={currentUserId}
+        currentUserEmail={currentUserEmail}
       />
 
       {/* Warm Intro Request Modal */}
