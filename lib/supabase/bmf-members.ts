@@ -910,8 +910,12 @@ async function ensureHostedMediaUrl(url: string | undefined, folder: 'founders' 
         userId,
       }),
     })
-    const data = await res.json()
-    if (data.success && data.url) {
+    if (!res.ok) {
+      console.warn('[Base64 Auto-Upload Warning]: HTTP status', res.status)
+      return url
+    }
+    const data = await res.json().catch(() => null)
+    if (data && data.success && data.url) {
       return data.url
     }
   } catch (e) {

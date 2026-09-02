@@ -250,9 +250,11 @@ export function ProposeMastermindModal({
           method: 'POST',
           body: formData,
         })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.success && uploadData.url) {
-          finalImageUrl = uploadData.url
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json().catch(() => null)
+          if (uploadData && uploadData.success && uploadData.url) {
+            finalImageUrl = uploadData.url
+          }
         }
       }
 

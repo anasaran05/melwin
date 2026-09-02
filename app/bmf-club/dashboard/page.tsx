@@ -40,7 +40,7 @@ import { CardThemeModal } from '@/components/bmf-club/card-theme-modal'
 import { DashboardIntrosTab } from '@/components/bmf-club/dashboard-intros-tab'
 import { ShareFounderCardModal } from '@/components/bmf-club/share-founder-card-modal'
 import { getCardTheme } from '@/lib/card-themes'
-import { normalizeR2Url, getFounderFallbackAvatar } from '@/lib/image-utils'
+import { normalizeR2Url, getFounderFallbackAvatar, compressImageToWebP } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
 import { 
@@ -772,6 +772,63 @@ function BmfMemberDashboardContent() {
     }
   }
 
+  // Resilient helper to safely upload media with client-side WebP compression and robust error checking
+  const uploadMediaSafely = async (
+    file: File,
+    folder: 'founders' | 'companies',
+    targetUserId: string
+  ): Promise<string> => {
+    let fileToUpload = file
+    try {
+      // Auto-compress to modern WebP if file is > 400KB or not already WebP
+      if (file.size > 400 * 1024 || !file.type.includes('webp')) {
+        const compressed = await compressImageToWebP(file, {
+          maxWidth: folder === 'founders' ? 1200 : 800,
+          maxHeight: folder === 'founders' ? 1200 : 800,
+          quality: 0.85,
+        })
+        fileToUpload = compressed.file
+      }
+    } catch (compErr) {
+      console.warn('[Client Image Compression Warning]:', compErr)
+    }
+
+    const formData = new FormData()
+    formData.append('file', fileToUpload)
+    formData.append('folder', folder)
+    formData.append('userId', targetUserId)
+
+    const uploadRes = await fetch('/api/bmf/upload-media', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!uploadRes.ok) {
+      const responseText = await uploadRes.text().catch(() => '')
+      if (uploadRes.status === 413 || responseText.toLowerCase().includes('entity too large')) {
+        throw new Error(
+          `The ${folder === 'founders' ? 'portrait photo' : 'company logo'} exceeds the maximum allowed file size. Please choose an image under 5MB.`
+        )
+      }
+      let errorMsg = `Failed to upload ${folder === 'founders' ? 'portrait photo' : 'company logo'}.`
+      try {
+        const parsed = JSON.parse(responseText)
+        if (parsed.error) errorMsg = parsed.error
+      } catch {
+        if (responseText && responseText.length < 120) {
+          errorMsg = responseText
+        }
+      }
+      throw new Error(errorMsg)
+    }
+
+    const uploadData = await uploadRes.json().catch(() => null)
+    if (uploadData && uploadData.success && uploadData.url) {
+      return uploadData.url
+    }
+    throw new Error(uploadData?.error || `Failed to upload ${folder === 'founders' ? 'portrait photo' : 'company logo'}.`)
+  }
+
   // Profile Save / Update Handler with Deferred Cloudflare Upload & Supabase Update
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -782,43 +839,16 @@ function BmfMemberDashboardContent() {
     try {
       let updatedAvatarUrl = profileForm.avatar_url
       let updatedLogoUrl = profileForm.company_logo
+      const currentUserId = profile.user_id || profile.id || 'founder'
 
       // Upload staged WebP portrait if changed
       if (pendingAvatarFile) {
-        const formData = new FormData()
-        formData.append('file', pendingAvatarFile)
-        formData.append('folder', 'founders')
-        formData.append('userId', profile.user_id || profile.id || 'founder')
-
-        const uploadRes = await fetch('/api/bmf/upload-media', {
-          method: 'POST',
-          body: formData,
-        })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.success && uploadData.url) {
-          updatedAvatarUrl = uploadData.url
-        } else {
-          throw new Error(uploadData.error || 'Failed to upload portrait image to Cloudflare.')
-        }
+        updatedAvatarUrl = await uploadMediaSafely(pendingAvatarFile, 'founders', currentUserId)
       }
 
       // Upload staged WebP company logo if changed
       if (pendingLogoFile) {
-        const formData = new FormData()
-        formData.append('file', pendingLogoFile)
-        formData.append('folder', 'companies')
-        formData.append('userId', profile.user_id || profile.id || 'founder')
-
-        const uploadRes = await fetch('/api/bmf/upload-media', {
-          method: 'POST',
-          body: formData,
-        })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.success && uploadData.url) {
-          updatedLogoUrl = uploadData.url
-        } else {
-          throw new Error(uploadData.error || 'Failed to upload company logo to Cloudflare.')
-        }
+        updatedLogoUrl = await uploadMediaSafely(pendingLogoFile, 'companies', currentUserId)
       }
 
       const finalProfileData = {
@@ -951,35 +981,19 @@ function BmfMemberDashboardContent() {
 
       // Upload staged WebP portrait if changed in onboarding
       if (onboardingPendingAvatarFile) {
-        const formData = new FormData()
-        formData.append('file', onboardingPendingAvatarFile)
-        formData.append('folder', 'founders')
-        formData.append('userId', targetUserId)
-
-        const uploadRes = await fetch('/api/bmf/upload-media', {
-          method: 'POST',
-          body: formData,
-        })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.success && uploadData.url) {
-          finalAvatarUrl = uploadData.url
+        try {
+          finalAvatarUrl = await uploadMediaSafely(onboardingPendingAvatarFile, 'founders', targetUserId)
+        } catch (uploadErr: any) {
+          console.error('[Onboarding Avatar Upload Error]:', uploadErr)
         }
       }
 
       // Upload staged company logo if changed in onboarding
       if (onboardingPendingLogoFile) {
-        const formData = new FormData()
-        formData.append('file', onboardingPendingLogoFile)
-        formData.append('folder', 'companies')
-        formData.append('userId', targetUserId)
-
-        const uploadRes = await fetch('/api/bmf/upload-media', {
-          method: 'POST',
-          body: formData,
-        })
-        const uploadData = await uploadRes.json()
-        if (uploadRes.ok && uploadData.success && uploadData.url) {
-          finalLogoUrl = uploadData.url
+        try {
+          finalLogoUrl = await uploadMediaSafely(onboardingPendingLogoFile, 'companies', targetUserId)
+        } catch (uploadErr: any) {
+          console.error('[Onboarding Logo Upload Error]:', uploadErr)
         }
       }
 
@@ -1656,11 +1670,17 @@ function BmfMemberDashboardContent() {
                               type="file"
                               accept="image/*"
                               className="hidden"
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0]
                                 if (file) {
-                                   setOnboardingPendingAvatarFile(file)
-                                   setOnboardingForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                  try {
+                                    const compressed = await compressImageToWebP(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
+                                    setOnboardingPendingAvatarFile(compressed.file)
+                                    setOnboardingForm((prev) => ({ ...prev, avatar_url: compressed.previewUrl }))
+                                  } catch {
+                                    setOnboardingPendingAvatarFile(file)
+                                    setOnboardingForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                  }
                                 }
                               }}
                             />
@@ -1729,11 +1749,17 @@ function BmfMemberDashboardContent() {
                               type="file"
                               accept="image/*"
                               className="hidden"
-                              onChange={(e) => {
+                              onChange={async (e) => {
                                 const file = e.target.files?.[0]
                                 if (file) {
-                                  setOnboardingPendingLogoFile(file)
-                                  setOnboardingForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                  try {
+                                    const compressed = await compressImageToWebP(file, { maxWidth: 800, maxHeight: 800, quality: 0.85 })
+                                    setOnboardingPendingLogoFile(compressed.file)
+                                    setOnboardingForm((prev) => ({ ...prev, company_logo: compressed.previewUrl }))
+                                  } catch {
+                                    setOnboardingPendingLogoFile(file)
+                                    setOnboardingForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                  }
                                 }
                               }}
                             />
@@ -2591,11 +2617,17 @@ function BmfMemberDashboardContent() {
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   const file = e.target.files?.[0]
                                   if (file) {
-                                    setPendingAvatarFile(file)
-                                    setProfileForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                    try {
+                                      const compressed = await compressImageToWebP(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.85 })
+                                      setPendingAvatarFile(compressed.file)
+                                      setProfileForm((prev) => ({ ...prev, avatar_url: compressed.previewUrl }))
+                                    } catch {
+                                      setPendingAvatarFile(file)
+                                      setProfileForm((prev) => ({ ...prev, avatar_url: URL.createObjectURL(file) }))
+                                    }
                                   }
                                 }}
                               />
@@ -2667,11 +2699,17 @@ function BmfMemberDashboardContent() {
                                 type="file"
                                 accept="image/*"
                                 className="hidden"
-                                onChange={(e) => {
+                                onChange={async (e) => {
                                   const file = e.target.files?.[0]
                                   if (file) {
-                                    setPendingLogoFile(file)
-                                    setProfileForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                    try {
+                                      const compressed = await compressImageToWebP(file, { maxWidth: 800, maxHeight: 800, quality: 0.85 })
+                                      setPendingLogoFile(compressed.file)
+                                      setProfileForm((prev) => ({ ...prev, company_logo: compressed.previewUrl }))
+                                    } catch {
+                                      setPendingLogoFile(file)
+                                      setProfileForm((prev) => ({ ...prev, company_logo: URL.createObjectURL(file) }))
+                                    }
                                   }
                                 }}
                               />
