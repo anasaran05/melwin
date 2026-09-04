@@ -52,13 +52,22 @@ export function GoogleOneTap({
   const [isInitializing, setIsInitializing] = useState(false)
 
   const isBmfPage = pathname?.startsWith('/bmf') || false
+  const isAuthOrDashboardPage = 
+    pathname?.includes('/dashboard') || 
+    pathname?.includes('/reset-password') || 
+    pathname?.includes('/admin') ||
+    pathname?.includes('/login') ||
+    pathname?.includes('/auth')
+
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   useEffect(() => {
-    // If navigating away from BMF pages, dismiss any open Google One Tap prompt
-    if (!isBmfPage) {
+    // If on dashboard, password reset, or navigating away from public BMF pages, dismiss any open Google One Tap prompt
+    if (!isBmfPage || isAuthOrDashboardPage) {
       if (typeof window !== 'undefined' && window.google?.accounts?.id?.cancel) {
-        window.google.accounts.id.cancel()
+        try {
+          window.google.accounts.id.cancel()
+        } catch {}
       }
       return
     }
@@ -125,7 +134,7 @@ export function GoogleOneTap({
           auto_select: false,
           cancel_on_tap_outside: true,
           itp_support: true,
-          use_fedcm_for_prompt: false,
+          use_fedcm_for_prompt: true,
         })
 
         // 5. Prompt the One Tap Floating Widget
@@ -146,10 +155,18 @@ export function GoogleOneTap({
     }
 
     initializeGoogleOneTap()
-  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isInitializing, isBmfPage, pathname])
 
-  // Only load the external script and initialize on BMF Club routes
-  if (!isBmfPage) {
+    return () => {
+      if (typeof window !== 'undefined' && window.google?.accounts?.id?.cancel) {
+        try {
+          window.google.accounts.id.cancel()
+        } catch {}
+      }
+    }
+  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isInitializing, isBmfPage, isAuthOrDashboardPage, pathname])
+
+  // Only load the external script and initialize on public BMF Club routes (never on dashboard or auth pages)
+  if (!isBmfPage || isAuthOrDashboardPage) {
     return null
   }
 

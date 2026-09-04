@@ -66,7 +66,7 @@ export function MemberFlipCard({
     member.avatar_url.trim() !== ''
   )
   const avatarFallback = getFounderFallbackAvatar(member.full_name)
-  let avatarUrl = hasAvatar ? normalizeR2Url(member.avatar_url) : ''
+  let avatarUrl = (hasAvatar ? normalizeR2Url(member.avatar_url, member.full_name) : '') || avatarFallback
   if (avatarUrl && avatarUrl.includes('images.unsplash.com') && !avatarUrl.includes('w=')) {
     avatarUrl = `${avatarUrl}&w=440&q=80&auto=format`
   }

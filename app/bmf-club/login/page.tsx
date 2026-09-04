@@ -6,14 +6,10 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react'
 
 const IconGoogle = (props: React.SVGProps<SVGSVGElement>) => (
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" {...props}><title>Google</title><path d="M12.24 10.285V14.4h6.806c-.275 1.765-2.056 5.174-6.806 5.174-4.095 0-7.439-3.386-7.439-7.574s3.344-7.574 7.439-7.574c2.33 0 3.891.989 4.785 1.85l3.25-3.138C18.189 1.186 15.479 0 12.24 0 5.48 0 0 5.48 0 12.24s5.48 12.24 12.24 12.24c6.885 0 11.954-4.823 11.954-12.015 0-.795-.084-1.588-.239-2.356H12.24z" fill="currentColor"/></svg>
-)
-
-const IconGithub = (props: React.SVGProps<SVGSVGElement>) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-4 h-4" {...props}><title>GitHub</title><path d="M12 0C5.373 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.085 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0 1 12 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.91 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12Z" fill="currentColor"/></svg>
 )
 
 const IconMail = (props: React.SVGProps<SVGSVGElement>) => (
@@ -29,14 +25,32 @@ function BmfMemberLoginContent() {
   const rawNext = searchParams.get('next') || searchParams.get('redirectTo') || searchParams.get('redirect')
   const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
 
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin')
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot-password'>('signin')
+  const [showPassword, setShowPassword] = useState(false)
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // Forgot password OTP states
+  const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request')
+  const [otpCode, setOtpCode] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [cooldownSeconds, setCooldownSeconds] = useState(0)
+
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
   const [message, setMessage] = useState('')
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+
+  // 1-minute cooldown countdown timer
+  useEffect(() => {
+    if (cooldownSeconds <= 0) return
+    const interval = setInterval(() => {
+      setCooldownSeconds((prev) => (prev > 0 ? prev - 1 : 0))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [cooldownSeconds])
 
   useEffect(() => {
     let isSubscribed = true
@@ -100,35 +114,6 @@ function BmfMemberLoginContent() {
     }
   }
 
-  const handleGithubSignIn = async () => {
-    setStatus('loading')
-    setMessage('')
-    try {
-      const supabase = getSupabaseBrowserClient()
-      if (supabase) {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'github',
-          options: {
-            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-          },
-        })
-        if (error) {
-          setStatus('error')
-          setMessage(error.message)
-        }
-      } else {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('bmf_current_user_email', 'github.founder@bmf.club')
-        }
-        setStatus('success')
-        router.push(destination)
-      }
-    } catch (err: any) {
-      setStatus('error')
-      setMessage(err.message || 'GitHub authentication failed')
-    }
-  }
-
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) {
@@ -176,7 +161,11 @@ function BmfMemberLoginContent() {
         const resData = await res.json()
         if (res.ok && resData.success) {
           setStatus('success')
-          setMessage("Account created! We've sent a verification email with your pass activation link via Resend. Please check your inbox.")
+          setMessage("Account created! We've sent a verification email to activate your founder pass. Please check your inbox.")
+        } else if (resData.alreadyExists || resData.error?.toLowerCase().includes('already') || res.status === 409) {
+          setStatus('error')
+          setMessage('An account with this email already exists. Switched to Sign In — please enter your password.')
+          setAuthMode('signin')
         } else {
           // Direct fallback to Supabase sign up
           const { data, error } = await supabase.auth.signUp({
@@ -190,8 +179,16 @@ function BmfMemberLoginContent() {
             },
           })
           if (error) {
+            const isExists = error.message.toLowerCase().includes('already') || error.message.toLowerCase().includes('exists')
             setStatus('error')
-            setMessage(error.message || resData.error)
+            setMessage(isExists ? 'An account with this email already exists. Switched to Sign In.' : error.message || resData.error)
+            if (isExists) {
+              setAuthMode('signin')
+            }
+          } else if (data.user && data.user.identities && data.user.identities.length === 0) {
+            setStatus('error')
+            setMessage('An account with this email already exists. Switched to Sign In.')
+            setAuthMode('signin')
           } else if (data.session && data.user) {
             if (typeof window !== 'undefined' && data.user.email) {
               localStorage.setItem('bmf_current_user_email', data.user.email)
@@ -208,76 +205,161 @@ function BmfMemberLoginContent() {
         return
       }
 
-      if (password.trim()) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password.trim(),
-        })
+      // STANDARD SIGN IN FLOW (Email + Password only)
+      if (!password.trim()) {
+        setStatus('error')
+        setMessage('Please enter your password to sign in.')
+        return
+      }
 
-        if (error) {
-          // Password failed, dispatch branded magic link via Resend
-          const res = await fetch('/api/bmf/auth/send-auth-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: email.trim(),
-              type: 'magiclink',
-              redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-            }),
-          })
-          const resData = await res.json()
-          if (res.ok && resData.success) {
-            setStatus('success')
-            setMessage('Magic login link sent to your email via Resend! Click the link to access your dashboard.')
-          } else {
-            setStatus('error')
-            setMessage(error.message)
-          }
-        } else if (data.user) {
-          if (typeof window !== 'undefined' && data.user.email) {
-            localStorage.setItem('bmf_current_user_email', data.user.email)
-          }
-          setStatus('success')
-          setMessage('Signed in successfully! Redirecting...')
-          router.push(destination)
-          router.refresh()
-        }
-      } else {
-        // Dispatch branded magic link via Resend
-        const res = await fetch('/api/bmf/auth/send-auth-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: email.trim(),
-            type: 'magiclink',
-            redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-          }),
-        })
-        const resData = await res.json()
-        if (res.ok && resData.success) {
-          setStatus('success')
-          setMessage('Magic login link sent to your email via Resend! Check your inbox.')
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: password.trim(),
+      })
+
+      if (error) {
+        setStatus('error')
+        const errMsg = error.message.toLowerCase()
+        if (errMsg.includes('invalid login credentials') || errMsg.includes('invalid_credentials') || errMsg.includes('invalid_grant')) {
+          setMessage('Incorrect password. Please verify your credentials or reset your password below.')
         } else {
-          // Fallback to direct supabase OTP
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            email: email.trim(),
-            options: {
-              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
-            },
-          })
-
-          if (otpError) {
-            setStatus('error')
-            setMessage(otpError.message || resData.error)
-          } else {
-            setStatus('success')
-            setMessage('Magic login link sent to your email! Click the link to access your dashboard.')
-          }
+          setMessage(error.message)
         }
+      } else if (data.user) {
+        if (typeof window !== 'undefined' && data.user.email) {
+          localStorage.setItem('bmf_current_user_email', data.user.email)
+        }
+        setStatus('success')
+        setMessage('Signed in successfully! Redirecting...')
+        router.push(destination)
+        router.refresh()
       }
     } catch (err: any) {
       setStatus('error')
       setMessage(err.message || 'An unexpected error occurred.')
+    }
+  }
+
+  // FORGOT PASSWORD: Request OTP
+  const handleRequestPasswordResetOtp = async (targetEmail?: string) => {
+    const emailToUse = (targetEmail || email).trim()
+    if (!emailToUse) {
+      setStatus('error')
+      setMessage('Please enter your email address to receive a verification code.')
+      return
+    }
+
+    if (cooldownSeconds > 0) {
+      setStatus('error')
+      setMessage(`Please wait ${cooldownSeconds}s before requesting another code.`)
+      return
+    }
+
+    setStatus('loading')
+    setMessage('')
+
+    try {
+      const res = await fetch('/api/bmf/auth/send-auth-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToUse,
+          type: 'recovery',
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(destination)}`,
+        }),
+      })
+
+      const resData = await res.json()
+      if (res.ok && resData.success) {
+        setStatus('success')
+        setMessage(resData.message || '6-digit verification code sent to your email!')
+        setForgotStep('verify')
+        setCooldownSeconds(60) // Enforce 1-minute timer
+      } else if (res.status === 429) {
+        setStatus('error')
+        setMessage(resData.error || 'Please wait before requesting another code.')
+        if (resData.retryAfter) {
+          setCooldownSeconds(resData.retryAfter)
+        }
+      } else {
+        setStatus('error')
+        setMessage(resData.error || 'Failed to send reset code. Please ensure your email is registered.')
+      }
+    } catch (err: any) {
+      setStatus('error')
+      setMessage(err.message || 'Failed to request reset code.')
+    }
+  }
+
+  // FORGOT PASSWORD: Verify OTP and update password
+  const handleVerifyOtpAndResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!email.trim()) {
+      setStatus('error')
+      setMessage('Email address is required.')
+      return
+    }
+
+    if (!otpCode.trim() || otpCode.trim().length < 6) {
+      setStatus('error')
+      setMessage('Please enter the verification code sent to your email.')
+      return
+    }
+
+    if (!newPassword.trim() || newPassword.trim().length < 6) {
+      setStatus('error')
+      setMessage('New password must be at least 6 characters.')
+      return
+    }
+
+    setStatus('loading')
+    setMessage('')
+
+    try {
+      const supabase = getSupabaseBrowserClient()
+      if (!supabase) {
+        setStatus('error')
+        setMessage('Database configuration not available.')
+        return
+      }
+
+      // 1. Verify OTP code for password recovery
+      const { data: verifyData, error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token: otpCode.trim(),
+        type: 'recovery',
+      })
+
+      if (verifyError) {
+        setStatus('error')
+        setMessage(verifyError.message || 'Invalid or expired verification code. Please check your email or resend.')
+        return
+      }
+
+      // 2. Set new password for the authenticated recovery session
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      })
+
+      if (updateError) {
+        setStatus('error')
+        setMessage(updateError.message || 'Failed to update password. Please try again.')
+        return
+      }
+
+      if (typeof window !== 'undefined' && verifyData?.user?.email) {
+        localStorage.setItem('bmf_current_user_email', verifyData.user.email)
+      }
+
+      setStatus('success')
+      setMessage('Password updated successfully! Signing you in...')
+      setTimeout(() => {
+        router.push(destination)
+        router.refresh()
+      }, 900)
+    } catch (err: any) {
+      setStatus('error')
+      setMessage(err.message || 'Failed to complete password reset.')
     }
   }
 
@@ -300,8 +382,12 @@ function BmfMemberLoginContent() {
         <AuthForm
           logoSrc={BMF_LOGO_URL}
           logoAlt="BMF Club Logo"
-          title="BMF Member Portal"
-          description="Log in to manage your executive profile card, company bio, and venture metrics."
+          title={authMode === 'forgot-password' ? "Reset Password" : "BMF Member Portal"}
+          description={
+            authMode === 'forgot-password'
+              ? "Verify your account with the OTP code sent to your email to create a new password."
+              : "Log in to manage your executive profile card, company bio, and venture metrics."
+          }
           primaryAction={{
             label: status === 'loading' ? "Authenticating..." : "Continue with Google",
             icon: status === 'loading' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <IconGoogle />,
@@ -310,7 +396,7 @@ function BmfMemberLoginContent() {
           }}
           secondaryActions={[
             {
-              label: showEmailForm ? "Hide Email Login" : "Continue with Email",
+              label: showEmailForm ? "Hide Email Login" : "Continue with Email & Password",
               icon: <IconMail />,
               onClick: () => setShowEmailForm(!showEmailForm),
               disabled: status === 'loading',
@@ -319,114 +405,281 @@ function BmfMemberLoginContent() {
           footerContent={
             <>
               By logging in, you agree to the{" "}
-              <Link href="/terms" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Terms of Service</Link>{" "}
+              <Link href="/terms?from=/bmf-club/login" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Terms of Service</Link>{" "}
               and{" "}
-              <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Privacy Policy</Link>.
+              <Link href="/privacy?from=/bmf-club/login" target="_blank" rel="noopener noreferrer" className="cursor-pointer transition-colors hover:text-white underline underline-offset-2">Privacy Policy</Link>.
             </>
           }
         >
           {showEmailForm && (
-            <form onSubmit={handleEmailSignIn} className="space-y-3 pt-1 pb-2 text-left animate-in fade-in-0 duration-300">
-              {/* 2-Pill Mode Switcher: Sign In vs Sign Up */}
-              <div className="flex rounded-xl bg-neutral-900/90 p-1 border border-neutral-800 mb-2">
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('signin'); setMessage(''); }}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    authMode === 'signin' 
-                      ? 'bg-neutral-800 text-white shadow-sm' 
-                      : 'text-neutral-400 hover:text-neutral-200'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setAuthMode('signup'); setMessage(''); }}
-                  className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                    authMode === 'signup' 
-                      ? 'bg-neutral-800 text-white shadow-sm' 
-                      : 'text-neutral-400 hover:text-neutral-200'
-                  }`}
-                >
-                  Sign Up
-                </button>
-              </div>
+            <div className="pt-1 pb-2 text-left animate-in fade-in-0 duration-300">
+              {/* FORGOT PASSWORD VIEW */}
+              {authMode === 'forgot-password' ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between pb-1 border-b border-white/10 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode('signin')
+                        setForgotStep('request')
+                        setMessage('')
+                      }}
+                      className="text-xs text-neutral-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>Back to Sign In</span>
+                    </button>
+                    <span className="text-[10px] font-mono text-sky-400 font-semibold uppercase tracking-wider">
+                      OTP Recovery
+                    </span>
+                  </div>
 
-              {authMode === 'signup' && (
-                <div className="space-y-1">
-                  <label className="text-[11px] font-medium text-neutral-300">Full Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Alex Johnson"
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              )}
+                  {forgotStep === 'request' ? (
+                    <form onSubmit={(e) => { e.preventDefault(); handleRequestPasswordResetOtp(); }} className="space-y-3">
+                      <p className="text-[12px] text-neutral-400 leading-relaxed">
+                        Enter your registered account email. We will dispatch an OTP verification code to your inbox.
+                      </p>
 
-              <div className="space-y-1">
-                <label className="text-[11px] font-medium text-neutral-300">Registered Email</label>
-                <input
-                  type="email"
-                  required
-                  placeholder="founder@yourcompany.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
-                />
-              </div>
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-medium text-neutral-300">Registered Email</label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="founder@yourcompany.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
 
-              <div className="space-y-1">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-neutral-300">
-                    {authMode === 'signup' ? 'Create Password (min 6 chars)' : 'Password (or leave blank for Magic Link)'}
-                  </label>
-                </div>
-                <input
-                  type="password"
-                  required={authMode === 'signup'}
-                  minLength={authMode === 'signup' ? 6 : undefined}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <Button
-                type="submit"
-                disabled={status === 'loading'}
-                className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-4 rounded-xl transition-all shadow-md mt-1 cursor-pointer"
-              >
-                {status === 'loading' ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
-                    <span>{authMode === 'signup' ? 'Creating Account...' : 'Authenticating...'}</span>
-                  </>
-                ) : (
-                  <span>{authMode === 'signup' ? 'Create Account / Sign Up' : 'Sign In with Email / Magic Link'}</span>
-                )}
-              </Button>
-
-              <div className="text-center pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode(authMode === 'signin' ? 'signup' : 'signin')
-                    setMessage('')
-                  }}
-                  className="text-[11px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  {authMode === 'signin' ? (
-                    <>Don&apos;t have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign Up</span></>
+                      <Button
+                        type="submit"
+                        disabled={status === 'loading' || cooldownSeconds > 0}
+                        className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-4 rounded-xl transition-all shadow-md mt-1 cursor-pointer"
+                      >
+                        {status === 'loading' ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                            <span>Sending Code...</span>
+                          </>
+                        ) : cooldownSeconds > 0 ? (
+                          <span>Resend code in {cooldownSeconds}s</span>
+                        ) : (
+                          <span>Send Verification Code &rarr;</span>
+                        )}
+                      </Button>
+                    </form>
                   ) : (
-                    <>Already have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign In</span></>
+                    <form onSubmit={handleVerifyOtpAndResetPassword} className="space-y-3">
+                      <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-[11px] text-sky-300 flex items-center justify-between">
+                        <span className="truncate">Code sent to <strong>{email}</strong></span>
+                        <button
+                          type="button"
+                          onClick={() => { setForgotStep('request'); setMessage(''); }}
+                          className="text-[10px] text-sky-400 hover:text-sky-200 underline ml-2 shrink-0 cursor-pointer"
+                        >
+                          Change
+                        </button>
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-medium text-neutral-300">Verification Code (OTP)</label>
+                        <input
+                          type="text"
+                          required
+                          maxLength={8}
+                          placeholder="••••••••"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                          className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-600 rounded-xl px-3.5 py-2.5 text-sm font-mono tracking-[0.3em] text-center focus:outline-none focus:border-sky-500"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-medium text-neutral-300">New Password (min 6 chars)</label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            required
+                            minLength={6}
+                            placeholder="••••••••"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl pl-3.5 pr-10 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 cursor-pointer"
+                            aria-label={showNewPassword ? "Hide password" : "Show password"}
+                          >
+                            {showNewPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        disabled={status === 'loading'}
+                        className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-4 rounded-xl transition-all shadow-md mt-1 cursor-pointer"
+                      >
+                        {status === 'loading' ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                            <span>Updating Password...</span>
+                          </>
+                        ) : (
+                          <span>Reset Password & Sign In</span>
+                        )}
+                      </Button>
+
+                      <div className="flex items-center justify-between text-[11px] pt-1">
+                        <span className="text-neutral-500">Didn&apos;t receive code?</span>
+                        {cooldownSeconds > 0 ? (
+                          <span className="text-neutral-400 font-mono text-[10px]">
+                            Resend code in {cooldownSeconds}s
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestPasswordResetOtp()}
+                            className="text-sky-400 hover:text-sky-300 font-medium cursor-pointer transition-colors"
+                          >
+                            Resend Code
+                          </button>
+                        )}
+                      </div>
+                    </form>
                   )}
-                </button>
-              </div>
-            </form>
+                </div>
+              ) : (
+                /* STANDARD SIGN IN / SIGN UP FORM */
+                <form onSubmit={handleEmailSignIn} className="space-y-3">
+                  {/* Mode Switcher: Sign In vs Sign Up */}
+                  <div className="flex rounded-xl bg-neutral-900/90 p-1 border border-neutral-800 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode('signin'); setMessage(''); }}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                        authMode === 'signin' 
+                          ? 'bg-neutral-800 text-white shadow-sm' 
+                          : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAuthMode('signup'); setMessage(''); }}
+                      className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                        authMode === 'signup' 
+                          ? 'bg-neutral-800 text-white shadow-sm' 
+                          : 'text-neutral-400 hover:text-neutral-200'
+                      }`}
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-medium text-neutral-300">Full Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Alex Johnson"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-neutral-300">Email Address</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="founder@yourcompany.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl px-3.5 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-medium text-neutral-300">
+                        {authMode === 'signup' ? 'Create Password (min 6 chars)' : 'Password'}
+                      </label>
+                      {authMode === 'signin' && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAuthMode('forgot-password')
+                            setForgotStep('request')
+                            setMessage('')
+                          }}
+                          className="text-[10px] text-sky-400 hover:text-sky-300 transition-colors cursor-pointer"
+                        >
+                          Forgot password?
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={authMode === 'signup' ? 6 : undefined}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-neutral-900 border border-neutral-700 text-white placeholder:text-neutral-500 rounded-xl pl-3.5 pr-10 py-2.5 text-xs focus:outline-none focus:border-sky-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-200 cursor-pointer"
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={status === 'loading'}
+                    className="w-full bg-sky-500 hover:bg-sky-600 text-white font-semibold text-xs py-4 rounded-xl transition-all shadow-md mt-1 cursor-pointer"
+                  >
+                    {status === 'loading' ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                        <span>{authMode === 'signup' ? 'Creating Account...' : 'Signing In...'}</span>
+                      </>
+                    ) : (
+                      <span>{authMode === 'signup' ? 'Create Account' : 'Sign In'}</span>
+                    )}
+                  </Button>
+
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAuthMode(authMode === 'signin' ? 'signup' : 'signin')
+                        setMessage('')
+                      }}
+                      className="text-[11px] text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {authMode === 'signin' ? (
+                        <>Don&apos;t have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign Up</span></>
+                      ) : (
+                        <>Already have an account? <span className="text-sky-400 font-semibold underline underline-offset-2">Sign In</span></>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           )}
 
           {message && (

@@ -817,34 +817,135 @@ export function isCustomCompanyName(name?: string | null): boolean {
   return !genericPlaceholders.includes(clean)
 }
 
+export function isValidWebUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.trim().toLowerCase()
+  if (!clean || clean.length < 4) return false
+  if (clean === '#' || clean === 'n/a' || clean === 'none' || clean === 'null' || clean === 'undefined') return false
+  if (clean.startsWith('http://') || clean.startsWith('https://')) {
+    const afterProtocol = clean.replace(/^https?:\/\//, '')
+    return afterProtocol.length >= 3 && afterProtocol.includes('.')
+  }
+  return clean.includes('.') && clean.length >= 4 && !clean.includes(' ')
+}
+
+export function isValidLinkedInUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.trim().toLowerCase()
+  if (!clean || clean.length < 5) return false
+  if (clean === '#' || clean === 'n/a' || clean === 'none' || clean === 'null' || clean === 'undefined') return false
+  return clean.includes('linkedin.com') || (clean.startsWith('http') && clean.includes('linkedin')) || clean.startsWith('in/')
+}
+
+export function isValidTwitterUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.trim().toLowerCase()
+  if (!clean || clean.length < 4) return false
+  if (clean === '#' || clean === 'n/a' || clean === 'none' || clean === 'null' || clean === 'undefined') return false
+  return clean.includes('twitter.com') || clean.includes('x.com') || clean.startsWith('@')
+}
+
+/**
+ * Computes profile completeness tier:
+ * Tier 3: Fully completed profile (Website + LinkedIn + Portrait Avatar + Company Logo + Company Name + Bio)
+ * Tier 2: High completeness with online presence (Has Website OR LinkedIn + Avatar + Company Logo + Company Name)
+ * Tier 1: Incomplete online presence (Missing both Website and LinkedIn, e.g. Peelgood)
+ * Tier 0: Placeholder or minimal profile
+ */
+export function getProfileCompletenessTier(member: BmfMember): number {
+  const hasWebsite = isValidWebUrl(member.website_url)
+  const hasLinkedIn = isValidLinkedInUrl(member.linkedin_url)
+  const hasCustomLogo = isCustomCompanyLogo(member.company_logo)
+  const hasCustomName = isCustomCompanyName(member.company_name)
+  const hasRealAvatar = isUploadedAvatar(member.avatar_url) || isGoogleAvatar(member.avatar_url)
+  const hasBio = Boolean(member.description && member.description.trim().length >= 15)
+  const hasRole = Boolean(member.role && member.role.trim().length >= 2)
+
+  // Tier 3: Fully complete gold standard (Website + LinkedIn + Logo + Photo + Name + Bio)
+  if (hasWebsite && hasLinkedIn && hasCustomLogo && hasRealAvatar && hasCustomName && hasBio) {
+    return 3
+  }
+
+  // Tier 2: Has at least one verified online anchor (Website OR LinkedIn) with venture assets
+  if ((hasWebsite || hasLinkedIn) && hasCustomLogo && hasCustomName && (hasRealAvatar || hasBio)) {
+    return 2
+  }
+
+  // Tier 1: Missing both Website and LinkedIn (or missing core logo/photo)
+  if (hasCustomName && (hasCustomLogo || hasRealAvatar || hasRole)) {
+    return 1
+  }
+
+  return 0
+}
+
 export function getProfileQualityScore(member: BmfMember): number {
   let score = 0
 
-  // 1. Founder Portrait Photo (up to 40 pts)
+  // 1. Online Presence & Social Links (Up to 80 pts - primary trust & verification factors)
+  if (isValidWebUrl(member.website_url)) {
+    score += 35
+  }
+  if (isValidLinkedInUrl(member.linkedin_url)) {
+    score += 35
+  }
+  if (isValidTwitterUrl(member.twitter_url)) {
+    score += 10
+  }
+
+  // 2. Founder Portrait Photo (Up to 40 pts)
   if (isUploadedAvatar(member.avatar_url)) {
     score += 40
   } else if (isGoogleAvatar(member.avatar_url)) {
-    score += 15
-  } else if (member.avatar_url && member.avatar_url.trim() !== '') {
+    score += 20
+  } else if (member.avatar_url && member.avatar_url.trim() !== '' && !member.avatar_url.includes('api.dicebear.com')) {
     score += 5
   }
 
-  // 2. Company Logo (30 pts)
+  // 3. Company Logo (35 pts)
   if (isCustomCompanyLogo(member.company_logo)) {
-    score += 30
+    score += 35
   }
 
-  // 3. Company Name (30 pts)
+  // 4. Company Name (30 pts)
   if (isCustomCompanyName(member.company_name)) {
     score += 30
   }
 
-  // Completeness bonus (up to 10 pts)
-  if (member.description && member.description.trim().length > 10) {
+  // 5. Bio / Elevator Pitch (Up to 25 pts)
+  const descLen = member.description?.trim().length || 0
+  if (descLen >= 50) {
+    score += 25
+  } else if (descLen >= 15) {
+    score += 15
+  } else if (descLen > 0) {
     score += 5
   }
-  if (member.category && member.category !== 'Others' && member.category.trim() !== '') {
+
+  // 6. Tagline & One-Liner (10 pts)
+  if (member.tagline && member.tagline.trim().length >= 5) {
+    score += 10
+  }
+
+  // 7. Venture Stage, Location & Team Size (Up to 15 pts)
+  if (member.stage && member.stage.trim() !== '' && member.stage.toLowerCase() !== 'idea') {
     score += 5
+  }
+  if (member.location && member.location.trim().length >= 2) {
+    score += 5
+  }
+  if (member.team_size && member.team_size.trim() !== '') {
+    score += 5
+  }
+
+  // 8. Specific Category (10 pts)
+  if (member.category && member.category !== 'Others' && member.category.trim() !== '') {
+    score += 10
+  }
+
+  // 9. Verified Founder Status (15 pts)
+  if (member.is_verified) {
+    score += 15
   }
 
   return score
@@ -898,6 +999,12 @@ export function getProfileMissingFields(member?: BmfMember | null): string[] {
   if (!member.role || member.role.trim().length < 2) {
     missing.push('Founder Role')
   }
+  if (!isValidWebUrl(member.website_url)) {
+    missing.push('Website URL')
+  }
+  if (!isValidLinkedInUrl(member.linkedin_url)) {
+    missing.push('LinkedIn Profile')
+  }
   if (!member.description || member.description.trim().length < 10) {
     missing.push('Founder Bio')
   }
@@ -907,33 +1014,46 @@ export function getProfileMissingFields(member?: BmfMember | null): string[] {
 
 export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
   return [...members].sort((a, b) => {
-    // 1. Explicit priority_order (1 is highest priority e.g. President / Pinned)
-    const pA = a.priority_order !== undefined && a.priority_order !== null 
-      ? a.priority_order 
-      : (a.full_name?.toLowerCase().includes('melwin') || a.role?.toLowerCase().includes('president') ? 1 : 100)
-    const pB = b.priority_order !== undefined && b.priority_order !== null 
-      ? b.priority_order 
-      : (b.full_name?.toLowerCase().includes('melwin') || b.role?.toLowerCase().includes('president') ? 1 : 100)
+    // 1. Dr. Melwin is strictly pinned at #1 (or priority_order === 1)
+    const isMelwinA = a.priority_order === 1 || 
+      a.full_name?.toLowerCase().includes('melwin') || 
+      a.role?.toLowerCase().includes('president')
+    const isMelwinB = b.priority_order === 1 || 
+      b.full_name?.toLowerCase().includes('melwin') || 
+      b.role?.toLowerCase().includes('president')
 
+    if (isMelwinA && !isMelwinB) return -1
+    if (!isMelwinA && isMelwinB) return 1
+
+    // Explicit manual priority rank set by Admin (if any other member is specifically pinned)
+    const pA = a.priority_order !== undefined && a.priority_order !== null && a.priority_order > 1 ? a.priority_order : 100
+    const pB = b.priority_order !== undefined && b.priority_order !== null && b.priority_order > 1 ? b.priority_order : 100
     if (pA !== pB) {
       return pA - pB
     }
 
-    // 2. Profile Quality & Completeness Score (Higher score first)
+    // 2. Profile Completeness Tier (Tier 3 = Full Website + LinkedIn + Logo + Photo + Bio first!)
+    const tierA = getProfileCompletenessTier(a)
+    const tierB = getProfileCompletenessTier(b)
+    if (tierA !== tierB) {
+      return tierB - tierA
+    }
+
+    // 3. Granular Profile Quality Score (Higher score first)
     const scoreA = getProfileQualityScore(a)
     const scoreB = getProfileQualityScore(b)
     if (scoreA !== scoreB) {
       return scoreB - scoreA
     }
 
-    // 3. Featured status
+    // 4. Featured spotlight status
     const featA = a.is_featured ? 1 : 0
     const featB = b.is_featured ? 1 : 0
     if (featA !== featB) {
       return featB - featA
     }
 
-    // 4. Most recent first
+    // 5. Most recent first as tie-breaker
     const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
     const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
     return dateB - dateA
@@ -968,7 +1088,7 @@ export function clearClientMembersCache() {
       const keysToRemove: string[] = []
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i)
-        if (key && key.startsWith('bmf_members_cache_')) {
+        if (key && (key.startsWith('bmf_members_cache_') || key.startsWith('bmf_members_cache_v4_'))) {
           keysToRemove.push(key)
         }
       }
@@ -988,7 +1108,7 @@ function getFromClientCache<T>(cacheKey: string): T | null {
   // 2. Check SessionStorage
   if (typeof window !== 'undefined' && window.sessionStorage) {
     try {
-      const stored = sessionStorage.getItem(`bmf_members_cache_${cacheKey}`)
+      const stored = sessionStorage.getItem(`bmf_members_cache_v4_${cacheKey}`)
       if (stored) {
         const parsed = JSON.parse(stored)
         if (parsed && (now - parsed.timestamp < CLIENT_CACHE_TTL_MS)) {
@@ -1008,7 +1128,7 @@ function saveToClientCache<T>(cacheKey: string, data: T): void {
   clientMemoryCache.set(cacheKey, payload)
   if (typeof window !== 'undefined' && window.sessionStorage) {
     try {
-      sessionStorage.setItem(`bmf_members_cache_${cacheKey}`, JSON.stringify(payload))
+      sessionStorage.setItem(`bmf_members_cache_v4_${cacheKey}`, JSON.stringify(payload))
     } catch {}
   }
 }

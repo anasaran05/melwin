@@ -1,23 +1,42 @@
 'use client'
 
-import React from 'react'
+import React, { Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import { ArrowLeft, FileText } from 'lucide-react'
 import { Footer } from '@/components/footer'
 
-export default function TermsOfServicePage() {
+function TermsOfServiceContent() {
+  const searchParams = useSearchParams()
+  const from = searchParams.get('from') || searchParams.get('returnTo')
+  const isFromBmf = Boolean(from && (from.startsWith('/bmf-club') || from.includes('bmf')))
+  const backUrl = from || '/'
+  const backLabel = isFromBmf 
+    ? (from === '/bmf-club/login' ? 'Back to Portal Login' : from === '/bmf-club/dashboard' ? 'Back to Dashboard' : 'Back to BMF Club')
+    : 'Back to Home'
+
   return (
     <div className="min-h-screen bg-[#0a0a0c] text-white font-sans flex flex-col justify-between selection:bg-blue-600 selection:text-white">
       {/* Navigation Header */}
       <header className="border-b border-white/10 bg-black/40 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to Home</span>
-          </Link>
+          <div className="flex items-center gap-3">
+            <Link
+              href={backUrl}
+              className="inline-flex items-center gap-2 text-xs font-semibold text-neutral-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-full border border-white/10"
+            >
+              <ArrowLeft className="w-3.5 h-3.5 text-sky-400" />
+              <span>{backLabel}</span>
+            </Link>
+            {isFromBmf && (
+              <Link
+                href="/"
+                className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors hidden sm:inline-block"
+              >
+                Personal Website
+              </Link>
+            )}
+          </div>
           <div className="text-xs font-mono font-bold tracking-wider uppercase text-neutral-500">
             Build With Melwin • Legal & Compliance
           </div>
@@ -191,5 +210,13 @@ export default function TermsOfServicePage() {
 
       <Footer />
     </div>
+  )
+}
+
+export default function TermsOfServicePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0a0a0c] text-white" />}>
+      <TermsOfServiceContent />
+    </Suspense>
   )
 }

@@ -110,7 +110,9 @@ export const DEFAULT_FOUNDER_AVATAR = 'https://api.dicebear.com/7.x/personas/svg
 
 export function normalizeR2Url(url?: string | null, fallbackName?: string | null): string {
   if (!url || typeof url !== 'string' || url.trim() === '') {
-    return fallbackName ? getFounderFallbackAvatar(fallbackName) : ''
+    return fallbackName !== undefined && fallbackName !== null 
+      ? getFounderFallbackAvatar(fallbackName || 'Founder') 
+      : ''
   }
 
   const cleanUrl = url.trim()

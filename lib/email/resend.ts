@@ -785,11 +785,6 @@ export async function sendAuthConfirmationEmail({
               </p>
             </div>
 
-            <p style="font-size: 12px; color: #71717a; word-break: break-all;">
-              Or copy and paste this link in your browser:<br />
-              <a href="${confirmUrl}" style="color: #38bdf8; text-decoration: underline;">${confirmUrl}</a>
-            </p>
-
             <div class="footer">
               <p style="margin: 0; font-weight: 600; color: #a1a1aa;">BMF Founders Club Admissions & Concierge</p>
               <p style="margin: 4px 0 0 0;">Networking, Investments, Opportunities. All in one place.</p>
@@ -859,7 +854,7 @@ export async function sendAuthMagicLinkEmail({
           <div class="card">
             <span class="badge">BMF Founders Club &bull; One-Click Access</span>
             <h1>Your Magic Login Link 🔑</h1>
-            <p>Click the secure link below to sign in directly to your BMF Founder Studio dashboard without entering a password.</p>
+            <p>Click the secure button below to sign in directly to your BMF Founder Studio dashboard without entering a password.</p>
             
             <div style="text-align: center; margin: 28px 0;">
               <a href="${loginUrl}" class="btn">Sign In to Founder Studio &rarr;</a>
@@ -871,11 +866,6 @@ export async function sendAuthMagicLinkEmail({
                 For your security, this single-use link will expire in 15 minutes. If you did not request this login, you can safely ignore this email.
               </p>
             </div>
-
-            <p style="font-size: 12px; color: #71717a; word-break: break-all;">
-              Or copy and paste this link in your browser:<br />
-              <a href="${loginUrl}" style="color: #38bdf8; text-decoration: underline;">${loginUrl}</a>
-            </p>
 
             <div class="footer">
               <p style="margin: 0; font-weight: 600; color: #a1a1aa;">BMF Founders Club Admissions & Concierge</p>
@@ -911,6 +901,92 @@ export async function sendAuthMagicLinkEmail({
   } catch (err: any) {
     console.error('[Email Send Error]:', err)
     return { success: false, error: err.message || 'Failed to dispatch magic link email' }
+  }
+}
+
+export interface SendAuthPasswordResetOtpEmailParams {
+  to: string
+  otpCode: string
+}
+
+export async function sendAuthPasswordResetOtpEmail({
+  to,
+  otpCode,
+}: SendAuthPasswordResetOtpEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const resend = getResendClient()
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #09090b; color: #ffffff; margin: 0; padding: 40px 20px; }
+            .card { max-width: 580px; margin: 0 auto; background: #141417; border: 1px solid rgba(255,255,255,0.12); border-radius: 24px; padding: 36px 32px; }
+            .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.15em; color: #38bdf8; background: rgba(56,189,248,0.15); padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+            h1 { font-size: 26px; font-weight: 900; line-height: 1.2; margin: 0 0 16px 0; color: #ffffff; }
+            p { font-size: 14px; line-height: 1.6; color: #a1a1aa; margin: 0 0 20px 0; }
+            .otp-box { background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.25); border-radius: 18px; padding: 24px 20px; text-align: center; margin: 24px 0; }
+            .otp-label { margin: 0 0 8px 0; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.18em; color: #38bdf8; }
+            .otp-code { font-size: 38px; font-weight: 900; letter-spacing: 10px; color: #ffffff; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; line-height: 1; padding: 6px 0; }
+            .highlight-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; margin: 24px 0; }
+            .footer { font-size: 11px; color: #71717a; text-align: center; margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">BMF Founders Club &bull; Security Verification</span>
+            <h1>Reset Your Password 🔐</h1>
+            <p>We received a request to reset your password for your BMF Founders Club account. Enter the verification code below in your portal window:</p>
+            
+            <div class="otp-box">
+              <p class="otp-label">Verification Code</p>
+              <div class="otp-code">${otpCode}</div>
+              <p style="margin: 8px 0 0 0; font-size: 12px; color: #71717a;">Valid for 15 minutes &bull; Do not share this code with anyone</p>
+            </div>
+
+            <div class="highlight-box">
+              <p style="margin: 0; color: #ffffff; font-weight: 600; font-size: 13px;">🔒 Security Advisory</p>
+              <p style="margin: 6px 0 0 0; font-size: 12px; color: #71717a; line-height: 1.5;">
+                If you did not initiate this request, you can safely disregard this email. Your password will remain unchanged.
+              </p>
+            </div>
+
+            <div class="footer">
+              <p style="margin: 0; font-weight: 600; color: #a1a1aa;">BMF Founders Club Admissions & Concierge</p>
+              <p style="margin: 4px 0 0 0;">Networking, Investments, Opportunities. All in one place.</p>
+              <p style="margin: 12px 0 0 0; font-size: 10px; color: #52525b; line-height: 1.5;">
+                This is an automated transactional security message &bull; Please do not reply directly to this address.<br />
+                For questions or support, contact <a href="mailto:support@buildwithmelwin.com" style="color: #71717a; text-decoration: underline;">support@buildwithmelwin.com</a>
+              </p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    if (!resend) {
+      console.log(`[Resend Mock Email Dispatch to ${to}]: Password Reset OTP ${otpCode}`)
+      return { success: true, id: 'mock-otp-id' }
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `🔐 Your BMF Club Verification Code: ${otpCode}`,
+      html,
+    })
+
+    if (error) {
+      console.error('[Resend Error]:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: any) {
+    console.error('[Email Send Error]:', err)
+    return { success: false, error: err.message || 'Failed to dispatch password reset OTP email' }
   }
 }
 
