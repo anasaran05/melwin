@@ -78,42 +78,383 @@ export const BMF_STANDARD_CATEGORIES = [
   'Professional & Business Services',
 ] as const
 
+interface CategoryRule {
+  category: typeof BMF_STANDARD_CATEGORIES[number]
+  exactAliases: string[]
+  patterns: { regex: RegExp; weight: number }[]
+}
+
+const CATEGORY_WEIGHT_RULES: CategoryRule[] = [
+  {
+    category: 'Media, Entertainment & Gaming',
+    exactAliases: [
+      'media',
+      'media & entertainment',
+      'media and entertainment',
+      'media, entertainment',
+      'media, entertainment & creative',
+      'entertainment',
+      'entertainment & media',
+      'gaming',
+      'gaming & esports',
+      'creative studio',
+      'creative branding',
+      'creative & branding',
+      'digital marketing',
+      'branding & marketing',
+      'advertising & marketing',
+      'events & marketing',
+      'events | marketing',
+      'events',
+      'video production',
+      'visual creators',
+      'content creation',
+      'creator economy',
+    ],
+    patterns: [
+      { regex: /\b(entertainment|gaming|game|games|esports|animation|vfx|studio|studios|music|film|cinema|ott|streaming|creator|creators|influencer|influencers|podcast|podcasts|audio|creative|branding|videography|photography|visual)\b/i, weight: 15 },
+      { regex: /\b(media|content|advertising|advertisement|marketing|pr|digital marketing|performance marketing|campaigns?|events?)\b/i, weight: 10 },
+    ],
+  },
+  {
+    category: 'Finance & FinTech',
+    exactAliases: [
+      'fintech',
+      'finance',
+      'financial services',
+      'banking & finance',
+      'wealth management',
+      'tax & accounting',
+      'accounting & tax',
+      'taxation',
+      'taxes',
+      'tax & compliance',
+      'tax consulting',
+      'audit & tax',
+      'accounting',
+      'audit',
+      'chartered accountant',
+      'crypto & web3',
+    ],
+    patterns: [
+      { regex: /\b(fintech|finance|financial|banking|payments?|treasury|escrow|wealth|investments?|crypto|web3|blockchain|defi|insurtech|tax|taxation|taxes|accounting|accountant|accountants|audit|auditing)\b/i, weight: 15 },
+      { regex: /\b(capital|fund|fundraising|lending|loans?|credit|invoice|invoicing)\b/i, weight: 10 },
+    ],
+  },
+  {
+    category: 'Logistics & Supply Chain',
+    exactAliases: [
+      'logistics',
+      'supply chain',
+      'freight & logistics',
+      'warehousing',
+      'shipping & logistics',
+      'transportation & logistics',
+    ],
+    patterns: [
+      { regex: /\b(logistics|supply chain|freight|shipping|warehous(e|ing)|trucking|fleet|cargo|courier|transportation|cross-docking|last-mile)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'E-commerce & Consumer Brands',
+    exactAliases: [
+      'e-commerce',
+      'ecommerce',
+      'd2c',
+      'consumer goods',
+      'consumer brand',
+      'consumer brands',
+      'retail',
+      'fashion & apparel',
+      'apparel',
+      'fmcg',
+    ],
+    patterns: [
+      { regex: /\b(e-commerce|ecommerce|d2c|direct to consumer|retail|retailer|shopping|apparel|fashion|clothing|footwear|cosmetics|beauty|skincare|jewelry|consumer goods|fmcg|merchandise)\b/i, weight: 15 },
+      { regex: /\b(consumer|brands?|store|boutique)\b/i, weight: 6 },
+    ],
+  },
+  {
+    category: 'Education & EdTech',
+    exactAliases: [
+      'edtech',
+      'education',
+      'e-learning',
+      'elearning',
+      'training & upskilling',
+      'training',
+      'academy',
+      'coaching',
+    ],
+    patterns: [
+      { regex: /\b(edtech|education|educational|e-learning|learning|school|schools|college|colleges|university|universities|academy|tutoring|training|upskilling|coaching|curriculum|pedagogy)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'EV, Automotive & Mobility',
+    exactAliases: [
+      'ev',
+      'evs',
+      'electric vehicles',
+      'electric vehicle',
+      'automotive',
+      'mobility',
+      'connected mobility',
+    ],
+    patterns: [
+      { regex: /\b(electric vehicles?|evs?|automotive|automobile|motorcycle|scooter|battery tech(nology)?|charging station|charging infra|connected mobility|autonomous driving)\b/i, weight: 15 },
+      { regex: /\b(mobility|vehicles?)\b/i, weight: 10 },
+    ],
+  },
+  {
+    category: 'Healthcare & Life Sciences',
+    exactAliases: [
+      'healthcare',
+      'health',
+      'health & wellness',
+      'medtech',
+      'pharma',
+      'pharmaceuticals',
+      'clinical research',
+      'telemedicine',
+    ],
+    patterns: [
+      { regex: /\b(healthcare|hospitals?|clinics?|clinical|doctors?|physician|patient|pharma|pharmaceuticals?|medicine|medtech|telemedicine|diagnostics|telehealth|wellness|mental health)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'BioTech & DeepTech',
+    exactAliases: [
+      'biotech',
+      'deeptech',
+      'deep tech',
+      'genomics',
+      'life sciences r&d',
+      'synthetic biology',
+      'quantum tech',
+    ],
+    patterns: [
+      { regex: /\b(biotech|biotechnology|genomics|genetics|gene|molecular|protein|synthesis|peptide|deeptech|deep tech|quantum|nanotech(nology)?|materials science)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Green Tech & Climate',
+    exactAliases: [
+      'greentech',
+      'green tech',
+      'cleantech',
+      'clean tech',
+      'climate tech',
+      'sustainability',
+      'renewable energy',
+      'solar energy',
+    ],
+    patterns: [
+      { regex: /\b(greentech|green tech|cleantech|clean tech|climate tech|climate|solar|wind energy|sustainability|sustainable|carbon|decarbonization|esg|renewables?|waste management|recycling)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Cybersecurity & Infrastructure',
+    exactAliases: [
+      'cybersecurity',
+      'infosec',
+      'devops',
+      'cloud infrastructure',
+      'developer tools',
+      'devtools',
+    ],
+    patterns: [
+      { regex: /\b(cybersecurity|infosec|network security|data security|zero trust|encryption|devops|cloud infra(structure)?|developer tools|devtools|observability|kubernetes|docker|ci\/cd)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Manufacturing & Robotics',
+    exactAliases: [
+      'manufacturing',
+      'robotics',
+      'industrial tech',
+      'hardware',
+      'industrial automation',
+    ],
+    patterns: [
+      { regex: /\b(manufacturing|robotics?|robots?|robotic|factory|industrial automation|hardware|iot|embedded systems|semiconductor|3d printing|machinery)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Food, Agriculture & Hospitality',
+    exactAliases: [
+      'agritech',
+      'food & beverage',
+      'food and beverage',
+      'food & hospitality',
+      'foodtech',
+      'hospitality',
+      'restaurants',
+    ],
+    patterns: [
+      { regex: /\b(agritech|agriculture|farming|crops?|farm|farms|food|foodtech|beverages?|restaurants?|cafes?|dining|hospitality|hotels?|culinary)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Real Estate & Construction',
+    exactAliases: [
+      'real estate',
+      'proptech',
+      'construction tech',
+      'construction',
+      'architecture',
+      'interior design',
+    ],
+    patterns: [
+      { regex: /\b(real estate|proptech|propert(y|ies)|realtor|construction|civil engineering|architecture|architectural|interior design|housing|commercial leasing)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Aerospace & Defence',
+    exactAliases: [
+      'aerospace',
+      'defense',
+      'defence',
+      'drone tech',
+      'drones',
+      'space tech',
+      'spacetech',
+      'aviation',
+    ],
+    patterns: [
+      { regex: /\b(aerospace|defen[sc]e|military|drones?|uav|space tech|spacetech|satellites?|aviation|aircraft|avionics)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Energy & Utilities',
+    exactAliases: [
+      'energy',
+      'utilities',
+      'oil & gas',
+      'power & grid',
+      'clean energy',
+    ],
+    patterns: [
+      { regex: /\b(energy|utilities|power grid|grid|electricity|oil & gas|petroleum|natural gas|clean power|nuclear)\b/i, weight: 15 },
+    ],
+  },
+  {
+    category: 'Professional & Business Services',
+    exactAliases: [
+      'consulting',
+      'business services',
+      'legal services',
+      'legal',
+      'hr & recruiting',
+      'staffing',
+      'agency services',
+      'corporate services',
+    ],
+    patterns: [
+      { regex: /\b(consulting|consultancy|legal|law firm|compliance|recruitment|recruiting|staffing|hr tech|human resources|advisory|corporate services|business services)\b/i, weight: 15 },
+      { regex: /\b(agency|services|outsourcing|bpo)\b/i, weight: 8 },
+    ],
+  },
+  {
+    category: 'AI & SaaS',
+    exactAliases: [
+      'ai & saas',
+      'ai and saas',
+      'ai/saas',
+      'ai',
+      'saas',
+      'generative ai',
+      'artificial intelligence',
+      'b2b saas',
+      'ai agents',
+    ],
+    patterns: [
+      { regex: /\b(artificial intelligence|machine learning|deep learning|llms?|generative ai|computer vision|nlp|neural network|autonomous agents?|agentic)\b/i, weight: 15 },
+      { regex: /\b(saas|b2b saas|software as a service)\b/i, weight: 14 },
+      { regex: /\bai\b/i, weight: 12 },
+    ],
+  },
+  {
+    category: 'Technology & Software',
+    exactAliases: [
+      'technology & software',
+      'software',
+      'software development',
+      'tech',
+      'it services',
+      'information technology',
+      'web development',
+      'mobile app development',
+    ],
+    patterns: [
+      { regex: /\b(software( development)?|it services|web dev(elopment)?|mobile apps?|cloud computing|tech platform|application development)\b/i, weight: 10 },
+      { regex: /\b(tech|technology)\b/i, weight: 6 },
+    ],
+  },
+]
+
 export function normalizeCategory(rawCategory?: string | null): string {
   if (!rawCategory) return 'Others'
   const trimmed = rawCategory.trim()
-  if (!trimmed || trimmed.toLowerCase() === 'other' || trimmed.toLowerCase() === 'others' || trimmed.toLowerCase() === 'other (specify)') {
+  if (
+    !trimmed ||
+    trimmed.toLowerCase() === 'other' ||
+    trimmed.toLowerCase() === 'others' ||
+    trimmed.toLowerCase() === 'other (specify)'
+  ) {
     return 'Others'
   }
 
-  // Exact standard match (case-insensitive)
+  // 1. Exact standard category match (case-insensitive)
   const exact = BMF_STANDARD_CATEGORIES.find(
     (c) => c.toLowerCase() === trimmed.toLowerCase()
   )
   if (exact) return exact
 
-  // Smart canonical aliases to prevent fragmented custom categories
-  const lower = trimmed.toLowerCase()
-  if (lower.includes('ai') || lower.includes('saas') || lower.includes('artificial intelligence') || lower.includes('machine learning') || lower.includes('llm')) return 'AI & SaaS'
-  if (lower.includes('logistics') || lower.includes('supply chain') || lower.includes('freight') || lower.includes('shipping') || lower.includes('warehouse') || lower.includes('warehousing') || lower.includes('trucking') || lower.includes('fleet')) return 'Logistics & Supply Chain'
-  if (lower.includes('ev') || lower.includes('electric vehicle') || lower.includes('automotive') || lower.includes('auto') || lower.includes('mobility') || lower.includes('battery')) return 'EV, Automotive & Mobility'
-  if (lower.includes('green') || lower.includes('clean') || lower.includes('cleantech') || lower.includes('climate') || lower.includes('solar') || lower.includes('wind') || lower.includes('sustainab') || lower.includes('carbon') || lower.includes('esg') || lower.includes('renewable') || lower.includes('waste')) return 'Green Tech & Climate'
-  if (lower.includes('cyber') || lower.includes('security') || lower.includes('infra') || lower.includes('devops') || lower.includes('cloud') || lower.includes('developer tool') || lower.includes('devtools')) return 'Cybersecurity & Infrastructure'
-  if (lower.includes('aerospace') || lower.includes('defense') || lower.includes('defence') || lower.includes('drone') || lower.includes('space') || lower.includes('aviation') || lower.includes('satellite')) return 'Aerospace & Defence'
-  if (lower.includes('energy') || lower.includes('utilit') || lower.includes('power') || lower.includes('oil') || lower.includes('gas') || lower.includes('grid')) return 'Energy & Utilities'
-  if (lower.includes('fintech') || lower.includes('finance') || lower.includes('banking') || lower.includes('payment') || lower.includes('ledger') || lower.includes('escrow') || lower.includes('crypto') || lower.includes('web3') || lower.includes('insurtech') || lower.includes('wealth')) return 'Finance & FinTech'
-  if (lower.includes('edtech') || lower.includes('education') || lower.includes('learning') || lower.includes('school') || lower.includes('academy') || lower.includes('training') || lower.includes('upskill')) return 'Education & EdTech'
-  if (lower.includes('biotech') || lower.includes('biology') || lower.includes('gene') || lower.includes('genom') || lower.includes('deeptech') || lower.includes('nano') || lower.includes('quantum')) return 'BioTech & DeepTech'
-  if (lower.includes('health') || lower.includes('pharma') || lower.includes('medical') || lower.includes('medtech') || lower.includes('telemedicine') || lower.includes('clinical') || lower.includes('doctor')) return 'Healthcare & Life Sciences'
-  if (lower.includes('e-commerce') || lower.includes('ecommerce') || lower.includes('d2c') || lower.includes('retail') || lower.includes('shopping') || lower.includes('consumer') || lower.includes('apparel') || lower.includes('fashion')) return 'E-commerce & Consumer Brands'
-  if (lower.includes('manufactur') || lower.includes('industrial') || lower.includes('hardware') || lower.includes('robot') || lower.includes('automation') || lower.includes('factory') || lower.includes('iot')) return 'Manufacturing & Robotics'
-  if (lower.includes('real estate') || lower.includes('construction') || lower.includes('proptech') || lower.includes('property') || lower.includes('architecture') || lower.includes('housing') || lower.includes('civil')) return 'Real Estate & Construction'
-  if (lower.includes('food') || lower.includes('agri') || lower.includes('farming') || lower.includes('hospitality') || lower.includes('beverage') || lower.includes('restaurant') || lower.includes('kitchen')) return 'Food, Agriculture & Hospitality'
-  if (lower.includes('media') || lower.includes('entertainment') || lower.includes('creative') || lower.includes('design') || lower.includes('studio') || lower.includes('video') || lower.includes('gaming') || lower.includes('game') || lower.includes('creator') || lower.includes('ott')) return 'Media, Entertainment & Gaming'
-  if (lower.includes('consulting') || lower.includes('business service') || lower.includes('professional') || lower.includes('legal') || lower.includes('law') || lower.includes('agency') || lower.includes('hr') || lower.includes('staffing') || lower.includes('recruiting')) return 'Professional & Business Services'
-  if (lower.includes('software') || lower.includes('tech') || lower.includes('developer') || lower.includes('app')) return 'Technology & Software'
+  // Normalize punctuation/delimiters for canonical comparison
+  const normalizedText = trimmed
+    .toLowerCase()
+    .replace(/[&]/g, 'and')
+    .replace(/[|/\\,]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
-  // Everything else is grouped into a single "Others" bucket
-  return 'Others'
+  // 2. Canonical exact alias lookup
+  for (const rule of CATEGORY_WEIGHT_RULES) {
+    if (
+      rule.exactAliases.some((alias) => {
+        const normAlias = alias
+          .toLowerCase()
+          .replace(/[&]/g, 'and')
+          .replace(/[|/\\,]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+        return normAlias === normalizedText || alias.toLowerCase() === trimmed.toLowerCase()
+      })
+    ) {
+      return rule.category
+    }
+  }
+
+  // 3. Weighted Scoring with Word Boundaries
+  let bestCategory = 'Others'
+  let maxScore = 0
+
+  for (const rule of CATEGORY_WEIGHT_RULES) {
+    let score = 0
+    for (const pattern of rule.patterns) {
+      if (pattern.regex.test(trimmed) || pattern.regex.test(normalizedText)) {
+        score += pattern.weight
+      }
+    }
+    if (score > maxScore) {
+      maxScore = score
+      bestCategory = rule.category
+    }
+  }
+
+  // Require minimum confidence score to avoid misclassification
+  return maxScore >= 8 ? bestCategory : 'Others'
 }
 
 export const INITIAL_BMF_MEMBERS: BmfMember[] = [

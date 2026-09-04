@@ -46,7 +46,7 @@ export function BioSection() {
               href="/atom-se" 
               className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
             >
-              Atom SE (Tech)
+              Atom SE (Tech Agency)
             </Link>
             <Link 
               href="/funding-grants" 

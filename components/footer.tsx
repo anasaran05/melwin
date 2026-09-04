@@ -42,7 +42,7 @@ export function Footer() {
                 { name: 'Directory', href: '/bmf-club/directory' },
                 { name: 'Personal Branding', href: '/agency' },
                 { name: 'FAQ', href: '/faq' },
-                { name: 'Atom SE (Tech)', href: '/atom-se' },
+                { name: 'Atom SE (Tech Agency)', href: '/atom-se' },
                 { name: 'Funding & Grants', href: '/funding-grants' },
                 { name: 'Jobs & Talent', href: '#', isLocked: true },
                 { name: 'Business Registrations', href: '#', isLocked: true },
