@@ -309,20 +309,21 @@ export function MemberFlipCard({
           </div>
 
           {/* Bottom Actions & Member Since Meta */}
-          <div className="pt-1 sm:pt-2 flex flex-col gap-1 sm:gap-2">
-            {/* Actions Above Line: Social Profiles & Intro Button */}
-            <div className="flex items-center justify-between gap-1 sm:gap-1.5">
-              <div className="flex items-center gap-0.5 sm:gap-1 min-w-0">
+          <div className="pt-1 sm:pt-2 flex flex-col gap-1.5 sm:gap-2">
+            {/* Row 1: Social Profiles & Share Button */}
+            <div className="flex items-center justify-between gap-1 sm:gap-1.5 min-w-0">
+              <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
                 {member.linkedin_url?.trim() && (
                   <a
                     href={member.linkedin_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-[#0A66C2] text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-800/90 hover:bg-[#0A66C2] text-white flex items-center justify-center transition-colors border border-white/10 shrink-0 cursor-pointer shadow-xs"
                     aria-label="LinkedIn Profile"
+                    title="LinkedIn Profile"
                   >
-                    <Linkedin className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                    <Linkedin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                 )}
                 {member.twitter_url?.trim() && (
@@ -331,10 +332,11 @@ export function MemberFlipCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0 cursor-pointer shadow-xs"
                     aria-label="Twitter/X Profile"
+                    title="Twitter/X Profile"
                   >
-                    <Twitter className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                    <Twitter className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                 )}
                 {member.website_url?.trim() && (
@@ -343,52 +345,56 @@ export function MemberFlipCard({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0"
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-800/90 hover:bg-neutral-700 text-white flex items-center justify-center transition-colors border border-white/10 shrink-0 cursor-pointer shadow-xs"
                     aria-label="Company Website"
+                    title="Company Website"
                   >
-                    <Globe className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                    <Globe className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                   </a>
                 )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsShareModalOpen(true)
-                  }}
-                  className="w-4.5 h-4.5 sm:w-6 sm:h-6 rounded-full bg-neutral-800 hover:bg-emerald-500 hover:text-black text-emerald-400 flex items-center justify-center transition-colors border border-white/10 shrink-0"
-                  aria-label="Share Founder Pass"
-                  title="Share Founder Pass"
-                >
-                  <Share2 className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                </button>
               </div>
 
-              {isOwnCard ? (
-                <Link
-                  href="/bmf-club/dashboard"
-                  onClick={(e) => e.stopPropagation()}
-                  className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-                >
-                  <span>Edit</span>
-                  <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsProfileModalOpen(true)
-                  }}
-                  className="inline-flex items-center gap-0.5 sm:gap-1 bg-white hover:bg-neutral-200 text-black px-1.5 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[8px] sm:text-[10px] font-bold transition-all shadow-xs shrink-0 cursor-pointer active:scale-95"
-                >
-                  <span>Approach</span>
-                  <ArrowUpRight className="w-1.5 h-1.5 sm:w-2.5 sm:h-2.5" />
-                </button>
-              )}
+              {/* Share Founder Pass Action */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsShareModalOpen(true)
+                }}
+                className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-neutral-800/90 hover:bg-emerald-500 hover:text-black text-emerald-400 flex items-center justify-center transition-colors border border-white/10 shrink-0 cursor-pointer shadow-xs"
+                aria-label="Share Founder Pass"
+                title="Share Founder Pass"
+              >
+                <Share2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
+              </button>
             </div>
 
-            {/* Bottom Line Divider & Member Since Text alone */}
-            <div className="border-t border-neutral-800/80 pt-0.5 sm:pt-1.5 flex items-center justify-center text-center text-[7.5px] sm:text-[9px] font-mono text-neutral-400">
+            {/* Row 2: Full-Width Primary CTA */}
+            {isOwnCard ? (
+              <Link
+                href="/bmf-club/dashboard"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full py-1.5 sm:py-1.5 rounded-lg sm:rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-[8.5px] sm:text-[10.5px] flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-98"
+              >
+                <span>Edit Profile</span>
+                <ArrowUpRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsProfileModalOpen(true)
+                }}
+                className="w-full py-1.5 sm:py-1.5 rounded-lg sm:rounded-xl bg-white hover:bg-neutral-200 text-black font-bold text-[8.5px] sm:text-[10.5px] flex items-center justify-center gap-1 transition-all shadow-xs cursor-pointer active:scale-98"
+              >
+                <span>Approach</span>
+                <ArrowUpRight className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+              </button>
+            )}
+
+            {/* Row 3: Bottom Line Divider & Member Since Text */}
+            <div className="border-t border-neutral-800/80 pt-0.5 sm:pt-1 flex items-center justify-center text-center text-[7.5px] sm:text-[8.5px] font-mono text-neutral-400">
               <span>Member since {formatMemberSince(member.created_at)}</span>
             </div>
           </div>
