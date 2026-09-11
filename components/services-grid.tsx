@@ -472,7 +472,7 @@ export function ServicesGrid() {
           <label className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-600 block mb-2.5 pl-1">
             Select a Service
           </label>
-          
+
           <button
             type="button"
             onClick={() => setMobileDropdownOpen(!mobileDropdownOpen)}
@@ -518,11 +518,10 @@ export function ServicesGrid() {
                           setActiveService(service.id)
                           setMobileDropdownOpen(false)
                         }}
-                        className={`w-full text-left rounded-xl sm:rounded-2xl p-3 sm:p-3.5 transition-all flex items-center justify-between gap-3 cursor-pointer ${
-                          isSelected 
-                            ? 'bg-white/15 text-white ring-1 ring-white/20' 
+                        className={`w-full text-left rounded-xl sm:rounded-2xl p-3 sm:p-3.5 transition-all flex items-center justify-between gap-3 cursor-pointer ${isSelected
+                            ? 'bg-white/15 text-white ring-1 ring-white/20'
                             : 'text-neutral-300 hover:bg-white/10 hover:text-white'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0 border border-white/5">
@@ -553,7 +552,7 @@ export function ServicesGrid() {
 
         {/* 2-Column Split: Service Pills on Left, Dynamic Form on Right */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
-          
+
           {/* Left Column: Interactive Service Pills (Desktop only: hidden on mobile) */}
           <div className="hidden lg:flex lg:col-span-5 flex-col gap-3.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-neutral-600 block pl-1">
@@ -570,19 +569,17 @@ export function ServicesGrid() {
                     key={service.id}
                     type="button"
                     onClick={() => setActiveService(service.id)}
-                    className={`w-full text-left p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-200 relative group cursor-pointer flex items-center justify-between gap-4 ${
-                      isSelected
+                    className={`w-full text-left p-4 sm:p-5 rounded-2xl sm:rounded-3xl transition-all duration-200 relative group cursor-pointer flex items-center justify-between gap-4 ${isSelected
                         ? 'bg-[#111111] text-white shadow-xl ring-2 ring-black/10 scale-[1.01]'
                         : 'bg-white hover:bg-neutral-50 text-[#111111] border border-neutral-200/90 shadow-xs hover:shadow-md hover:border-neutral-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
                       <div
-                        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-200 ${
-                          isSelected
+                        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shrink-0 transition-transform duration-200 ${isSelected
                             ? 'bg-white text-black shadow-sm'
                             : 'bg-neutral-100 text-neutral-700 group-hover:scale-105'
-                        }`}
+                          }`}
                       >
                         <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
                       </div>
@@ -590,17 +587,15 @@ export function ServicesGrid() {
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <h3
-                            className={`text-base sm:text-lg font-bold tracking-tight truncate ${
-                              isSelected ? 'text-white' : 'text-[#111111]'
-                            }`}
+                            className={`text-base sm:text-lg font-bold tracking-tight truncate ${isSelected ? 'text-white' : 'text-[#111111]'
+                              }`}
                           >
                             {service.title}
                           </h3>
                         </div>
                         <p
-                          className={`text-xs truncate mt-0.5 ${
-                            isSelected ? 'text-neutral-300' : 'text-neutral-500'
-                          }`}
+                          className={`text-xs truncate mt-0.5 ${isSelected ? 'text-neutral-300' : 'text-neutral-500'
+                            }`}
                         >
                           {service.subtitle}
                         </p>
@@ -674,7 +669,7 @@ export function ServicesGrid() {
                     <div className="bg-neutral-50 rounded-2xl p-3.5 sm:p-4 border border-neutral-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="relative w-11 h-11 rounded-full overflow-hidden border-2 border-white shadow-xs shrink-0">
-                          <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
+                          <Image src="/melwin.jpg" alt="Dr. Melwin" fill className="object-cover" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-nowrap">
@@ -1037,11 +1032,10 @@ export function ServicesGrid() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div
                           onClick={() => setCareerForm({ ...careerForm, session_tier: 'consult_melwin' })}
-                          className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between relative ${
-                            careerForm.session_tier === 'consult_melwin'
+                          className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between relative ${careerForm.session_tier === 'consult_melwin'
                               ? 'border-black bg-neutral-50 shadow-xs'
                               : 'border-neutral-200 bg-white hover:border-neutral-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-1">
@@ -1055,11 +1049,10 @@ export function ServicesGrid() {
 
                         <div
                           onClick={() => setCareerForm({ ...careerForm, session_tier: 'regular' })}
-                          className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
-                            careerForm.session_tier === 'regular'
+                          className={`cursor-pointer p-3.5 rounded-2xl border-2 transition-all flex flex-col justify-between ${careerForm.session_tier === 'regular'
                               ? 'border-black bg-neutral-50 shadow-xs'
                               : 'border-neutral-200 bg-white hover:border-neutral-300'
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center justify-between mb-1">
                             <span className="font-bold text-neutral-900 text-xs sm:text-sm">Regular Consultation</span>

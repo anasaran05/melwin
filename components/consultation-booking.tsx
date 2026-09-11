@@ -26,7 +26,7 @@ export function ConsultationBooking() {
 
   useEffect(() => {
     const handleOpenConsultation = (e: CustomEvent<string>) => {
-      setFormData(prev => ({...prev, consultation_type: e.detail}))
+      setFormData(prev => ({ ...prev, consultation_type: e.detail }))
     }
     window.addEventListener('openConsultation', handleOpenConsultation as EventListener)
     return () => window.removeEventListener('openConsultation', handleOpenConsultation as EventListener)
@@ -64,17 +64,17 @@ export function ConsultationBooking() {
       toast.error('Please enter the date in dd/mm/yyyy format')
       return false
     }
-    
+
     const [_, day, month, year] = match
     const selectedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
     selectedDate.setHours(0, 0, 0, 0)
-    
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    
+
     if (selectedDate <= today) {
-       toast.error('Please select a future date')
-       return false
+      toast.error('Please select a future date')
+      return false
     }
     if (!formData.city.trim()) {
       toast.error('Please enter your city')
@@ -140,14 +140,14 @@ export function ConsultationBooking() {
               <h3 className="text-2xl font-bold text-zinc-900 mb-2">1-on-1 Strategy Consultation</h3>
               <p className="text-zinc-500">Direct access to Dr. Melwin for personalized strategic guidance.</p>
             </div>
-            
+
             <div className="border border-zinc-200 bg-zinc-50 rounded-2xl p-6 shadow-sm ring-1 ring-black/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 bg-black text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg uppercase tracking-wider z-10">
                 Recommended
               </div>
               <div className="flex items-center gap-4 text-left mb-5">
                 <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-white shadow-md flex-shrink-0">
-                  <Image src="/melwin.jpeg" alt="Dr. Melwin" fill className="object-cover" />
+                  <Image src="/melwin.jpg" alt="Dr. Melwin" fill className="object-cover" />
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
