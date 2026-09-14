@@ -3,47 +3,41 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Footer } from '@/components/footer'
 import { 
-  Award, 
-  Globe2, 
-  Lightbulb, 
-  Microscope, 
-  Presentation, 
-  Rocket, 
   Stethoscope, 
-  Users, 
   Zap,
   ArrowUpRight,
   Sparkles,
   CheckCircle2,
-  GraduationCap
+  GraduationCap,
+  Music
 } from 'lucide-react'
 
 export const metadata = {
   title: 'About Dr. Melwin Vincent | Healthcare & EdTech Innovator',
-  description: 'Founder building the infrastructure for biosciences education and healthcare AI. Founder & CEO of Zane ProEd and Co-founder of Alphatic Labs.',
+  description: 'Founder building at the intersection of biosciences education, healthcare AI, and technology. Leading ZANE ProEd and Alphatic Labs while building a founder community in public.',
 }
 
 export default function AboutPage() {
   const stats = [
-    { label: 'Content Reach', value: '1.7M+', subtext: 'Business & strategy impressions' },
+    { label: 'Content Reach', value: '2.2M+', subtext: 'Business & strategy impressions' },
     { label: 'Startup Network', value: '23,000+', subtext: 'WhatsApp community members' },
-    { label: 'Personal Brand', value: '50,000+', subtext: 'Followers across platforms' },
-    { label: 'Global Hubs', value: '4+', subtext: 'India, USA, Europe, Australia' },
+    { label: 'Personal Brand', value: '60,000+', subtext: 'Followers across platforms' },
+    { label: 'Global Hubs', value: '6+', subtext: 'India, USA, Europe, Australia' },
   ]
 
   const ventures = [
     {
       role: 'Founder & CEO',
-      company: 'Zane ProEd',
+      company: 'ZANE ProEd',
       website: 'ZaneProEd.com',
       url: 'https://zaneproed.com',
       badge: 'EdTech & Bioscience',
       logo: '/ventures logos/zaneproed.png',
       highlights: [
-        'Built a leading bioscience learning platform combining real-world job simulations with an AI-driven career portfolio system.',
-        'Developed a strong B2B and B2C engine with collaborations across biotech & pharma companies in India, U.S.A., and Europe.',
-        'Leading global expansion efforts with active discussions underway to enter European markets.',
-        'Own end-to-end execution across product architecture, growth, and high-impact industry partnerships.'
+        'Built ZANE ProEd from zero into a biosciences-focused education platform serving learners across the US, UK, and India.',
+        'Grew from $0 to seven-figure organic revenue within six months, without paid advertising or outside capital.',
+        'Focused on helping students and professionals understand bioscience careers through practical, industry-relevant learning.',
+        'Lead the business across product, growth, partnerships, and strategy.'
       ],
       icon: GraduationCap
     },
@@ -55,9 +49,9 @@ export default function AboutPage() {
       badge: 'Healthcare AI & Hardware',
       logo: '/alphaticlabs-logo.png',
       highlights: [
-        'Pioneering a proprietary, one-click hardware device that turns doctor-patient conversations into structured clinical documentation in real time.',
-        'Designed for zero-friction adoption, featuring seamless integration into existing Electronic Health Record (EHR) systems.',
-        'Leading R&D, product direction, and early clinical partnerships to reshape modern medical workflows.'
+        'Building healthcare AI hardware that transcribes physician-patient conversations in real time and turns them into structured clinical documentation.',
+        'Designed to reduce administrative work and give clinicians more time to focus on patients.',
+        'Involved across R&D, product direction, and early clinical partnerships.'
       ],
       icon: Stethoscope
     }
@@ -68,44 +62,21 @@ export default function AboutPage() {
       category: 'Growth & Strategy',
       items: [
         '0-to-1 Venture Building',
-        'Global Go-to-Market (GTM)',
-        'B2B Enterprise Sales',
-        'International Investor Relations'
-      ],
-      color: 'bg-amber-500/10 border-amber-500/20 text-amber-900'
+        'Go-to-Market Strategy & International Market Expansion',
+        'Organic, Community-Led & B2B/B2C Growth Execution',
+        'Revenue Growth, Enterprise Sales & Strategic Partnerships',
+        'Investor Relations & Fundraising'
+      ]
     },
     {
       category: 'Product & Brand',
       items: [
-        'Healthcare AI & Hardware Innovation',
-        'Community & Growth',
-        'Strategic Partnerships',
-        'Keynote Speaking'
-      ],
-      color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-900'
-    }
-  ]
-
-  const leadershipPoints = [
-    {
-      title: 'Global Ecosystem Presence',
-      description: 'Active in startup innovation, investor relations, and strategic growth across major global hubs including India, USA, Europe, and Australia.',
-      icon: Globe2
-    },
-    {
-      title: 'Community',
-      description: 'Built a personal brand to 50,000+ followers and 1.7M+ content impressions. Launched the private BMF Club scaling to 23,000+ WhatsApp members in 2 months.',
-      icon: Users
-    },
-    {
-      title: 'Ecosystem Leadership',
-      description: 'Active at StartupLive Bangalore, part of the prestigious global entrepreneurship network headquartered in Vienna, Austria.',
-      icon: Rocket
-    },
-    {
-      title: 'International Keynote Speaker',
-      description: 'Regular speaker on entrepreneurship, healthcare AI hardware, and venture scaling at leading universities & innovation forums across Malaysia and Dubai.',
-      icon: Presentation
+        'Product Strategy',
+        'Brand Strategy & Positioning — Corporate and Personal',
+        'Content Strategy, Thought Leadership & Public Speaking',
+        'Audience & Community Building',
+        'Founder-Led & Digital Marketing'
+      ]
     }
   ]
 
@@ -151,8 +122,7 @@ export default function AboutPage() {
         </h1>
         
         <p className="text-lg sm:text-2xl text-[#111111]/80 max-w-4xl mx-auto font-medium leading-relaxed mb-10 sm:mb-14 px-2">
-          Founder building the infrastructure for <span className="text-[#111111] font-bold underline decoration-neutral-400 decoration-2 underline-offset-4 sm:underline-offset-8">biosciences education</span> and <span className="text-[#111111] font-bold underline decoration-neutral-400 decoration-2 underline-offset-4 sm:underline-offset-8">healthcare AI</span>. 
-          Leading Zane ProEd and Alphatic Labs while cultivating a global digital reach.
+          Founder building at the intersection of <span className="text-[#111111] font-bold underline decoration-neutral-400 decoration-2 underline-offset-4 sm:underline-offset-8">biosciences education</span>, <span className="text-[#111111] font-bold underline decoration-neutral-400 decoration-2 underline-offset-4 sm:underline-offset-8">healthcare AI</span>, and <span className="text-[#111111] font-bold underline decoration-neutral-400 decoration-2 underline-offset-4 sm:underline-offset-8">technology</span>. Leading ZANE ProEd and Alphatic Labs while building a founder community in public.
         </p>
 
         {/* Quick Highlights Grid (Bento Style) */}
@@ -170,37 +140,6 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Professional Summary (Executive Card) */}
-      <section className="py-8 sm:py-12 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
-        <div className="p-6 sm:p-14 rounded-[2rem] bg-white border border-neutral-200/90 shadow-2xs relative overflow-hidden group hover:shadow-md transition-all duration-300">
-          <div className="absolute -top-10 -right-10 p-8 text-neutral-100 pointer-events-none group-hover:text-neutral-200/60 transition-colors duration-500 hidden sm:block">
-            <Lightbulb className="w-64 h-64" />
-          </div>
-          
-          <div className="inline-block px-3 py-1 rounded-md bg-neutral-100 border border-neutral-200 text-[#111111] text-xs font-mono font-bold uppercase tracking-widest mb-4 sm:mb-6">
-            Executive Vision
-          </div>
-          <p className="text-xl sm:text-3.5xl font-bold tracking-tight leading-relaxed text-[#111111] max-w-5xl">
-            "Leading Zane ProEd and Alphatic Labs while growing a high-impact digital presence that has reached over 1.7 million people on business, investing, and startup strategy. An active builder and international speaker focused on practical, scalable innovation across tech and healthcare."
-          </p>
-
-          <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-4 text-xs sm:text-sm font-semibold text-[#111111] pt-6 sm:pt-8 border-t border-neutral-100">
-            <div className="flex items-center gap-2.5 bg-[#f8f8f8] px-4 py-2 rounded-full border border-neutral-200 w-full sm:w-auto">
-              <GraduationCap className="w-4 h-4 text-[#111111] shrink-0" />
-              <span>Doctor of Pharmacy (Pharm.D)</span>
-            </div>
-            <div className="flex items-center gap-2.5 bg-[#f8f8f8] px-4 py-2 rounded-full border border-neutral-200 w-full sm:w-auto">
-              <Globe2 className="w-4 h-4 text-[#111111] shrink-0" />
-              <span>Global Speaker & Strategist</span>
-            </div>
-            <div className="flex items-center gap-2.5 bg-[#f8f8f8] px-4 py-2 rounded-full border border-neutral-200 w-full sm:w-auto">
-              <Microscope className="w-4 h-4 text-[#111111] shrink-0" />
-              <span>Bioscience & AI Pioneer</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Experience / Ventures Section */}
       <section className="py-10 sm:py-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 sm:mb-12">
@@ -215,7 +154,6 @@ export default function AboutPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
           {ventures.map((venture, index) => {
-            const Icon = venture.icon
             return (
               <div 
                 key={index}
@@ -273,93 +211,64 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* Startup Ecosystem & Thought Leadership */}
+      {/* Core Competencies Section */}
       <section className="py-10 sm:py-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
         <div className="mb-8 sm:mb-12">
-          <span className="text-xs font-mono text-neutral-500 font-bold uppercase tracking-widest block mb-2">Impact & Influence</span>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-[#111111]">Ecosystem Leadership</h2>
+          <span className="text-xs font-mono text-neutral-500 font-bold uppercase tracking-widest block mb-2">Expertise</span>
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-[#111111]">Core Competencies</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {leadershipPoints.map((point, index) => {
-            const Icon = point.icon
-            return (
-              <div 
-                key={index} 
-                className="p-6 sm:p-7 rounded-2xl bg-white border border-neutral-200/90 shadow-2xs hover:shadow-md hover:border-neutral-400 transition-all duration-300 flex flex-col justify-between group"
-              >
-                <div>
-                  <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-[#f8f8f8] text-[#111111] border border-neutral-200 flex items-center justify-center mb-5 sm:mb-6 group-hover:scale-110 transition-transform">
-                    <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+          {competencies.map((comp, index) => (
+            <div key={index} className="p-6 sm:p-9 rounded-[2rem] border border-neutral-200/90 bg-white shadow-2xs hover:border-neutral-400 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#111111] mb-6 flex items-center gap-3">
+                  <div className="p-2 sm:p-2.5 rounded-xl bg-[#f8f8f8] text-[#111111] border border-neutral-200">
+                    <Zap className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg sm:text-xl font-bold tracking-tight text-[#111111] mb-2 sm:mb-3">{point.title}</h3>
-                  <p className="text-xs sm:text-sm text-[#111111]/70 leading-relaxed font-normal">{point.description}</p>
-                </div>
+                  {comp.category}
+                </h3>
+                <ul className="space-y-3.5">
+                  {comp.items.map((item, i) => (
+                    <li key={i} className="flex items-start gap-3 text-xs sm:text-sm md:text-base font-medium text-[#111111]/85 leading-snug">
+                      <CheckCircle2 className="w-4 h-4 text-[#111111] shrink-0 mt-0.5" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-            )
-          })}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* Core Competencies & Education */}
+      {/* Beyond Work Section */}
       <section className="py-10 sm:py-16 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-          
-          {/* Core Competencies (Takes 2 cols) */}
-          <div className="lg:col-span-2">
-            <span className="text-xs font-mono text-neutral-500 font-bold uppercase tracking-widest block mb-2">Expertise</span>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tighter text-[#111111] mb-6 sm:mb-8">Core Competencies</h2>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              {competencies.map((comp, index) => (
-                <div key={index} className="p-6 sm:p-7 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs">
-                  <h3 className="text-lg sm:text-xl font-bold tracking-tight text-[#111111] mb-4 sm:mb-5 flex items-center gap-3">
-                    <div className="p-1.5 sm:p-2 rounded-lg bg-[#f8f8f8] text-[#111111] border border-neutral-200">
-                      <Zap className="w-4 h-4" />
-                    </div>
-                    {comp.category}
-                  </h3>
-                  <ul className="space-y-3">
-                    {comp.items.map((item, i) => (
-                      <li key={i} className="flex items-center gap-2.5 sm:gap-3 text-xs sm:text-sm font-medium text-[#111111]/80">
-                        <CheckCircle2 className="w-4 h-4 text-[#111111] shrink-0" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
+        <div className="p-8 sm:p-14 rounded-[2rem] bg-white border border-neutral-200/90 shadow-2xs relative overflow-hidden group hover:shadow-md transition-all duration-300">
+          <div className="absolute -top-8 -right-8 p-8 text-neutral-100 pointer-events-none group-hover:text-neutral-200/60 transition-colors duration-500 hidden sm:block">
+            <Music className="w-64 h-64" />
           </div>
 
-          {/* Education Card (1 col) */}
-          <div className="flex flex-col justify-between p-6 sm:p-9 rounded-[2rem] bg-white border border-neutral-200/90 shadow-2xs relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-6 text-neutral-100 pointer-events-none hidden sm:block">
-              <Award className="w-32 h-32" />
+          <span className="text-xs font-mono text-neutral-500 font-bold uppercase tracking-widest block mb-2 sm:mb-3">Passions & Life</span>
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tighter text-[#111111] mb-6 sm:mb-8">Beyond work</h2>
+
+          <p className="text-lg sm:text-2xl text-[#111111]/85 font-medium leading-relaxed max-w-4xl">
+            I am a guitarist and a pianist, and whenever time allows, I perform and teach both. It’s one of the few things in my life that has nothing to do with growth, strategy, or startups. Pure love. And I’m grateful to have it.
+          </p>
+
+          <div className="mt-8 sm:mt-10 flex flex-wrap items-center gap-3 text-xs sm:text-sm font-semibold text-[#111111] pt-6 sm:pt-8 border-t border-neutral-100">
+            <div className="flex items-center gap-2.5 bg-[#f8f8f8] px-4 py-2 rounded-full border border-neutral-200">
+              <Music className="w-4 h-4 text-[#111111] shrink-0" />
+              <span>Guitarist & Pianist</span>
             </div>
-
-            <div>
-              <span className="text-xs font-mono text-neutral-500 font-bold uppercase tracking-widest block mb-2">Academic Foundation</span>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tighter text-[#111111] mb-6">Education</h2>
-
-              <div className="space-y-4">
-                <div className="p-5 sm:p-6 rounded-2xl bg-[#f8f8f8] border border-neutral-200">
-                  <span className="text-xs font-mono text-neutral-500 font-bold block mb-1">Doctorate Degree</span>
-                  <h3 className="text-lg sm:text-xl font-bold tracking-tight text-[#111111]">Doctor of Pharmacy (Pharm.D)</h3>
-                  <p className="text-xs text-[#111111]/70 mt-2 font-medium">
-                    The Tamil Nadu Dr. M.G.R. Medical University
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-neutral-100 text-xs text-neutral-500 leading-relaxed font-normal">
-              Combining doctorate-level medical & pharmacological precision with technology execution and venture creation.
+            <div className="flex items-center gap-2.5 bg-[#f8f8f8] px-4 py-2 rounded-full border border-neutral-200">
+              <Sparkles className="w-4 h-4 text-[#111111] shrink-0" />
+              <span>Performer & Educator</span>
             </div>
           </div>
-
         </div>
       </section>
+
 
       {/* CTA Footer Section */}
       <section className="py-12 sm:py-20 px-4 sm:px-6 md:px-12 max-w-5xl mx-auto text-center">

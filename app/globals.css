@@ -30,6 +30,12 @@
     @apply border-neutral-300;
   }
 
+  html,
+  body {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
   body {
     @apply bg-[#f2f2f2] text-[#111111];
   }
