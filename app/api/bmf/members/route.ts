@@ -31,7 +31,7 @@ async function getApprovedMembersFromSupabase(): Promise<BmfMember[]> {
     const supabase = createClient(supabaseUrl, supabaseKey)
     const { data, error } = await supabase
       .from('bmf_members')
-      .select('id, user_id, full_name, role, company_name, company_logo, avatar_url, category, tagline, description, stage, metrics, location, team_size, is_verified, is_approved, is_featured, card_theme, priority_order, created_at, updated_at, linkedin_url, twitter_url, website_url, badge_title')
+      .select('id, user_id, full_name, role, company_name, company_logo, avatar_url, category, tagline, description, stage, metrics, location, team_size, is_verified, is_approved, is_featured, card_theme, priority_order, created_at, updated_at, linkedin_url, twitter_url, website_url, badge_title, bmf_id, bmf_number, membership_tier')
       .eq('is_approved', true)
       .order('priority_order', { ascending: true, nullsFirst: false })
       .order('is_featured', { ascending: false })
@@ -61,6 +61,7 @@ export async function GET(request: NextRequest) {
   const tier = (searchParams.get('tier') || 'all').toLowerCase()
   const category = searchParams.get('category') || 'All'
   const search = (searchParams.get('search') || '').trim().toLowerCase()
+  const seed = searchParams.get('seed') || ''
   const forceFresh = searchParams.get('fresh') === 'true'
 
   const now = Date.now()
@@ -120,6 +121,8 @@ export async function GET(request: NextRequest) {
         member.description?.toLowerCase().includes(search) ||
         member.location?.toLowerCase().includes(search) ||
         member.category?.toLowerCase().includes(search) ||
+        (member.bmf_id && member.bmf_id.toLowerCase().includes(search)) ||
+        (member.bmf_number !== undefined && member.bmf_number !== null && String(member.bmf_number) === search) ||
         normalizeCategory(member.category).toLowerCase().includes(search)
 
       if (!match) return false
@@ -128,8 +131,9 @@ export async function GET(request: NextRequest) {
     return true
   })
 
-  // Ensure sorting consistency
-  filtered = sortBmfMembers(filtered)
+  // Ensure sorting consistency with seeded random rotation within tiers
+  const effectiveSeed = seed || `hourly_${Math.floor(now / (1000 * 60 * 60))}`
+  filtered = sortBmfMembers(filtered, { seed: effectiveSeed })
 
   // 6. Pagination calculation
   const totalFiltered = filtered.length
@@ -177,7 +181,9 @@ export async function GET(request: NextRequest) {
       status: 200,
       headers: {
         ...rateLimitResult.headers,
-        'Cache-Control': 'public, s-maxage=180, stale-while-revalidate=600',
+        'Cache-Control': forceFresh 
+          ? 'no-cache, no-store, must-revalidate'
+          : 'public, s-maxage=60, stale-while-revalidate=180',
       },
     }
   )

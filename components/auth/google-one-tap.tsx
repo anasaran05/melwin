@@ -49,7 +49,7 @@ export function GoogleOneTap({
   const router = useRouter()
   const pathname = usePathname()
   const [scriptLoaded, setScriptLoaded] = useState(false)
-  const [isInitializing, setIsInitializing] = useState(false)
+  const initializedRef = React.useRef(false)
 
   const isBmfPage = pathname?.startsWith('/bmf') || false
   const isAuthOrDashboardPage = 
@@ -69,10 +69,11 @@ export function GoogleOneTap({
           window.google.accounts.id.cancel()
         } catch {}
       }
+      initializedRef.current = false
       return
     }
 
-    if (!scriptLoaded || isInitializing) return
+    if (!scriptLoaded || initializedRef.current) return
 
     async function initializeGoogleOneTap() {
       try {
@@ -96,7 +97,7 @@ export function GoogleOneTap({
           return
         }
 
-        setIsInitializing(true)
+        initializedRef.current = true
 
         // 2. Generate matching SHA-256 nonce pair for Google and Supabase
         const { rawNonce, hashedNonce } = await generateNonce()
@@ -155,15 +156,7 @@ export function GoogleOneTap({
     }
 
     initializeGoogleOneTap()
-
-    return () => {
-      if (typeof window !== 'undefined' && window.google?.accounts?.id?.cancel) {
-        try {
-          window.google.accounts.id.cancel()
-        } catch {}
-      }
-    }
-  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isInitializing, isBmfPage, isAuthOrDashboardPage, pathname])
+  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isBmfPage, isAuthOrDashboardPage, pathname])
 
   // Only load the external script and initialize on public BMF Club routes (never on dashboard or auth pages)
   if (!isBmfPage || isAuthOrDashboardPage) {

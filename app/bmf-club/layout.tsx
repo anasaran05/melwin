@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { TopEventAnnouncementBanner } from '@/components/bmf-club/top-event-announcement-banner'
 
 export const metadata: Metadata = {
   title: 'BMF Club | Private Founder & Creator Community',
@@ -32,5 +33,10 @@ export default function BmfClubLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <TopEventAnnouncementBanner />
+      {children}
+    </>
+  )
 }

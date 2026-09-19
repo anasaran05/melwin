@@ -63,7 +63,12 @@ import {
   Handshake, 
   Mail, 
   Phone, 
-  MessageSquare 
+  MessageSquare,
+  ShoppingBag,
+  FileText,
+  Globe,
+  Tag,
+  Copy
 } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -71,10 +76,10 @@ import { Button } from '@/components/ui/button'
 function BmfAdminReviewContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros'>('showcases')
+  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros' | 'products'>('showcases')
 
   useEffect(() => {
-    if (tabParam && ['showcases', 'events', 'registrations', 'cards', 'intros'].includes(tabParam)) {
+    if (tabParam && ['showcases', 'events', 'registrations', 'cards', 'intros', 'products'].includes(tabParam)) {
       setMainTab(tabParam as any)
     }
   }, [tabParam])
@@ -142,7 +147,58 @@ function BmfAdminReviewContent() {
   const [isSavingEvent, setIsSavingEvent] = useState(false)
   const [activeRegActionId, setActiveRegActionId] = useState<string | null>(null)
 
+  // Digital Store Products State
+  const [products, setProducts] = useState<any[]>([])
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false)
+  const [productSearch, setProductSearch] = useState('')
+  const [productCategoryFilter, setProductCategoryFilter] = useState('all')
+  const [productTypeFilter, setProductTypeFilter] = useState('all')
+  const [productPriceFilter, setProductPriceFilter] = useState<'all' | 'free' | 'paid'>('all')
+  const [productStatusFilter, setProductStatusFilter] = useState<'all' | 'published' | 'draft'>('all')
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<any | null>(null)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [activeProductActionId, setActiveProductActionId] = useState<string | null>(null)
+  const [deleteConfirmProductId, setDeleteConfirmProductId] = useState<string | null>(null)
+
+  // Product Form State
+  const [productForm, setProductForm] = useState({
+    id: '',
+    title: '',
+    slug: '',
+    subtitle: '',
+    description: '',
+    category: 'Growth',
+    product_type: 'pdf',
+    format_badge: 'PDF Guide',
+    regular_price: 99,
+    premium_discount_percent: 50,
+    is_exclusive: false,
+    is_free_for_premium: false,
+    highlightsString: '',
+    asset_url: '',
+    preview_url: '',
+    author_name: 'Build With Melwin',
+    is_published: true,
+    display_order: 0,
+  })
+
   const [isLoading, setIsLoading] = useState(true)
+
+  const loadAdminProducts = async () => {
+    setIsLoadingProducts(true)
+    try {
+      const res = await fetch('/api/bmf/admin-product-action')
+      const data = await res.json()
+      if (res.ok && data.success && Array.isArray(data.products)) {
+        setProducts(data.products)
+      }
+    } catch (err) {
+      console.error('Failed to load admin products:', err)
+    } finally {
+      setIsLoadingProducts(false)
+    }
+  }
 
   const loadData = async () => {
     setIsLoading(true)
@@ -159,10 +215,184 @@ function BmfAdminReviewContent() {
       setRegistrations(regData)
       setCards(cardsData)
       setIntros(introsData)
+      await loadAdminProducts()
     } catch (err) {
       console.error(err)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleOpenCreateProduct = () => {
+    setEditingProduct(null)
+    setProductForm({
+      id: '',
+      title: '',
+      slug: '',
+      subtitle: '',
+      description: '',
+      category: 'Growth',
+      product_type: 'pdf',
+      format_badge: 'PDF Guide',
+      regular_price: 99,
+      premium_discount_percent: 50,
+      is_exclusive: false,
+      is_free_for_premium: false,
+      highlightsString: '',
+      asset_url: '',
+      preview_url: '',
+      author_name: 'Build With Melwin',
+      is_published: true,
+      display_order: products.length + 1,
+    })
+    setIsProductModalOpen(true)
+  }
+
+  const handleOpenEditProduct = (prod: any) => {
+    setEditingProduct(prod)
+    const highlightsText = Array.isArray(prod.highlights)
+      ? prod.highlights.join('\n')
+      : typeof prod.highlights === 'string'
+      ? prod.highlights
+      : ''
+
+    setProductForm({
+      id: prod.id || '',
+      title: prod.title || '',
+      slug: prod.slug || '',
+      subtitle: prod.subtitle || '',
+      description: prod.description || '',
+      category: prod.category || 'Growth',
+      product_type: prod.product_type || 'pdf',
+      format_badge: prod.format_badge || 'PDF Guide',
+      regular_price: Number(prod.regular_price ?? 99),
+      premium_discount_percent: Number(prod.premium_discount_percent ?? 50),
+      is_exclusive: Boolean(prod.is_exclusive),
+      is_free_for_premium: Boolean(prod.is_free_for_premium),
+      highlightsString: highlightsText,
+      asset_url: prod.asset_url || '',
+      preview_url: prod.preview_url || '',
+      author_name: prod.author_name || 'Build With Melwin',
+      is_published: prod.is_published !== false,
+      display_order: Number(prod.display_order ?? 0),
+    })
+    setIsProductModalOpen(true)
+  }
+
+  const handleSaveProduct = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    if (!productForm.title.trim()) {
+      alert('Product title is required')
+      return
+    }
+
+    setIsSavingProduct(true)
+    try {
+      const action = editingProduct ? 'update' : 'create'
+      const highlightsArray = productForm.highlightsString
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+
+      const payload = {
+        action,
+        productId: editingProduct?.id,
+        product: {
+          id: editingProduct?.id,
+          title: productForm.title.trim(),
+          slug: productForm.slug.trim(),
+          subtitle: productForm.subtitle.trim(),
+          description: productForm.description.trim(),
+          category: productForm.category,
+          product_type: productForm.product_type,
+          format_badge: productForm.format_badge,
+          regular_price: Number(productForm.regular_price),
+          premium_discount_percent: Number(productForm.premium_discount_percent),
+          is_exclusive: productForm.is_exclusive,
+          is_free_for_premium: productForm.regular_price === 0 || productForm.is_free_for_premium,
+          highlights: highlightsArray,
+          asset_url: productForm.asset_url.trim(),
+          preview_url: productForm.preview_url.trim(),
+          author_name: productForm.author_name.trim(),
+          is_published: productForm.is_published,
+          display_order: Number(productForm.display_order || 0),
+        },
+      }
+
+      const res = await fetch('/api/bmf/admin-product-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setIsProductModalOpen(false)
+        await loadAdminProducts()
+      } else {
+        alert(data.error || 'Failed to save product')
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Error saving product')
+    } finally {
+      setIsSavingProduct(false)
+    }
+  }
+
+  const handleTogglePublishProduct = async (prodId: string, currentPublished: boolean) => {
+    setActiveProductActionId(prodId)
+    try {
+      const res = await fetch('/api/bmf/admin-product-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'toggle_publish',
+          productId: prodId,
+          product: { is_published: !currentPublished },
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setProducts((prev) =>
+          prev.map((p) => (p.id === prodId ? { ...p, is_published: !currentPublished } : p))
+        )
+      } else {
+        alert(data.error || 'Failed to toggle product status')
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Action error')
+    } finally {
+      setActiveProductActionId(null)
+    }
+  }
+
+  const handleDeleteProduct = async (prodId: string) => {
+    setActiveProductActionId(prodId)
+    try {
+      const res = await fetch('/api/bmf/admin-product-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          productId: prodId,
+        }),
+      })
+
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setProducts((prev) => prev.filter((p) => p.id !== prodId))
+        setDeleteConfirmProductId(null)
+      } else {
+        alert(data.error || 'Failed to delete product')
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert(err.message || 'Delete error')
+    } finally {
+      setActiveProductActionId(null)
     }
   }
 
@@ -625,6 +855,23 @@ function BmfAdminReviewContent() {
           {intros.filter((i) => i.status === 'pending').length > 0 && (
             <span className="bg-amber-500 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
               {intros.filter((i) => i.status === 'pending').length} new
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setMainTab('products')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
+            mainTab === 'products'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <ShoppingBag className="w-3.5 h-3.5" />
+          <span>Store Products & Catalog ({products.length})</span>
+          {products.filter((p) => !p.is_published).length > 0 && (
+            <span className="bg-slate-400 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+              {products.filter((p) => !p.is_published).length} draft
             </span>
           )}
         </button>
@@ -1289,14 +1536,38 @@ function BmfAdminReviewContent() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleOpenEditEvent(event)}
                         className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
                       >
                         <Edit className="w-3 h-3" />
-                        <span>Edit Details</span>
+                        <span>Edit</span>
+                      </button>
+
+                      <a
+                        href={`/bmf-club/events/${event.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-full transition-colors"
+                        title="Open Public Event Overview"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View Page</span>
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const url = `${window.location.origin}/bmf-club/events/${event.id}`
+                          navigator.clipboard.writeText(url)
+                          alert('Event overview link copied to clipboard:\n' + url)
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Copy Public Link"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
@@ -1664,6 +1935,740 @@ function BmfAdminReviewContent() {
       )}
 
       {/* ========================================================= */}
+      {/* TAB 6: DIGITAL STORE PRODUCTS & CATALOG */}
+      {/* ========================================================= */}
+      {mainTab === 'products' && (
+        <div className="space-y-6 text-left">
+          {/* Top Header & Actions */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+                <ShoppingBag className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span>Store Products & Resource Catalog</span>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {products.length} Products
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Manage digital products, guides, playbooks, sheets, and masterclasses published to{' '}
+                  <Link href="/bmf-club/store" target="_blank" className="text-emerald-600 hover:underline font-medium inline-flex items-center gap-0.5">
+                    /bmf-club/store <ExternalLink className="w-2.5 h-2.5" />
+                  </Link>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadAdminProducts}
+                disabled={isLoadingProducts}
+                className="text-xs border-slate-200 hover:bg-slate-50 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isLoadingProducts ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+
+              <Button
+                size="sm"
+                onClick={handleOpenCreateProduct}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Add New Product</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Quick Metrics Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Catalog</div>
+              <div className="text-2xl font-black text-slate-900 mt-1">{products.length}</div>
+              <div className="text-[10px] text-slate-400 mt-0.5">All formats & types</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Active & Live</div>
+              <div className="text-2xl font-black text-emerald-700 mt-1">
+                {products.filter((p) => p.is_published).length}
+              </div>
+              <div className="text-[10px] text-emerald-600/80 mt-0.5">Visible on store</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-semibold text-amber-600 uppercase tracking-wider">Paid Products</div>
+              <div className="text-2xl font-black text-amber-700 mt-1">
+                {products.filter((p) => Number(p.regular_price) > 0).length}
+              </div>
+              <div className="text-[10px] text-amber-600/80 mt-0.5">₹99 regular (50% Pass off)</div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
+              <div className="text-[11px] font-semibold text-sky-600 uppercase tracking-wider">Free Resources</div>
+              <div className="text-2xl font-black text-sky-700 mt-1">
+                {products.filter((p) => Number(p.regular_price) === 0).length}
+              </div>
+              <div className="text-[10px] text-sky-600/80 mt-0.5">1-click instant unlock</div>
+            </div>
+          </div>
+
+          {/* Filters & Search Controls */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs space-y-3">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+              {/* Search */}
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Search products by title, subtitle, slug, or keywords..."
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-none">
+                <select
+                  value={productCategoryFilter}
+                  onChange={(e) => setProductCategoryFilter(e.target.value)}
+                  aria-label="Filter by category"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Growth">Growth</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Strategy">Strategy</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Career">Career</option>
+                  <option value="Tech">Tech</option>
+                  <option value="Legal">Legal</option>
+                  <option value="Marketing">Marketing</option>
+                </select>
+
+                {/* Product Type Filter */}
+                <select
+                  value={productTypeFilter}
+                  onChange={(e) => setProductTypeFilter(e.target.value)}
+                  aria-label="Filter by product type"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All File Types</option>
+                  <option value="pdf">PDF Guide</option>
+                  <option value="docx">Word DOCX</option>
+                  <option value="sheets">Sheets / Excel</option>
+                  <option value="video">Video Masterclass</option>
+                  <option value="ebook">Full E-Book</option>
+                  <option value="bundle">Resource Bundle</option>
+                  <option value="playbook">Playbook</option>
+                  <option value="notion">Notion Template</option>
+                </select>
+
+                {/* Price Filter */}
+                <select
+                  value={productPriceFilter}
+                  onChange={(e) => setProductPriceFilter(e.target.value as any)}
+                  aria-label="Filter by price tier"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Prices</option>
+                  <option value="free">Free Only (₹0)</option>
+                  <option value="paid">Paid Only (₹99)</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={productStatusFilter}
+                  onChange={(e) => setProductStatusFilter(e.target.value as any)}
+                  aria-label="Filter by publication status"
+                  className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="published">Live on Store</option>
+                  <option value="draft">Hidden Drafts</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Products Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Product Details</th>
+                    <th className="py-3 px-4">Type & Format</th>
+                    <th className="py-3 px-4">Pricing</th>
+                    <th className="py-3 px-4">Asset Link</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {products
+                    .filter((item) => {
+                      const matchSearch =
+                        !productSearch ||
+                        (item.title && item.title.toLowerCase().includes(productSearch.toLowerCase())) ||
+                        (item.subtitle && item.subtitle.toLowerCase().includes(productSearch.toLowerCase())) ||
+                        (item.slug && item.slug.toLowerCase().includes(productSearch.toLowerCase())) ||
+                        (item.category && item.category.toLowerCase().includes(productSearch.toLowerCase()))
+
+                      const matchCategory =
+                        productCategoryFilter === 'all' ||
+                        (item.category && item.category.toLowerCase() === productCategoryFilter.toLowerCase())
+
+                      const matchType =
+                        productTypeFilter === 'all' ||
+                        (item.product_type && item.product_type.toLowerCase() === productTypeFilter.toLowerCase())
+
+                      const matchPrice =
+                        productPriceFilter === 'all' ||
+                        (productPriceFilter === 'free' && Number(item.regular_price) === 0) ||
+                        (productPriceFilter === 'paid' && Number(item.regular_price) > 0)
+
+                      const matchStatus =
+                        productStatusFilter === 'all' ||
+                        (productStatusFilter === 'published' && item.is_published) ||
+                        (productStatusFilter === 'draft' && !item.is_published)
+
+                      return matchSearch && matchCategory && matchType && matchPrice && matchStatus
+                    })
+                    .map((item) => {
+                      const regPrice = Number(item.regular_price ?? 0)
+                      const isFree = regPrice === 0
+                      const discount = Number(item.premium_discount_percent ?? 50)
+                      const passPrice = isFree ? 0 : Math.round(regPrice * (1 - discount / 100))
+                      const isLive = Boolean(item.is_published)
+                      const hasAsset = Boolean(item.asset_url)
+
+                      return (
+                        <tr key={item.id} className="hover:bg-slate-50/70 transition-colors">
+                          {/* Product Details */}
+                          <td className="py-4 px-4 align-top max-w-sm">
+                            <div className="font-bold text-slate-900 text-sm">{item.title}</div>
+                            {item.subtitle && (
+                              <div className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">{item.subtitle}</div>
+                            )}
+                            <div className="flex items-center gap-2 mt-1.5 font-mono text-[10px] text-slate-400">
+                              <span className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono">
+                                /{item.slug}
+                              </span>
+                              <span>•</span>
+                              <span className="text-slate-500 font-semibold">{item.category || 'General'}</span>
+                              {item.highlights && Array.isArray(item.highlights) && item.highlights.length > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-slate-400">{item.highlights.length} highlights</span>
+                                </>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Type & Format */}
+                          <td className="py-4 px-4 align-top whitespace-nowrap">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-100 text-slate-800 text-[10px] font-bold border border-slate-200 uppercase tracking-wider">
+                              <FileText className="w-3 h-3 text-emerald-600" />
+                              {item.format_badge || item.product_type || 'PDF Guide'}
+                            </span>
+                            <div className="text-[10px] text-slate-400 font-mono mt-1 capitalize">
+                              Format: {item.product_type || 'pdf'}
+                            </div>
+                          </td>
+
+                          {/* Pricing */}
+                          <td className="py-4 px-4 align-top whitespace-nowrap">
+                            {isFree ? (
+                              <div>
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[10px] font-bold border border-sky-200">
+                                  FREE (₹0)
+                                </span>
+                                <div className="text-[10px] text-slate-400 mt-0.5">Open to all founders</div>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="font-bold text-slate-900 text-xs">
+                                  ₹{regPrice}{' '}
+                                  <span className="text-[10px] font-normal text-slate-400 font-mono">regular</span>
+                                </div>
+                                <div className="text-[11px] text-emerald-600 font-bold mt-0.5">
+                                  {item.is_free_for_premium ? (
+                                    'Free with Pass'
+                                  ) : (
+                                    <>₹{passPrice} with Pass ({discount}% off)</>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Asset Link */}
+                          <td className="py-4 px-4 align-top max-w-xs">
+                            {hasAsset ? (
+                              <div className="flex items-center gap-1.5">
+                                <a
+                                  href={item.asset_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-[10px] font-bold transition-all border border-emerald-200"
+                                >
+                                  <Download className="w-3 h-3" />
+                                  <span>Test Link</span>
+                                  <ExternalLink className="w-2.5 h-2.5" />
+                                </a>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-rose-500 font-medium italic">
+                                No asset URL configured
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-4 px-4 align-top whitespace-nowrap">
+                            <button
+                              onClick={() => handleTogglePublishProduct(item.id, isLive)}
+                              disabled={activeProductActionId === item.id}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
+                                isLive
+                                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                  : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                              }`}
+                            >
+                              {activeProductActionId === item.id ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : isLive ? (
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              ) : (
+                                <AlertCircle className="w-3 h-3 text-slate-400" />
+                              )}
+                              <span>{isLive ? 'Live on Store' : 'Draft / Hidden'}</span>
+                            </button>
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-4 px-4 align-top text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleOpenEditProduct(item)}
+                                className="border-slate-200 text-slate-700 hover:text-slate-900 text-[11px] px-2.5 py-1 rounded-lg cursor-pointer h-7"
+                              >
+                                <Edit className="w-3 h-3 mr-1" />
+                                Edit
+                              </Button>
+
+                              {deleteConfirmProductId === item.id ? (
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleDeleteProduct(item.id)}
+                                    disabled={activeProductActionId === item.id}
+                                    className="bg-rose-600 hover:bg-rose-700 text-white text-[10px] px-2.5 py-1 rounded-lg cursor-pointer h-7 font-bold shadow-xs"
+                                  >
+                                    {activeProductActionId === item.id ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      'Confirm'
+                                    )}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setDeleteConfirmProductId(null)}
+                                    className="text-[10px] px-2 py-1 rounded-lg h-7"
+                                  >
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setDeleteConfirmProductId(item.id)}
+                                  className="text-slate-400 hover:text-rose-600 text-[11px] px-2 py-1 rounded-lg cursor-pointer h-7"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+
+                  {products.length === 0 && !isLoadingProducts && (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        <ShoppingBag className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        <p className="text-xs font-semibold">No digital products found.</p>
+                        <Button
+                          size="sm"
+                          onClick={handleOpenCreateProduct}
+                          className="mt-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" /> Add Your First Product
+                        </Button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* PRODUCT CREATE / EDIT MODAL */}
+      {/* ========================================================= */}
+      {isProductModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in-0 duration-200">
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 max-w-2xl w-full space-y-5 shadow-2xl text-left my-auto max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4 sticky top-0 bg-white z-10">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {editingProduct ? 'Edit Digital Store Product' : 'Add New Digital Store Product'}
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Configure pricing, file format, asset links (Google Drive/S3/R2), and highlights.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsProductModalOpen(false)}
+                className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
+              {/* Row 1: Title & Slug */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Product Title *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={productForm.title}
+                    onChange={(e) => {
+                      const newTitle = e.target.value
+                      setProductForm((prev) => ({
+                        ...prev,
+                        title: newTitle,
+                        slug:
+                          !editingProduct && (!prev.slug || prev.slug.startsWith(''))
+                            ? newTitle
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]+/g, '-')
+                                .replace(/(^-|-$)/g, '')
+                            : prev.slug,
+                      }))
+                    }}
+                    placeholder="e.g. The 1 Lakh Rule Book for Founders"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    URL Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={productForm.slug}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, slug: e.target.value }))}
+                    placeholder="e.g. 1-lakh-rule-book"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Subtitle */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Subtitle / One-Liner Hook
+                </label>
+                <input
+                  type="text"
+                  value={productForm.subtitle}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, subtitle: e.target.value }))}
+                  placeholder="e.g. A tactical framework to bootstrap cashflow from Day 1 without external debt"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Row 3: Category, Type & Format Badge */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={productForm.category}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, category: e.target.value }))}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="Growth">Growth</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Strategy">Strategy</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Career">Career</option>
+                    <option value="Tech">Tech</option>
+                    <option value="Legal">Legal</option>
+                    <option value="Marketing">Marketing</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Product Type
+                  </label>
+                  <select
+                    value={productForm.product_type}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      let badge = 'PDF Guide'
+                      if (val === 'docx') badge = 'Word Document'
+                      if (val === 'sheets') badge = 'Excel / Sheet'
+                      if (val === 'video') badge = 'Video Masterclass'
+                      if (val === 'ebook') badge = 'Full E-Book'
+                      if (val === 'bundle') badge = 'Resource Bundle'
+                      if (val === 'playbook') badge = 'Playbook'
+                      if (val === 'notion') badge = 'Notion Workspace'
+
+                      setProductForm((prev) => ({
+                        ...prev,
+                        product_type: val,
+                        format_badge: prev.format_badge ? prev.format_badge : badge,
+                      }))
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                  >
+                    <option value="pdf">PDF Guide (.pdf)</option>
+                    <option value="docx">Word Document (.docx)</option>
+                    <option value="sheets">Spreadsheet (.xlsx / Sheets)</option>
+                    <option value="video">Video Masterclass</option>
+                    <option value="ebook">Full E-Book</option>
+                    <option value="bundle">Bundle / Toolkit</option>
+                    <option value="playbook">Playbook / Framework</option>
+                    <option value="notion">Notion Template</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Format Badge Text
+                  </label>
+                  <input
+                    type="text"
+                    value={productForm.format_badge}
+                    onChange={(e) => setProductForm((prev) => ({ ...prev, format_badge: e.target.value }))}
+                    placeholder="e.g. PDF Guide"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Row 4: Pricing */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Regular Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={productForm.regular_price}
+                    onChange={(e) => {
+                      const val = Number(e.target.value)
+                      setProductForm((prev) => ({
+                        ...prev,
+                        regular_price: val,
+                        is_free_for_premium: val === 0 ? true : prev.is_free_for_premium,
+                      }))
+                    }}
+                    placeholder="99 (Set 0 for Free)"
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <div className="text-[10px] text-slate-500 mt-1">
+                    {productForm.regular_price === 0 ? '✨ Marked as 100% Free' : 'Standard guest price'}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Pass Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={productForm.premium_discount_percent}
+                    onChange={(e) =>
+                      setProductForm((prev) => ({
+                        ...prev,
+                        premium_discount_percent: Number(e.target.value),
+                      }))
+                    }
+                    placeholder="50"
+                    disabled={productForm.regular_price === 0}
+                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 disabled:opacity-50"
+                  />
+                  <div className="text-[10px] text-emerald-600 mt-1 font-semibold">
+                    {productForm.regular_price > 0
+                      ? `Pass Price: ₹${Math.round(
+                          productForm.regular_price * (1 - productForm.premium_discount_percent / 100)
+                        )}`
+                      : 'Free for everyone'}
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <label className="flex items-center gap-2 cursor-pointer mt-3">
+                    <input
+                      type="checkbox"
+                      checked={productForm.is_free_for_premium || productForm.regular_price === 0}
+                      disabled={productForm.regular_price === 0}
+                      onChange={(e) =>
+                        setProductForm((prev) => ({
+                          ...prev,
+                          is_free_for_premium: e.target.checked,
+                        }))
+                      }
+                      className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                    />
+                    <span className="text-xs font-semibold text-slate-800">
+                      100% Free with BMF Pass
+                    </span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 mt-1 ml-6">
+                    Pass holders unlock this item without paying
+                  </span>
+                </div>
+              </div>
+
+              {/* Row 5: Asset URL */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Asset / File Download URL (Google Drive / S3 / R2) *
+                </label>
+                <input
+                  type="url"
+                  value={productForm.asset_url}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, asset_url: e.target.value }))}
+                  placeholder="https://drive.google.com/file/d/.../view?usp=sharing"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+                <div className="text-[10px] text-slate-500 mt-1 flex items-center gap-1">
+                  <span>💡 Tip: Paste Google Drive sharing links or Cloudflare R2 links directly.</span>
+                </div>
+              </div>
+
+              {/* Row 6: Bullet Highlights */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Key Bullet Highlights (1 per line)
+                </label>
+                <textarea
+                  rows={3}
+                  value={productForm.highlightsString}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, highlightsString: e.target.value }))}
+                  placeholder="• 5 core principles for immediate cashflow&#10;• Operational sanity checks&#10;• Ready-to-copy email templates"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Row 7: Full Description */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Full Description & Context
+                </label>
+                <textarea
+                  rows={3}
+                  value={productForm.description}
+                  onChange={(e) => setProductForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Provide in-depth context about what this playbook or guide covers..."
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+                />
+              </div>
+
+              {/* Row 8: Publishing & Display Order */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-200">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={productForm.is_published}
+                    onChange={(e) =>
+                      setProductForm((prev) => ({ ...prev, is_published: e.target.checked }))
+                    }
+                    className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                  />
+                  <span className="text-xs font-bold text-slate-800">
+                    Publish Immediately on Store (/bmf-club/store)
+                  </span>
+                </label>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-500">Order:</span>
+                  <input
+                    type="number"
+                    value={productForm.display_order}
+                    onChange={(e) =>
+                      setProductForm((prev) => ({ ...prev, display_order: Number(e.target.value) }))
+                    }
+                    className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono text-center font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Modal Footer Actions */}
+              <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsProductModalOpen(false)}
+                  className="text-xs border-slate-200 text-slate-600 hover:text-slate-900 px-4 py-2 rounded-xl"
+                >
+                  Cancel
+                </Button>
+
+                <Button
+                  type="submit"
+                  disabled={isSavingProduct}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm"
+                >
+                  {isSavingProduct ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
+                  <span>{editingProduct ? 'Save Changes' : 'Create Product'}</span>
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
       {/* FULL-FEATURED CREATE / EDIT EVENT STEP WIZARD MODAL */}
       {/* ========================================================= */}
       {isEventModalOpen && (
@@ -1821,6 +2826,7 @@ function BmfAdminReviewContent() {
                         <option value="Technical Workshop">Technical Workshop</option>
                         <option value="Private Retreat">Private Retreat</option>
                         <option value="Investor Fireside">Investor Fireside</option>
+                        <option value="Webinar">Webinar</option>
                       </select>
                     </div>
 
@@ -1853,6 +2859,7 @@ function BmfAdminReviewContent() {
                           { label: 'Meetup', url: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=1200&auto=format&fit=crop' },
                           { label: 'Dining Lounge', url: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop' },
                           { label: 'Mixer', url: 'https://images.unsplash.com/photo-1531482615713-2afd69097998?q=80&w=1200&auto=format&fit=crop' },
+                          { label: 'Webinar', url: 'https://images.unsplash.com/photo-1588196749597-9ff075ee6b5b?q=80&w=1200&auto=format&fit=crop' },
                         ].map((preset) => (
                           <button
                             key={preset.label}
@@ -2040,6 +3047,27 @@ function BmfAdminReviewContent() {
                         />
                       </div>
                     )}
+
+                    {/* Public URL Live Indicator */}
+                    <div className="sm:col-span-4 p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex items-center justify-between text-xs">
+                      <div className="space-y-0.5">
+                        <span className="font-bold text-slate-900 block">Public Event Overview Route</span>
+                        <span className="font-mono text-[11px] text-emerald-800 font-semibold">
+                          /bmf-club/events/{eventForm.id || '[auto-generated-id]'}
+                        </span>
+                      </div>
+                      {eventForm.id && (
+                        <a
+                          href={`/bmf-club/events/${eventForm.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-emerald-300 text-emerald-800 text-[11px] font-bold shadow-xs hover:bg-emerald-100 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>Preview Live</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

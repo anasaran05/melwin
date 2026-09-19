@@ -7,7 +7,10 @@ import {
   BmfEvent,
   fetchBmfEvents,
   registerForEvent,
-  INITIAL_BMF_EVENTS
+  INITIAL_BMF_EVENTS,
+  isEventExpired,
+  cleanEventCtaText,
+  sortBmfEvents,
 } from '@/lib/supabase/bmf-events'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 import { Footer } from '@/components/footer'
@@ -37,6 +40,7 @@ const CATEGORY_TABS = [
   { label: 'Dinners', value: 'Dinner' },
   { label: 'Roundtables', value: 'Roundtable' },
   { label: 'Workshops', value: 'Workshop' },
+  { label: 'Webinars', value: 'Webinar' },
   { label: 'Demo Days', value: 'Demo Day' },
   { label: 'Mixers', value: 'Mixer' },
 ]
@@ -126,7 +130,7 @@ export default function BmfPublicEventsPage() {
 
   // Filtered Events
   const filteredEvents = useMemo(() => {
-    return events.filter((e) => {
+    const filtered = events.filter((e) => {
       if (!e.is_published) return false
 
       // Category filter
@@ -166,6 +170,7 @@ export default function BmfPublicEventsPage() {
 
       return true
     })
+    return sortBmfEvents(filtered)
   }, [events, selectedCategory, selectedCity, selectedPricing, searchQuery])
 
   // Open RSVP
@@ -441,6 +446,7 @@ export default function BmfPublicEventsPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredEvents.map((event) => {
+                const isExpired = isEventExpired(event)
                 const isPaid = event.pricing_type === 'paid'
                 const displayImage = event.thumbnail_url || event.cover_image
                 const capacityPercent = event.total_capacity 
@@ -455,25 +461,37 @@ export default function BmfPublicEventsPage() {
                     className="bg-white border border-neutral-200/90 hover:border-neutral-300 rounded-3xl overflow-hidden shadow-xs hover:shadow-md flex flex-col justify-between group transition-all"
                   >
                     <div>
-                      {/* Event Cover Image (No Free/Paid tag overlay on image) */}
-                      {displayImage ? (
-                        <div className="w-full h-48 bg-neutral-100 relative overflow-hidden shrink-0">
-                          <img
-                            src={displayImage}
-                            alt={event.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <span className="absolute top-3 left-3 text-[10px] font-mono font-bold uppercase bg-black/75 backdrop-blur-md text-white px-3 py-1 rounded-full shadow-xs">
-                            {event.category}
-                          </span>
-                        </div>
-                      ) : (
-                        <div className="p-5 bg-neutral-100 border-b border-neutral-200 flex items-center justify-between">
-                          <span className="text-[10px] font-mono uppercase bg-white text-neutral-800 border border-neutral-200 px-3 py-1 rounded-full font-bold shadow-xs">
-                            {event.category}
-                          </span>
-                        </div>
-                      )}
+                      {/* Event Cover Image (Clickable to detail page) */}
+                      <Link href={`/bmf-club/events/${event.id}`} className="block">
+                        {displayImage ? (
+                          <div className="w-full h-48 bg-neutral-100 relative overflow-hidden shrink-0">
+                            <img
+                              src={displayImage}
+                              alt={event.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <span className="absolute top-3 left-3 text-[10px] font-mono font-bold uppercase bg-black/75 backdrop-blur-md text-white px-3 py-1 rounded-full shadow-xs">
+                              {event.category}
+                            </span>
+                            {isExpired && (
+                              <span className="absolute top-3 right-3 text-[10px] font-mono font-bold uppercase bg-neutral-900/80 backdrop-blur-md text-neutral-300 px-2.5 py-1 rounded-full shadow-xs">
+                                Event Completed
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="p-5 bg-neutral-100 border-b border-neutral-200 flex items-center justify-between">
+                            <span className="text-[10px] font-mono uppercase bg-white text-neutral-800 border border-neutral-200 px-3 py-1 rounded-full font-bold shadow-xs">
+                              {event.category}
+                            </span>
+                            {isExpired && (
+                              <span className="text-[10px] font-mono font-bold uppercase bg-neutral-200 text-neutral-600 px-2.5 py-0.5 rounded-full">
+                                Event Completed
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </Link>
 
                       {/* Event Details Body */}
                       <div className="p-6 space-y-4">
@@ -489,9 +507,11 @@ export default function BmfPublicEventsPage() {
 
                         {/* Title & Tagline */}
                         <div className="space-y-1">
-                          <h3 className="text-base font-bold text-neutral-950 leading-snug group-hover:text-neutral-700 transition-colors">
-                            {event.title}
-                          </h3>
+                          <Link href={`/bmf-club/events/${event.id}`} className="block">
+                            <h3 className="text-base font-bold text-neutral-950 leading-snug group-hover:text-neutral-700 transition-colors">
+                              {event.title}
+                            </h3>
+                          </Link>
                           {event.tagline && (
                             <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
                               {event.tagline}
@@ -509,21 +529,39 @@ export default function BmfPublicEventsPage() {
                           </div>
                           
                           {/* Attendee count & Progress */}
-                          <div className="space-y-1 pt-1">
-                            <div className="flex items-center justify-between text-[11px]">
+                          {isExpired ? (
+                            <div className="pt-1.5 flex items-center justify-between text-[11px] text-neutral-600 font-semibold bg-neutral-100 px-3 py-1 rounded-xl border border-neutral-200">
                               <span className="flex items-center gap-1.5">
-                                <Users className="w-3.5 h-3.5 text-neutral-400" />
-                                <span>{event.registered_count || 0} / {event.total_capacity || 20} Attending</span>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500 shrink-0" />
+                                <span>Event Completed</span>
                               </span>
-                              <span className="text-neutral-400">{capacityPercent}% full</span>
+                              <span className="text-[10px] font-mono uppercase font-bold text-neutral-500">Concluded</span>
                             </div>
-                            <div className="w-full h-1 bg-neutral-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-neutral-900 rounded-full transition-all"
-                                style={{ width: `${capacityPercent}%` }}
-                              />
+                          ) : (!event.total_capacity || event.total_capacity === 0 || event.total_capacity >= 9999) ? (
+                            <div className="pt-1.5 flex items-center justify-between text-[11px] text-emerald-800 font-semibold bg-emerald-50/70 px-3 py-1 rounded-xl border border-emerald-200/60">
+                              <span className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span>Open Registration &bull; Unlimited</span>
+                              </span>
+                              <span className="text-[10px] font-mono uppercase font-bold text-emerald-700">Online</span>
                             </div>
-                          </div>
+                          ) : (
+                            <div className="space-y-1 pt-1">
+                              <div className="flex items-center justify-between text-[11px]">
+                                <span className="flex items-center gap-1.5">
+                                  <Users className="w-3.5 h-3.5 text-neutral-400" />
+                                  <span>{event.registered_count || 0} / {event.total_capacity} Attending</span>
+                                </span>
+                                <span className="text-neutral-400">{capacityPercent}% full</span>
+                              </div>
+                              <div className="w-full h-1 bg-neutral-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-neutral-900 rounded-full transition-all"
+                                  style={{ width: `${capacityPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                          )}
 
                           {event.requirements && (
                             <div className="p-2.5 rounded-xl bg-neutral-50 border border-neutral-200 text-[11px] text-neutral-700 font-sans mt-2">
@@ -535,30 +573,41 @@ export default function BmfPublicEventsPage() {
                       </div>
                     </div>
 
-                    {/* Footer Action Button */}
-                    <div className="p-6 pt-0">
-                      <Button
-                        type="button"
-                        onClick={() => handleOpenRsvp(event)}
-                        className="w-full bg-[#111111] hover:bg-black text-white text-xs font-bold py-2.5 rounded-xl inline-flex items-center justify-center gap-2 cursor-pointer shadow-xs active:scale-95 transition-all"
-                      >
-                        {event.cta_type === 'external_link' ? (
-                          <>
-                            <span>{event.external_cta_text || 'Register Online'}</span>
-                            <ExternalLink className="w-3.5 h-3.5" />
-                          </>
-                        ) : isPaid ? (
-                          <>
-                            <span>Buy Ticket &bull; ₹{event.price_inr}</span>
-                            <Ticket className="w-3.5 h-3.5 text-amber-400" />
-                          </>
-                        ) : (
-                          <>
-                            <span>Join Event (RSVP)</span>
+                    {/* Footer Action Buttons: View Details & Quick Action */}
+                    <div className="p-6 pt-0 flex items-center gap-2">
+                      {isExpired ? (
+                        <Link
+                          href={`/bmf-club/events/${event.id}`}
+                          className="flex-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold py-2.5 rounded-xl inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all text-center border border-neutral-200"
+                        >
+                          <span>View Overview & Recap</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      ) : (
+                        <>
+                          <Link
+                            href={`/bmf-club/events/${event.id}`}
+                            className="flex-1 bg-[#111111] hover:bg-black text-white text-xs font-bold py-2.5 rounded-xl inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all text-center"
+                          >
+                            <span>View Details</span>
                             <ArrowRight className="w-3.5 h-3.5" />
-                          </>
-                        )}
-                      </Button>
+                          </Link>
+
+                          <Button
+                            type="button"
+                            onClick={() => handleOpenRsvp(event)}
+                            variant="outline"
+                            className="px-3.5 py-2.5 rounded-xl border-neutral-200 hover:border-neutral-900 hover:bg-neutral-50 text-neutral-900 text-xs font-semibold cursor-pointer shrink-0 shadow-xs active:scale-95 transition-all"
+                            title={event.cta_type === 'external_link' ? 'Open Registration' : 'Quick RSVP'}
+                          >
+                            {event.cta_type === 'external_link' ? (
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            ) : (
+                              <Ticket className="w-3.5 h-3.5 text-amber-500" />
+                            )}
+                          </Button>
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 )

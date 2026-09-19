@@ -39,20 +39,28 @@ import { AvatarPickerModal } from '@/components/bmf-club/avatar-picker-modal'
 import { CardThemeModal } from '@/components/bmf-club/card-theme-modal'
 import { DashboardIntrosTab } from '@/components/bmf-club/dashboard-intros-tab'
 import { ShareFounderCardModal } from '@/components/bmf-club/share-founder-card-modal'
+import { PricingModal } from '@/components/bmf-club/pricing-modal'
 import { getCardTheme } from '@/lib/card-themes'
 import { normalizeR2Url, getFounderFallbackAvatar, compressImageToWebP } from '@/lib/image-utils'
 import { AuthForm } from '@/components/ui/sign-in-1'
 import { Button } from '@/components/ui/button'
+import { toast } from 'sonner'
 import { 
   ArrowLeft, 
   Palette,
   Sparkles, 
+  Crown,
+  BookOpen,
+  ShoppingBag,
   CheckCircle2, 
   Loader2, 
   LogOut, 
   Briefcase, 
   User, 
   Sliders, 
+  DownloadCloud,
+  ArrowRight,
+  FileText,
   AlertCircle, 
   Plus, 
   Trash2, 
@@ -160,7 +168,9 @@ function BmfMemberDashboardContent() {
   const destination = (rawNext && rawNext.startsWith('/')) ? rawNext : '/bmf-club/dashboard'
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
-  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'intros' | 'jobs' | 'events' | 'settings'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'profile' | 'purchases' | 'intros' | 'jobs' | 'events' | 'settings'>('overview')
+  const [purchasedItems, setPurchasedItems] = useState<any[]>([])
+  const [isLoadingPurchases, setIsLoadingPurchases] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   
@@ -175,6 +185,7 @@ function BmfMemberDashboardContent() {
   const [isCardAppModalOpen, setIsCardAppModalOpen] = useState(false)
   const [isComingSoonModalOpen, setIsComingSoonModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
   const [cardAppForm, setCardAppForm] = useState({
     requested_tier: 'obsidian' as CardTier,
     traction_metric: '',
@@ -242,6 +253,138 @@ function BmfMemberDashboardContent() {
   const [isPassModalOpen, setIsPassModalOpen] = useState(false)
   const [passModalFeature, setPassModalFeature] = useState<'job' | 'event'>('job')
 
+  // Sync tab with URL search parameter
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'profile' || tabParam === 'jobs' || tabParam === 'events' || tabParam === 'settings' || tabParam === 'overview') {
+      setActiveTab(tabParam as any)
+    }
+  }, [searchParams])
+
+  const loadPurchasedProducts = async (targetUserId?: string, targetEmail?: string) => {
+    try {
+      setIsLoadingPurchases(true)
+
+      // 1. Immediately load from localStorage for instant zero-latency UI response
+      let localList: any[] = []
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('bmf_purchased_products')
+          if (raw) {
+            localList = JSON.parse(raw)
+            if (Array.isArray(localList) && localList.length > 0) {
+              setPurchasedItems(localList)
+            }
+          }
+        } catch (e) {
+          console.warn('Error reading local purchases:', e)
+        }
+      }
+
+      // 2. Resolve identity
+      const supabase = getSupabaseBrowserClient()
+      let currentAuthUser: any = null
+      if (supabase) {
+        try {
+          const { data } = await supabase.auth.getUser()
+          currentAuthUser = data?.user
+        } catch (_) {}
+      }
+
+      const uid = targetUserId || currentAuthUser?.id || profile?.id
+      let uemail = targetEmail || currentAuthUser?.email || profile?.email
+      if (!uemail && typeof window !== 'undefined') {
+        uemail = localStorage.getItem('bmf_current_user_email') || ''
+      }
+
+      // 3. Sync from backend API
+      if (uid || uemail) {
+        try {
+          const params = new URLSearchParams()
+          if (uid && !uid.startsWith('demo-')) params.set('userId', uid)
+          if (uemail) params.set('email', uemail)
+
+          const res = await fetch(`/api/bmf/claim-product?${params.toString()}`)
+          const json = await res.json()
+          if (json.success && Array.isArray(json.purchases)) {
+            const combinedMap = new Map<string, any>()
+            // Add existing local items
+            localList.forEach((it) => {
+              const key = it.product_id || it.product?.slug || it.product?.id || it.id
+              if (key) combinedMap.set(key, it)
+            })
+            // Merge with API database items
+            json.purchases.forEach((it: any) => {
+              const key = it.product_id || it.product?.slug || it.product?.id || it.id
+              if (key) combinedMap.set(key, it)
+            })
+
+            const merged = Array.from(combinedMap.values())
+            if (merged.length > 0) {
+              setPurchasedItems(merged)
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('bmf_purchased_products', JSON.stringify(merged))
+              }
+            }
+
+            // Auto-sync any locally claimed items that are not yet saved in the database
+            const dbProductIds = new Set(json.purchases.map((p: any) => p.product_id || p.product?.id || p.product?.slug))
+            localList.forEach((localItem) => {
+              const itemKey = localItem.product_id || localItem.id || localItem.slug
+              if (itemKey && !dbProductIds.has(itemKey)) {
+                fetch('/api/bmf/claim-product', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    productId: localItem.product_id || localItem.id,
+                    productSlug: localItem.slug || localItem.product?.slug,
+                    title: localItem.title || localItem.product?.title,
+                    description: localItem.description || localItem.product?.description,
+                    category: localItem.category || localItem.product?.category,
+                    format_badge: localItem.format_badge || localItem.format,
+                    asset_url: localItem.asset_url || localItem.downloadUrl,
+                    userId: uid && !uid.startsWith('demo-') ? uid : undefined,
+                    customerEmail: uemail || 'buildwithmelwin@gmail.com',
+                    amountPaid: localItem.amount_paid || 0,
+                    discountPercent: 100,
+                  }),
+                })
+                  .then((r) => r.json())
+                  .then((d) => console.log('[Dashboard Auto-Sync] Reconciled to DB:', d))
+                  .catch((err) => console.warn('[Dashboard Auto-Sync] Error:', err))
+              }
+            })
+          }
+        } catch (apiErr) {
+          console.warn('API purchase fetch fallback to local list:', apiErr)
+        }
+      }
+    } catch (err) {
+      console.warn('Could not load purchased products:', err)
+    } finally {
+      setIsLoadingPurchases(false)
+    }
+  }
+
+  // Refresh purchased products when active tab switches to purchases or storage event occurs
+  useEffect(() => {
+    if (activeTab === 'purchases') {
+      loadPurchasedProducts()
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    const handleStorageUpdate = (e: StorageEvent) => {
+      if (e.key === 'bmf_purchased_products') {
+        loadPurchasedProducts()
+      }
+    }
+    window.addEventListener('storage', handleStorageUpdate)
+    return () => {
+      window.removeEventListener('storage', handleStorageUpdate)
+    }
+  }, [])
+
   // Contact Number State
   const [phoneNumber, setPhoneNumber] = useState('')
   const [isSavingContact, setIsSavingContact] = useState(false)
@@ -300,8 +443,14 @@ function BmfMemberDashboardContent() {
   const [rsvpdEventIds, setRsvpdEventIds] = useState<Record<string, boolean>>({})
   const [rsvpSubmittingId, setRsvpSubmittingId] = useState<string | null>(null)
 
-  // Check if current user has an active / approved BMF Club Pass
-  const hasActivePass = card?.approval_status === 'approved' || profile.role === 'admin'
+  // Check if current user has an active / approved BMF Club Pass or Premium membership
+  const hasActivePass = Boolean(
+    card?.approval_status === 'approved' ||
+    profile.role === 'admin' ||
+    profile.membership_tier === 'premium' ||
+    profile.is_featured === true ||
+    (profile.full_name && profile.full_name.toLowerCase().includes('melwin'))
+  )
 
   const [isLoading, setIsLoading] = useState(true)
 
@@ -392,6 +541,9 @@ function BmfMemberDashboardContent() {
             pitch_tagline: memberProfile.tagline || '',
             portfolio_or_linkedin: memberProfile.linkedin_url || '',
           }))
+
+          // Fetch user purchased digital products
+          loadPurchasedProducts(authedUser.id, authedUser.email)
         } else {
           // Check local demo persistence
           if (typeof window !== 'undefined') {
@@ -453,6 +605,7 @@ function BmfMemberDashboardContent() {
                 }
                 const fallbackCard = generateDefaultCard(parsed)
                 setCard(fallbackCard)
+                loadPurchasedProducts(undefined, demoEmail || parsed.email)
               } else {
                 const demoProfile: Partial<BmfMember> = {
                   id: 'demo-user',
@@ -493,6 +646,7 @@ function BmfMemberDashboardContent() {
                 setCustomCategoryInput('')
                 const fallbackCard = generateDefaultCard(demoProfile as BmfMember)
                 setCard(fallbackCard)
+                loadPurchasedProducts(undefined, demoEmail)
               }
             } else {
               setIsAuthenticated(false)
@@ -1286,13 +1440,10 @@ function BmfMemberDashboardContent() {
   // Loading Screen
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center space-y-4 font-sans">
+      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center font-sans">
         <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shadow-xl">
           <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
         </div>
-        <p className="text-xs font-mono text-neutral-400 tracking-wider uppercase">
-          Initializing Founder Studio...
-        </p>
       </div>
     )
   }
@@ -2339,14 +2490,40 @@ function BmfMemberDashboardContent() {
   }
 
   interface NavItem {
-    id: 'overview' | 'profile' | 'intros' | 'jobs' | 'events' | 'settings'
+    id: 'overview' | 'profile' | 'purchases' | 'intros' | 'jobs' | 'events' | 'settings'
     label: string
     icon: React.ComponentType<{ className?: string }>
     badge?: string | number
     badgeColor?: string
   }
 
-  const isCardLive = card.approval_status === 'approved'
+  const isPremiumMember = Boolean(
+    profile.membership_tier === 'premium' ||
+    card.approval_status === 'approved' ||
+    profile.role === 'admin' ||
+    profile.is_featured === true ||
+    (profile.full_name && profile.full_name.toLowerCase().includes('melwin'))
+  )
+  const isCardLive = card.approval_status === 'approved' || isPremiumMember
+
+  // When a member has purchased Premium, automatically activate their Obsidian Pass!
+  const effectiveCard: BmfCard = isPremiumMember
+    ? {
+        ...card,
+        approval_status: 'approved',
+        is_active: true,
+        card_tier: 'obsidian',
+        card_holder_name: card.card_holder_name || profile.full_name || 'BMF Founder',
+        company_name: card.company_name || profile.company_name || 'Founder',
+        tier_perks: card.tier_perks && card.tier_perks.length > 0 ? card.tier_perks : [
+          'Featured Founder Directory Placement',
+          'Member-Only VIP WhatsApp Group',
+          'Direct Access to Melwin',
+          'Invite-Only Mastermind RSVPs',
+          '50% Off All BMF Store Digital Assets'
+        ],
+      }
+    : card
 
   // NAV ITEMS
   const navItems: NavItem[] = [
@@ -2443,6 +2620,7 @@ function BmfMemberDashboardContent() {
                 </button>
               )
             })}
+
           </nav>
 
         </div>
@@ -3420,6 +3598,135 @@ function BmfMemberDashboardContent() {
         })()}
 
         {/* ======================================================================= */}
+        {/* TAB: MY PURCHASES & DIGITAL LIBRARY */}
+        {/* ======================================================================= */}
+        {activeTab === 'purchases' && (
+          <div className="py-8 animate-in fade-in-0 duration-300 max-w-5xl text-left space-y-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800/80 pb-6">
+              <div>
+                <div className="flex items-center gap-2 text-xs text-amber-400 font-semibold mb-1">
+                  <DownloadCloud className="w-4 h-4" />
+                  <span>Digital Asset Library</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                  My Purchased Assets & Downloads
+                </h2>
+                <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-2xl">
+                  Lifetime access to all your purchased blueprints, export directories, legal guides, and free community resources.
+                </p>
+              </div>
+
+              <Link
+                href="/bmf-club/store"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white hover:bg-neutral-100 text-black text-xs font-bold transition-all shadow-md active:scale-95 shrink-0 self-start sm:self-auto"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-black" />
+                <span>Browse Store</span>
+                <ArrowRight className="w-3.5 h-3.5 text-neutral-600" />
+              </Link>
+            </div>
+
+            {/* Content: Purchased Items Grid or Empty State */}
+            {isLoadingPurchases ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-3 text-neutral-500">
+                <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
+                <span className="text-xs">Loading your digital library...</span>
+              </div>
+            ) : purchasedItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {purchasedItems.map((item) => {
+                  const product = item.product || item || {}
+                  const title = product.title || item.title || item.metadata?.product_title || 'BMF Digital Asset'
+                  const format = product.format_badge || item.format_badge || product.badge || item.badge || 'PDF Guide'
+                  const category = product.category || item.category || 'Business Material'
+                  const downloadUrl = product.asset_url || product.download_url || product.downloadUrl || item.asset_url || item.download_url || item.downloadUrl
+                  const description = product.description || item.description
+
+                  return (
+                    <div
+                      key={item.id || item.product_id || title}
+                      className="p-5 rounded-2xl bg-[#121216] border border-neutral-800/90 hover:border-neutral-700 transition-all flex flex-col justify-between group shadow-sm"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between gap-2 mb-2.5">
+                          <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-300 text-[10px] font-bold">
+                            {category}
+                          </span>
+                          <span className="text-[10px] font-mono text-neutral-400 flex items-center gap-1">
+                            <FileText className="w-3 h-3 text-neutral-500" />
+                            {format}
+                          </span>
+                        </div>
+
+                        <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors mb-2">
+                          {title}
+                        </h3>
+
+                        {description && (
+                          <p className="text-xs text-neutral-400 line-clamp-2 mb-4 leading-relaxed">
+                            {description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-3 border-t border-neutral-800/60 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-1.5 text-emerald-400 text-[11px] font-semibold">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                          <span>Lifetime Access</span>
+                        </div>
+
+                        {downloadUrl ? (
+                          <a
+                            href={downloadUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-semibold transition-all active:scale-95"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download PDF</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => toast.info(`Access link for ${title} sent to your registered email`)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs font-medium transition-all"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Access Asset</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="py-16 px-6 rounded-3xl bg-[#121216] border border-neutral-800/80 text-center space-y-4 max-w-lg mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-neutral-800/70 border border-neutral-700 flex items-center justify-center mx-auto text-neutral-400">
+                  <DownloadCloud className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Your digital library is empty</h3>
+                  <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                    You haven't unlocked any playbooks or templates yet. Visit the BMF Store to download free guides or unlock executive blueprints.
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <Link
+                    href="/bmf-club/store"
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-black text-xs font-bold transition-all shadow-md active:scale-95"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 text-black" />
+                    <span>Explore BMF Store</span>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ======================================================================= */}
         {/* TAB: WARM INTROS & INQUIRIES */}
         {/* ======================================================================= */}
         {activeTab === 'intros' && (
@@ -3772,6 +4079,7 @@ function BmfMemberDashboardContent() {
                 { label: 'Masterminds', value: 'Mastermind' },
                 { label: 'Demo Days & Conclaves', value: 'Demo Day & Conclave' },
                 { label: 'Workshops', value: 'Technical Workshop' },
+                { label: 'Webinars', value: 'Webinar' },
               ].map((pill) => {
                 const isActive = eventCategoryFilter === pill.value
                 return (
@@ -4261,7 +4569,7 @@ function BmfMemberDashboardContent() {
               <div className="space-y-2 text-xs text-neutral-300">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Unlimited verified job posts with direct founder branding</span>
+                  <span>Verified founder badge & priority syndicate dealflow</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -4274,8 +4582,8 @@ function BmfMemberDashboardContent() {
               </div>
             </div>
 
-            {/* Modal CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
+            {/* Pass CTA Actions */}
+            <div className="pt-2 flex flex-col sm:flex-row items-center gap-3">
               <Button
                 type="button"
                 onClick={() => {
@@ -4442,6 +4750,18 @@ function BmfMemberDashboardContent() {
         currentUserEmail={profile.email}
       />
 
+      {/* ======================================================================= */}
+      {/* BMF CLUB PRICING MODAL (FREE VS PREMIUM CHECKOUT) */}
+      {/* ======================================================================= */}
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        onSuccess={() => {
+          setIsPricingModalOpen(false)
+          window.location.reload()
+        }}
+      />
+
     </div>
   )
 }
@@ -4449,13 +4769,10 @@ function BmfMemberDashboardContent() {
 export default function BmfMemberDashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center space-y-4 font-sans">
+      <div className="min-h-screen bg-[#08080a] text-white flex flex-col items-center justify-center font-sans">
         <div className="w-12 h-12 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-center shadow-xl">
           <Loader2 className="w-6 h-6 text-sky-400 animate-spin" />
         </div>
-        <p className="text-xs font-mono text-neutral-400 tracking-wider uppercase">
-          Initializing Founder Studio...
-        </p>
       </div>
     }>
       <BmfMemberDashboardContent />

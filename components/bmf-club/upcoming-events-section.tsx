@@ -7,7 +7,10 @@ import {
   BmfEvent, 
   INITIAL_BMF_EVENTS, 
   fetchBmfEvents, 
-  registerForEvent 
+  registerForEvent,
+  isEventExpired,
+  cleanEventCtaText,
+  sortBmfEvents
 } from '@/lib/supabase/bmf-events'
 import { 
   Calendar, 
@@ -62,6 +65,11 @@ export function UpcomingEventsSection() {
     }
     loadEvents()
   }, [])
+
+  // Sort: Live / Upcoming gatherings first, completed events at the bottom
+  const sortedEvents = React.useMemo(() => {
+    return sortBmfEvents(events)
+  }, [events])
 
   const handleOpenRsvp = (event: BmfEvent) => {
     if (event.cta_type === 'external_link' && event.external_cta_url) {
@@ -128,11 +136,14 @@ export function UpcomingEventsSection() {
           </p>
         </div>
 
-        {/* Events List (Last 5 events) */}
+        {/* Events List (Last 5 events - Live/Upcoming first, Completed at bottom) */}
         <div className="space-y-4">
-          {events.slice(0, 5).map((event) => {
-            const isFull = event.total_capacity > 0 && event.registered_count >= event.total_capacity
-            const spotsRemaining = Math.max(0, event.total_capacity - event.registered_count)
+          {sortedEvents.slice(0, 5).map((event) => {
+            const isExpired = isEventExpired(event)
+            const isUnlimited = !event.total_capacity || event.total_capacity === 0 || event.total_capacity >= 9999
+            const isFull = !isUnlimited && event.total_capacity > 0 && (event.registered_count || 0) >= event.total_capacity
+            const spotsRemaining = !isUnlimited ? Math.max(0, event.total_capacity - (event.registered_count || 0)) : 0
+            const cleanCtaText = cleanEventCtaText(event.external_cta_text)
 
             return (
               <div
@@ -146,12 +157,22 @@ export function UpcomingEventsSection() {
                       {event.category.toUpperCase()}
                     </span>
 
-                    {isFull ? (
+                    {isExpired ? (
+                      <span className="text-[11px] font-semibold text-neutral-600 bg-neutral-200/80 border border-neutral-300 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-neutral-500" />
+                        <span>Event Completed</span>
+                      </span>
+                    ) : isUnlimited ? (
+                      <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <Users className="w-3 h-3" />
+                        <span>Open Registration</span>
+                      </span>
+                    ) : isFull ? (
                       <span className="text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Flame className="w-3 h-3 text-rose-500" />
                         <span>Waitlist Only (Seats Full)</span>
                       </span>
-                    ) : spotsRemaining <= 5 ? (
+                    ) : spotsRemaining <= 5 && spotsRemaining > 0 ? (
                       <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Flame className="w-3 h-3 text-amber-500" />
                         <span>Only {spotsRemaining} Spots Left</span>
@@ -159,7 +180,7 @@ export function UpcomingEventsSection() {
                     ) : (
                       <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        <span>{event.total_capacity ? `${event.total_capacity} Curated Seats` : 'Open Seats'}</span>
+                        <span>{event.total_capacity ? `${event.total_capacity} Curated Seats` : 'Open Registration'}</span>
                       </span>
                     )}
 
@@ -172,9 +193,11 @@ export function UpcomingEventsSection() {
 
                   {/* Title & Tagline */}
                   <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-[#111111] group-hover:text-black transition-colors">
-                      {event.title}
-                    </h3>
+                    <Link href={`/bmf-club/events/${event.id}`} className="block group/title">
+                      <h3 className="text-xl sm:text-2xl font-bold text-[#111111] group-hover/title:text-neutral-600 transition-colors">
+                        {event.title}
+                      </h3>
+                    </Link>
                     {event.tagline && (
                       <p className="text-xs text-[#666666] pt-1 leading-relaxed">
                         {event.tagline}
@@ -207,20 +230,39 @@ export function UpcomingEventsSection() {
                   )}
                 </div>
 
-                {/* CTA Action Button */}
-                <div className="shrink-0">
-                  <Button
-                    type="button"
-                    onClick={() => handleOpenRsvp(event)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-6 py-3.5 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                {/* CTA Action Buttons */}
+                <div className="shrink-0 flex flex-col sm:flex-row items-center gap-2">
+                  <Link
+                    href={`/bmf-club/events/${event.id}`}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-200 px-5 py-3 rounded-full text-xs font-bold transition-all shadow-xs"
                   >
-                    <span>{event.external_cta_text || (event.cta_type === 'external_link' ? 'Apply on External Site' : isFull ? 'Join Waitlist' : 'Request Invitation')}</span>
-                    {event.cta_type === 'external_link' ? (
-                      <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
-                    ) : (
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    )}
-                  </Button>
+                    <span>View Details</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {isExpired ? (
+                    <Button
+                      type="button"
+                      disabled
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-neutral-200 text-neutral-500 px-6 py-3.5 rounded-full text-xs font-bold shadow-none cursor-not-allowed border border-neutral-300"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400" />
+                      <span>Event Completed</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      onClick={() => handleOpenRsvp(event)}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#111111] hover:bg-black text-white px-6 py-3.5 rounded-full text-xs font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                    >
+                      <span>{cleanCtaText || (event.cta_type === 'external_link' ? 'Apply on External Site' : isFull ? 'Join Waitlist' : 'Request Invitation')}</span>
+                      {event.cta_type === 'external_link' ? (
+                        <ExternalLink className="w-3.5 h-3.5 text-neutral-400" />
+                      ) : (
+                        <Ticket className="w-3.5 h-3.5 text-amber-400" />
+                      )}
+                    </Button>
+                  )}
                 </div>
               </div>
             )

@@ -38,6 +38,7 @@ const CATEGORIES = [
   'Dinner',
   'Roundtable',
   'Workshop',
+  'Webinar',
   'Product Teardown',
   'Investor Chat',
   'Casual Mixer',

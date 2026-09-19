@@ -50,6 +50,44 @@ export interface BmfEventRegistration {
 
 export const INITIAL_BMF_EVENTS: BmfEvent[] = [
   {
+    id: '9c2225b0-e13a-4450-b5df-1082e0da0d89',
+    title: 'From Idea to First ₹1 Lakh: The Early-Stage Founder Playbook',
+    slug: 'from-idea-to-first-1-lakh-early-stage-founder-playbook',
+    tagline: 'Starting a business is easy. Getting your first paying customers is where the real game begins.',
+    description: `Starting a business is easy. Getting your first paying customers is where the real game begins.
+
+In this practical BMF webinar, we’ll break down exactly how early-stage entrepreneurs can go from an idea to their first ₹1 lakh in revenue, without wasting months planning or burning money on things that don’t matter.
+
+We’ll cover idea validation, building your MVP, getting your first 10 customers, ₹0 marketing strategies, pricing, personal branding, common founder mistakes, hiring, and how to build a focused 30-day action plan.
+
+Whether you’re still exploring an idea or already building your first business, this session is designed to help you stop overthinking and start executing.
+
+Format: Online Webinar (60 Minutes)
+Hosted by: Build With Melwin (BMF) & BMF Club
+Schedule:
+• Batch 1: 26th September, 4:00 PM – 5:00 PM IST (Q&A Session Included)
+• Batch 2: 27th September, 4:00 PM – 5:00 PM IST (Q&A Session Included)`,
+    cover_image: 'https://static.wixstatic.com/media/6abdd9_45fd1f766dab4c88a57eea4ef5de2c08~mv2.png',
+    thumbnail_url: 'https://static.wixstatic.com/media/6abdd9_45fd1f766dab4c88a57eea4ef5de2c08~mv2.png',
+    event_date: 'September 26–27, 2026',
+    event_time: '4:00 PM - 5:00 PM IST',
+    location_type: 'virtual',
+    location_venue: 'Live Interactive Online Webinar',
+    location_city: 'Online',
+    category: 'Webinar',
+    total_capacity: 0,
+    registered_count: 0,
+    is_published: true,
+    status: 'upcoming',
+    cta_type: 'external_link',
+    external_cta_url: 'https://payments.cashfree.com/forms?code=from-idea-to-1-lakh-webinar',
+    external_cta_text: 'Book Webinar Pass',
+    pricing_type: 'paid',
+    price_inr: 99,
+    requirements: `• Aspiring entrepreneurs & first-time founders\n• Early-stage startup founders\n• Freelancers and solopreneurs\n• Students building their first business\n• Anyone trying to get their first paying customers`,
+    tags: ['Webinar', 'Playbook', 'Idea to 1 Lakh', 'First Customers', 'BMF Masterclass', 'Early-Stage'],
+  },
+  {
     id: 'event-1',
     title: 'INNOVEST 3.0 – Startup Demo Day & Investor Conclave',
     slug: 'innovest-3-startup-demo-day-cit-chennai-2026',
@@ -203,13 +241,13 @@ export async function fetchBmfEvents(): Promise<BmfEvent[]> {
       if (typeof window !== 'undefined') {
         fetch('/api/bmf/seed-events', { method: 'POST' }).catch(() => {})
       }
-      return INITIAL_BMF_EVENTS
+      return sortBmfEvents(INITIAL_BMF_EVENTS)
     }
 
-    return data as BmfEvent[]
+    return sortBmfEvents(data as BmfEvent[])
   } catch (err) {
     console.error('Error fetching BMF events:', err)
-    return INITIAL_BMF_EVENTS
+    return sortBmfEvents(INITIAL_BMF_EVENTS)
   }
 }
 
@@ -230,13 +268,13 @@ export async function fetchAllEventsForAdmin(): Promise<BmfEvent[]> {
       .order('created_at', { ascending: false })
 
     if (error || !data || data.length === 0) {
-      return INITIAL_BMF_EVENTS
+      return sortBmfEvents(INITIAL_BMF_EVENTS)
     }
 
-    return data as BmfEvent[]
+    return sortBmfEvents(data as BmfEvent[])
   } catch (err) {
     console.error('Error fetching admin BMF events:', err)
-    return INITIAL_BMF_EVENTS
+    return sortBmfEvents(INITIAL_BMF_EVENTS)
   }
 }
 
@@ -392,3 +430,140 @@ export async function fetchEventRegistrations(eventId?: string): Promise<BmfEven
     return []
   }
 }
+
+export async function fetchBmfEventByIdOrSlug(idOrSlug: string): Promise<BmfEvent | null> {
+  try {
+    const supabase = getSupabaseBrowserClient()
+    if (!supabase) {
+      if (typeof window !== 'undefined') {
+        const local = localStorage.getItem('bmf_custom_events')
+        if (local) {
+          const parsed: BmfEvent[] = JSON.parse(local)
+          const found = parsed.find((e) => e.id === idOrSlug || e.slug === idOrSlug)
+          if (found) return found
+        }
+      }
+      const initialFound = INITIAL_BMF_EVENTS.find((e) => e.id === idOrSlug || e.slug === idOrSlug)
+      return initialFound || null
+    }
+
+    // Try finding by id first
+    let { data, error } = await supabase
+      .from('bmf_events')
+      .select('*')
+      .eq('id', idOrSlug)
+      .maybeSingle()
+
+    // If not found, try finding by slug
+    if (!data) {
+      const slugRes = await supabase
+        .from('bmf_events')
+        .select('*')
+        .eq('slug', idOrSlug)
+        .maybeSingle()
+      data = slugRes.data
+    }
+
+    if (data) {
+      return data as BmfEvent
+    }
+
+    // Fallback to local storage or initial events
+    if (typeof window !== 'undefined') {
+      const local = localStorage.getItem('bmf_custom_events')
+      if (local) {
+        const parsed: BmfEvent[] = JSON.parse(local)
+        const found = parsed.find((e) => e.id === idOrSlug || e.slug === idOrSlug)
+        if (found) return found
+      }
+    }
+
+    const fallback = INITIAL_BMF_EVENTS.find((e) => e.id === idOrSlug || e.slug === idOrSlug)
+    return fallback || null
+  } catch (err) {
+    console.error('Error fetching BMF event by id or slug:', err)
+    const fallback = INITIAL_BMF_EVENTS.find((e) => e.id === idOrSlug || e.slug === idOrSlug)
+    return fallback || null
+  }
+}
+
+export function isEventExpired(event: BmfEvent): boolean {
+  if (event.status === 'past' || event.status === 'closed') {
+    return true
+  }
+
+  if (!event.event_date) return false
+
+  try {
+    const raw = event.event_date.trim()
+
+    // 1. Direct standard date parse
+    const directDate = new Date(raw)
+    if (!isNaN(directDate.getTime())) {
+      directDate.setHours(23, 59, 59, 999)
+      return directDate.getTime() < Date.now()
+    }
+
+    // 2. Handle ranges like "September 26–27, 2026" or "September 1-3, 2026"
+    const normalized = raw.replace(/[–—]/g, '-')
+    if (normalized.includes('-')) {
+      const parts = normalized.split('-')
+      const endPart = parts[parts.length - 1].trim()
+      const startPart = parts[0].trim()
+      const monthMatch = startPart.match(/^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)/i)
+      
+      let endString = endPart
+      if (monthMatch && !endPart.match(/^(January|February|March|April|May|June|July|August|September|October|November|December)/i)) {
+        endString = `${monthMatch[0]} ${endPart}`
+      }
+
+      const parsedEndDate = new Date(endString)
+      if (!isNaN(parsedEndDate.getTime())) {
+        parsedEndDate.setHours(23, 59, 59, 999)
+        return parsedEndDate.getTime() < Date.now()
+      }
+    }
+
+    // 3. Fallback: try parsing with Date.parse
+    const fallbackTime = Date.parse(raw)
+    if (!isNaN(fallbackTime)) {
+      const d = new Date(fallbackTime)
+      d.setHours(23, 59, 59, 999)
+      return d.getTime() < Date.now()
+    }
+  } catch (err) {
+    console.warn('Could not parse event date for expiration:', event.event_date)
+  }
+
+  return false
+}
+
+/**
+ * Strips duplicate price information from CTA button strings (e.g. "Book Webinar Pass • ₹99" -> "Book Webinar Pass")
+ */
+export function cleanEventCtaText(text?: string | null): string {
+  if (!text) return ''
+  return text
+    .replace(/\s*[•·-]\s*₹\s*[\d,]+/gi, '')
+    .replace(/₹\s*[\d,]+/gi, '')
+    .replace(/\s*[•·-]\s*INR\s*[\d,]+/gi, '')
+    .replace(/INR\s*[\d,]+/gi, '')
+    .trim()
+}
+
+/**
+ * Sorts events so that live / upcoming gatherings are ALWAYS at the top,
+ * and expired / completed events are moved down to the bottom.
+ */
+export function sortBmfEvents(events: BmfEvent[]): BmfEvent[] {
+  return [...events].sort((a, b) => {
+    const aCompleted = isEventExpired(a) || a.status === 'past' || a.status === 'closed'
+    const bCompleted = isEventExpired(b) || b.status === 'past' || b.status === 'closed'
+
+    if (aCompleted && !bCompleted) return 1
+    if (!aCompleted && bCompleted) return -1
+
+    return 0
+  })
+}
+

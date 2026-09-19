@@ -10,8 +10,9 @@ UPDATE bmf_club.bmf_events
 SET thumbnail_url = cover_image 
 WHERE thumbnail_url IS NULL AND cover_image IS NOT NULL;
 
--- 3. Recreate the backward-compatible view in public schema
-CREATE OR REPLACE VIEW public.bmf_events AS 
+-- 3. Recreate the backward-compatible view in public schema with security_invoker
+CREATE OR REPLACE VIEW public.bmf_events 
+WITH (security_invoker = true) AS 
 SELECT * FROM bmf_club.bmf_events;
 
 -- 4. Grant permissions

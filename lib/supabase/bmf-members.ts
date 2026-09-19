@@ -30,6 +30,10 @@ export interface BmfMember {
   is_featured?: boolean
   is_onboarding_completed?: boolean
   priority_order?: number
+  membership_tier?: 'free' | 'premium'
+  membership_valid_until?: string | null
+  bmf_number?: number | null
+  bmf_id?: string | null
   badge_title?: string | null
   card_theme?: 'obsidian' | 'gold_prestige' | 'midnight_sapphire' | 'royal_amethyst' | 'emerald_matrix' | 'sunset_rose' | 'titanium_carbon' | string
   review_status?: 'pending' | 'approved' | 'rejected'
@@ -1012,7 +1016,31 @@ export function getProfileMissingFields(member?: BmfMember | null): string[] {
   return missing
 }
 
-export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
+/**
+ * Fast 32-bit FNV-1a seeded hash function for deterministic uniform randomization.
+ */
+export function hashMemberSeed(id: string, seed: string | number): number {
+  const str = `${seed}:${id}`
+  let h = 0x811c9dc5
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0
+}
+
+export interface SortBmfMembersOptions {
+  seed?: string | number | null
+  rotateWithinTiers?: boolean
+}
+
+export function sortBmfMembers(
+  members: BmfMember[],
+  options?: SortBmfMembersOptions
+): BmfMember[] {
+  const shouldRotate = options?.rotateWithinTiers !== false
+  const activeSeed = options?.seed ?? Math.floor(Date.now() / (1000 * 60 * 60)) // hourly rotation by default
+
   return [...members].sort((a, b) => {
     // 1. Dr. Melwin is strictly pinned at #1 (or priority_order === 1)
     const isMelwinA = a.priority_order === 1 || 
@@ -1025,35 +1053,52 @@ export function sortBmfMembers(members: BmfMember[]): BmfMember[] {
     if (isMelwinA && !isMelwinB) return -1
     if (!isMelwinA && isMelwinB) return 1
 
-    // Explicit manual priority rank set by Admin (if any other member is specifically pinned)
+    // Explicit manual priority rank set by Admin (if any other member is specifically pinned, e.g. < 100)
     const pA = a.priority_order !== undefined && a.priority_order !== null && a.priority_order > 1 ? a.priority_order : 100
     const pB = b.priority_order !== undefined && b.priority_order !== null && b.priority_order > 1 ? b.priority_order : 100
-    if (pA !== pB) {
+    if (pA !== pB && (pA < 100 || pB < 100)) {
       return pA - pB
     }
 
-    // 2. Profile Completeness Tier (Tier 3 = Full Website + LinkedIn + Logo + Photo + Bio first!)
+    // 2. Featured / Premium Members (Featured Founder placement in the directory)
+    const isPremiumA = a.membership_tier === 'premium' || a.is_featured === true
+    const isPremiumB = b.membership_tier === 'premium' || b.is_featured === true
+    if (isPremiumA && !isPremiumB) return -1
+    if (!isPremiumA && isPremiumB) return 1
+
+    // 3. Profile Completeness Tier (Tier 3 = Full Website + LinkedIn + Logo + Photo + Bio first!)
     const tierA = getProfileCompletenessTier(a)
     const tierB = getProfileCompletenessTier(b)
     if (tierA !== tierB) {
       return tierB - tierA
     }
 
-    // 3. Granular Profile Quality Score (Higher score first)
+    // 3. Random Rotation within each completeness tier (so all-filled founders rotate fairly)
+    if (shouldRotate) {
+      const idA = a.id || a.full_name || ''
+      const idB = b.id || b.full_name || ''
+      const hashA = hashMemberSeed(idA, activeSeed)
+      const hashB = hashMemberSeed(idB, activeSeed)
+      if (hashA !== hashB) {
+        return hashA - hashB
+      }
+    }
+
+    // 4. Granular Profile Quality Score (Higher score first if rotation equal or disabled)
     const scoreA = getProfileQualityScore(a)
     const scoreB = getProfileQualityScore(b)
     if (scoreA !== scoreB) {
       return scoreB - scoreA
     }
 
-    // 4. Featured spotlight status
+    // 5. Featured spotlight status
     const featA = a.is_featured ? 1 : 0
     const featB = b.is_featured ? 1 : 0
     if (featA !== featB) {
       return featB - featA
     }
 
-    // 5. Most recent first as tie-breaker
+    // 6. Most recent first as tie-breaker
     const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
     const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
     return dateB - dateA
@@ -1139,6 +1184,7 @@ export async function fetchPaginatedMembers(params: {
   tier?: 'all' | 'premium' | 'regular'
   category?: string
   search?: string
+  seed?: string | number
   forceFresh?: boolean
 }): Promise<PaginatedMembersResponse> {
   const page = params.page || 1
@@ -1146,9 +1192,10 @@ export async function fetchPaginatedMembers(params: {
   const tier = params.tier || 'all'
   const category = params.category || 'All'
   const search = params.search || ''
+  const seed = params.seed !== undefined && params.seed !== null ? String(params.seed) : ''
   const forceFresh = params.forceFresh || false
 
-  const cacheKey = `p_${page}_l_${limit}_t_${tier}_c_${category}_s_${search}`
+  const cacheKey = `p_${page}_l_${limit}_t_${tier}_c_${category}_s_${search}_sd_${seed || 'def'}`
 
   if (!forceFresh) {
     const cached = getFromClientCache<PaginatedMembersResponse>(cacheKey)
@@ -1164,6 +1211,7 @@ export async function fetchPaginatedMembers(params: {
       tier,
       category,
       search,
+      ...(seed ? { seed } : {}),
       ...(forceFresh ? { fresh: 'true' } : {}),
     })
 
@@ -1187,7 +1235,7 @@ export async function fetchPaginatedMembers(params: {
 
     // Fallback: local processing from INITIAL_BMF_MEMBERS or direct Supabase
     const fallbackAll = INITIAL_BMF_MEMBERS
-    const filtered = fallbackAll.filter((m) => {
+    let filtered = fallbackAll.filter((m) => {
       if (tier === 'premium' && !m.is_featured) return false
       if (tier === 'regular' && m.is_featured) return false
       if (category !== 'All') {
@@ -1208,6 +1256,9 @@ export async function fetchPaginatedMembers(params: {
       }
       return true
     })
+
+    // Sort with seed
+    filtered = sortBmfMembers(filtered, { seed })
 
     const total = filtered.length
     const startIndex = (page - 1) * limit
@@ -1241,9 +1292,14 @@ export async function fetchPaginatedMembers(params: {
   }
 }
 
-export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?: number }): Promise<BmfMember[]> {
+export async function fetchBmfMembers(options?: {
+  onlyFeatured?: boolean
+  limit?: number
+  seed?: string | number
+  rotateWithinTiers?: boolean
+}): Promise<BmfMember[]> {
   try {
-    const cacheKey = `featured_${options?.onlyFeatured || false}_limit_${options?.limit || 0}`
+    const cacheKey = `featured_${options?.onlyFeatured || false}_limit_${options?.limit || 0}_seed_${options?.seed || ''}`
     const cached = getFromClientCache<BmfMember[]>(cacheKey)
     if (cached) {
       return cached
@@ -1254,7 +1310,7 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
       let data = INITIAL_BMF_MEMBERS
       if (options?.onlyFeatured) data = data.filter((m) => m.is_featured)
       if (options?.limit) data = data.slice(0, options.limit)
-      return sortBmfMembers(data)
+      return sortBmfMembers(data, options)
     }
 
     let query = supabase
@@ -1282,7 +1338,7 @@ export async function fetchBmfMembers(options?: { onlyFeatured?: boolean; limit?
       return []
     }
 
-    const sorted = sortBmfMembers(data as BmfMember[])
+    const sorted = sortBmfMembers(data as BmfMember[], options)
     saveToClientCache(cacheKey, sorted)
     return sorted
   } catch (err) {

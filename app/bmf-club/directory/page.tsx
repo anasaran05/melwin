@@ -54,6 +54,20 @@ export default function BmfFounderDirectoryPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
 
+  // Rotating cards within tiers state
+  const [rotationSeed, setRotationSeed] = useState<string>(() => {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const saved = window.sessionStorage.getItem('bmf_directory_rotation_seed')
+      if (saved) return saved
+      const created = 'rot_' + Math.random().toString(36).substring(2, 9)
+      try {
+        window.sessionStorage.setItem('bmf_directory_rotation_seed', created)
+      } catch {}
+      return created
+    }
+    return 'rot_' + Math.random().toString(36).substring(2, 9)
+  })
+
   // User Authentication State for dynamic Dashboard / Join Free button
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [authLoading, setAuthLoading] = useState(true)
@@ -122,7 +136,8 @@ export default function BmfFounderDirectoryPage() {
   }, [])
 
   // Load initial page or when tier/category/search changes
-  const loadInitialData = useCallback(async (isRefresh = false) => {
+  const loadInitialData = useCallback(async (isRefresh = false, overrideSeed?: string) => {
+    const activeSeed = overrideSeed || rotationSeed
     if (isRefresh) {
       setIsRefreshing(true)
       clearClientMembersCache()
@@ -137,6 +152,7 @@ export default function BmfFounderDirectoryPage() {
         tier: tierTab,
         category: selectedCategory,
         search: searchQuery,
+        seed: activeSeed,
         forceFresh: isRefresh,
       })
 
@@ -155,14 +171,26 @@ export default function BmfFounderDirectoryPage() {
       setIsInitialLoading(false)
       setIsRefreshing(false)
     }
-  }, [tierTab, selectedCategory, searchQuery])
+  }, [tierTab, selectedCategory, searchQuery, rotationSeed])
+
+  // Trigger manual or automatic rotation of founder cards within tiers
+  const handleRotate = useCallback((isManual = true) => {
+    const newSeed = 'rot_' + Math.random().toString(36).substring(2, 9)
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        window.sessionStorage.setItem('bmf_directory_rotation_seed', newSeed)
+      } catch {}
+    }
+    setRotationSeed(newSeed)
+    loadInitialData(true, newSeed)
+  }, [loadInitialData])
 
   // Trigger initial data load when filters change
   useEffect(() => {
     loadInitialData()
   }, [loadInitialData])
 
-  // Load next page function (Pinterest-style infinite scroll)
+  // Load next page function (Pinterest-style infinite scroll with consistent session seed)
   const loadNextPage = useCallback(async () => {
     if (isLoadingMore || !hasMore || isInitialLoading) return
 
@@ -176,6 +204,7 @@ export default function BmfFounderDirectoryPage() {
         tier: tierTab,
         category: selectedCategory,
         search: searchQuery,
+        seed: rotationSeed,
       })
 
       if (res.members && res.members.length > 0) {
@@ -195,7 +224,7 @@ export default function BmfFounderDirectoryPage() {
     } finally {
       setIsLoadingMore(false)
     }
-  }, [isLoadingMore, hasMore, isInitialLoading, page, tierTab, selectedCategory, searchQuery])
+  }, [isLoadingMore, hasMore, isInitialLoading, page, tierTab, selectedCategory, searchQuery, rotationSeed])
 
   // Setup IntersectionObserver for bottom sentinel
   useEffect(() => {
@@ -394,10 +423,10 @@ export default function BmfFounderDirectoryPage() {
                 )}
               </div>
 
-              {/* Cache Refresh Button */}
+              {/* Refresh Button */}
               <button
                 type="button"
-                onClick={() => loadInitialData(true)}
+                onClick={() => handleRotate()}
                 disabled={isRefreshing}
                 title="Refresh from server"
                 className="p-2 sm:p-2.5 rounded-xl bg-[#f5f5f7] hover:bg-neutral-200 text-neutral-600 hover:text-black transition-all shrink-0 cursor-pointer disabled:opacity-50"
@@ -448,8 +477,6 @@ export default function BmfFounderDirectoryPage() {
               </span>
             )}
           </div>
-
-        
         </div>
 
         {/* Initial Loading Skeleton State */}
