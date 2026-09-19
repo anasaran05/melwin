@@ -36,7 +36,7 @@ import { Button } from '@/components/ui/button'
 const VERIFIED_BADGE_URL = 'https://img.icons8.com/stickers/500/verified-badge.png'
 
 const CATEGORY_TABS = [
-  { label: 'All Gatherings', value: 'all' },
+  { label: 'All Events', value: 'all' },
   { label: 'Dinners', value: 'Dinner' },
   { label: 'Roundtables', value: 'Roundtable' },
   { label: 'Workshops', value: 'Workshop' },
@@ -415,7 +415,7 @@ export default function BmfPublicEventsPage() {
         {/* Events Grid */}
         <section className="space-y-6">
           <div className="flex items-center justify-between text-xs font-mono text-neutral-500 border-b border-neutral-200 pb-3">
-            <span>Showing {filteredEvents.length} {filteredEvents.length === 1 ? 'Gathering' : 'Gatherings'}</span>
+            <span>Showing {filteredEvents.length} {filteredEvents.length === 1 ? 'Event' : 'Events'}</span>
             <span>Live event feed</span>
           </div>
 
@@ -427,7 +427,7 @@ export default function BmfPublicEventsPage() {
           ) : filteredEvents.length === 0 ? (
             <div className="py-16 text-center space-y-3 bg-white border border-neutral-200 rounded-3xl p-8 shadow-xs">
               <Calendar className="w-8 h-8 text-neutral-400 mx-auto" />
-              <h3 className="text-base font-bold text-neutral-900">No gatherings found</h3>
+              <h3 className="text-base font-bold text-neutral-900">No events found</h3>
               <p className="text-xs text-neutral-500 max-w-sm mx-auto">
                 No events matched your current filters. Try changing category, city, or clearing search query.
               </p>

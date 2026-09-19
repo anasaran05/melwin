@@ -81,7 +81,7 @@ Schedule:
     status: 'upcoming',
     cta_type: 'external_link',
     external_cta_url: 'https://payments.cashfree.com/forms?code=from-idea-to-1-lakh-webinar',
-    external_cta_text: 'Book Webinar Pass',
+    external_cta_text: 'Enroll Now',
     pricing_type: 'paid',
     price_inr: 99,
     requirements: `• Aspiring entrepreneurs & first-time founders\n• Early-stage startup founders\n• Freelancers and solopreneurs\n• Students building their first business\n• Anyone trying to get their first paying customers`,
@@ -224,10 +224,10 @@ export async function fetchBmfEvents(): Promise<BmfEvent[]> {
         const local = localStorage.getItem('bmf_custom_events')
         if (local) {
           const parsed = JSON.parse(local)
-          return parsed.filter((e: BmfEvent) => e.is_published)
+          return sortBmfEvents(parsed.filter((e: BmfEvent) => e.is_published))
         }
       }
-      return INITIAL_BMF_EVENTS
+      return sortBmfEvents(INITIAL_BMF_EVENTS)
     }
 
     const { data, error } = await supabase
@@ -543,12 +543,17 @@ export function isEventExpired(event: BmfEvent): boolean {
  */
 export function cleanEventCtaText(text?: string | null): string {
   if (!text) return ''
-  return text
+  const cleaned = text
     .replace(/\s*[•·-]\s*₹\s*[\d,]+/gi, '')
     .replace(/₹\s*[\d,]+/gi, '')
     .replace(/\s*[•·-]\s*INR\s*[\d,]+/gi, '')
     .replace(/INR\s*[\d,]+/gi, '')
     .trim()
+
+  if (cleaned.toLowerCase() === 'book webinar pass' || cleaned.toLowerCase() === 'book pass') {
+    return 'Enroll Now'
+  }
+  return cleaned
 }
 
 /**

@@ -30,7 +30,7 @@ import {
   generateDefaultCard, 
   submitCardPassApplication 
 } from '@/lib/supabase/bmf-cards'
-import { BmfEvent, fetchBmfEvents, registerForEvent } from '@/lib/supabase/bmf-events'
+import { BmfEvent, fetchBmfEvents, registerForEvent, cleanEventCtaText } from '@/lib/supabase/bmf-events'
 import { ProposeMastermindModal } from '@/components/bmf-club/propose-mastermind-modal'
 import { MemberFlipCard } from '@/components/bmf-club/member-flip-card'
 import { ExecutiveMetalCard } from '@/components/bmf-club/executive-metal-card'
@@ -674,37 +674,8 @@ function BmfMemberDashboardContent() {
     checkAuthAndLoadData()
   }, [router, destination])
 
-  const handleRsvpForEvent = async (event: BmfEvent) => {
-    if (!hasActivePass) {
-      setPassModalFeature('event')
-      setIsPassModalOpen(true)
-      return
-    }
-    if (event.cta_type === 'external_link' && event.external_cta_url) {
-      window.open(event.external_cta_url, '_blank')
-      return
-    }
-    setRsvpSubmittingId(event.id)
-    try {
-      const res = await registerForEvent({
-        event_id: event.id,
-        user_id: profile.user_id || profile.id,
-        full_name: profile.full_name,
-        email: profile.email || `${profile.id}@bmfclub.vip`,
-        phone: profile.whatsapp_number || profile.phone_number || '',
-        company_name: profile.company_name,
-        role: profile.role,
-        linkedin_url: profile.linkedin_url || '',
-        notes: `RSVP pass requested by ${profile.full_name} (${profile.company_name})`,
-      })
-      if (res.success) {
-        setRsvpdEventIds((prev) => ({ ...prev, [event.id]: true }))
-      }
-    } catch (err) {
-      console.error('RSVP Error:', err)
-    } finally {
-      setRsvpSubmittingId(null)
-    }
+  const handleRsvpForEvent = (event: BmfEvent) => {
+    router.push(`/bmf-club/events/${event.id}`)
   }
 
   const handleMastermindProposed = (newEvent: BmfEvent) => {
@@ -4150,7 +4121,7 @@ function BmfMemberDashboardContent() {
                       >
                         {/* Cover Image or Graphic */}
                         {event.cover_image ? (
-                          <div className="w-full h-44 bg-neutral-950 relative overflow-hidden shrink-0">
+                          <Link href={`/bmf-club/events/${event.id}`} className="block w-full h-44 bg-neutral-950 relative overflow-hidden shrink-0 cursor-pointer">
                             <img
                               src={event.cover_image}
                               alt={event.title}
@@ -4175,9 +4146,9 @@ function BmfMemberDashboardContent() {
                                 ? 'MEMBERS ONLY'
                                 : 'INVITE ONLY'}
                             </span>
-                          </div>
+                          </Link>
                         ) : (
-                          <div className="p-5 bg-gradient-to-r from-neutral-900 to-neutral-950 border-b border-neutral-800/80 flex items-center justify-between">
+                          <Link href={`/bmf-club/events/${event.id}`} className="block p-5 bg-gradient-to-r from-neutral-900 to-neutral-950 border-b border-neutral-800/80 flex items-center justify-between cursor-pointer">
                             <span className="text-[10px] font-mono uppercase bg-neutral-800 text-neutral-200 border border-neutral-700 px-3 py-1 rounded-full font-bold">
                               {event.category}
                             </span>
@@ -4196,7 +4167,7 @@ function BmfMemberDashboardContent() {
                                 ? 'MEMBERS ONLY'
                                 : 'INVITE ONLY'}
                             </span>
-                          </div>
+                          </Link>
                         )}
 
                         {/* Event Details Body */}
@@ -4211,9 +4182,11 @@ function BmfMemberDashboardContent() {
                             </div>
 
                             <div>
-                              <h3 className="text-lg font-bold text-white leading-snug group-hover:text-neutral-200 transition-colors">
-                                {event.title}
-                              </h3>
+                              <Link href={`/bmf-club/events/${event.id}`} className="block group/title">
+                                <h3 className="text-lg font-bold text-white leading-snug group-hover/title:text-neutral-300 transition-colors">
+                                  {event.title}
+                                </h3>
+                              </Link>
                               {event.tagline && (
                                 <p className="text-xs text-neutral-400 mt-1 line-clamp-2 leading-relaxed">
                                   {event.tagline}
@@ -4247,43 +4220,37 @@ function BmfMemberDashboardContent() {
                           {/* Action CTA Button */}
                           <div className="pt-4 border-t border-neutral-800/80 flex items-center justify-between gap-3">
                             <span className="text-[11px] font-mono text-neutral-500 uppercase">
-                              Status: <strong className="text-emerald-400">{event.status}</strong>
+                              Status: <strong className={event.status === 'past' || event.status === 'closed' ? 'text-neutral-400' : 'text-emerald-400'}>{event.status}</strong>
                             </span>
 
-                            {isRsvpd ? (
-                              <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-950/60 border border-emerald-700/60 text-emerald-400 text-xs font-bold">
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>RSVP Submitted</span>
-                              </div>
-                            ) : event.cta_type === 'external_link' ? (
-                              <Button
-                                type="button"
-                                onClick={() => handleRsvpForEvent(event)}
-                                className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-5 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-md"
+                            <div className="flex items-center gap-2">
+                              {isRsvpd ? (
+                                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-950/60 border border-emerald-700/60 text-emerald-400 text-xs font-bold">
+                                  <CheckCircle2 className="w-3.5 h-3.5" />
+                                  <span>RSVP Submitted</span>
+                                </div>
+                              ) : null}
+
+                              <Link
+                                href={`/bmf-club/events/${event.id}`}
+                                className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-4 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 transition-all"
                               >
-                                <span>{event.external_cta_text || 'Register Online'}</span>
-                                <ExternalLink className="w-3.5 h-3.5" />
-                              </Button>
-                            ) : (
-                              <Button
-                                type="button"
-                                disabled={isSubmittingThis}
-                                onClick={() => handleRsvpForEvent(event)}
-                                className="bg-white hover:bg-neutral-200 text-black text-xs font-bold px-5 py-2 rounded-full inline-flex items-center gap-1.5 cursor-pointer shadow-md active:scale-95 transition-all"
-                              >
-                                {isSubmittingThis ? (
-                                  <>
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-black" />
-                                    <span>Processing...</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span>Join Event</span>
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                  </>
-                                )}
-                              </Button>
-                            )}
+                                <span>View Details</span>
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </Link>
+
+                              {event.cta_type === 'external_link' && event.external_cta_url && (
+                                <a
+                                  href={event.external_cta_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="p-2 rounded-full bg-neutral-900 border border-neutral-700 hover:border-neutral-500 text-neutral-300 hover:text-white transition-colors flex items-center justify-center shadow-xs"
+                                  title={cleanEventCtaText(event.external_cta_text) || 'Direct Registration / Booking'}
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                </a>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

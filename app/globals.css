@@ -93,6 +93,46 @@
   animation-play-state: paused;
 }
 
+/* Moving emerald-black gradient for announcement banners */
+@keyframes emeraldGradientMove {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes emeraldShimmerSweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  50%, 100% {
+    transform: translateX(120%);
+  }
+}
+
+.emerald-banner-bg {
+  background: linear-gradient(
+    115deg,
+    #050806 0%,
+    #041f15 20%,
+    #064e3b 40%,
+    #082e23 60%,
+    #022c22 80%,
+    #050806 100%
+  );
+  background-size: 240% 240%;
+  animation: emeraldGradientMove 9s ease infinite;
+}
+
+.emerald-shimmer-beam {
+  animation: emeraldShimmerSweep 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 
 /* ========================================================================= */
 /* Sterling Gate Kinetic Navigation Styles */

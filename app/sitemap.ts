@@ -1,10 +1,12 @@
 import type { MetadataRoute } from 'next'
+import { fetchBmfEvents } from '@/lib/supabase/bmf-events'
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://buildwithmelwin.com'
   const currentDate = new Date()
 
-  return [
+  // Base static pages
+  const staticRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: currentDate,
@@ -27,13 +29,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/bmf-club`,
       lastModified: currentDate,
       changeFrequency: 'daily',
-      priority: 0.9,
+      priority: 0.95,
     },
     {
       url: `${baseUrl}/bmf-club/directory`,
       lastModified: currentDate,
       changeFrequency: 'hourly',
       priority: 0.95,
+    },
+    {
+      url: `${baseUrl}/bmf-club/events`,
+      lastModified: currentDate,
+      changeFrequency: 'daily',
+      priority: 0.9,
     },
     {
       url: `${baseUrl}/bmf-club/dashboard`,
@@ -78,4 +86,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.5,
     },
   ]
+
+  // Dynamic BMF Events Pages for Google indexing
+  let eventRoutes: MetadataRoute.Sitemap = []
+  try {
+    const publishedEvents = await fetchBmfEvents()
+    eventRoutes = publishedEvents
+      .filter((event) => event.is_published)
+      .map((event) => ({
+        url: `${baseUrl}/bmf-club/events/${encodeURIComponent(event.id)}`,
+        lastModified: event.updated_at ? new Date(event.updated_at) : currentDate,
+        changeFrequency: 'weekly' as const,
+        priority: 0.85,
+      }))
+  } catch (err) {
+    console.error('[Sitemap] Error loading dynamic events for sitemap:', err)
+  }
+
+  return [...staticRoutes, ...eventRoutes]
 }
