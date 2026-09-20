@@ -3637,7 +3637,8 @@ function BmfMemberDashboardContent() {
                 {purchasedItems.map((item) => {
                   const product = item.product || item || {}
                   const title = product.title || item.title || item.metadata?.product_title || 'BMF Digital Asset'
-                  const format = product.format_badge || item.format_badge || product.badge || item.badge || 'PDF Guide'
+                  const rawFormat = product.format_badge || item.format_badge || product.badge || item.badge || 'PDF Guide'
+                  const format = rawFormat.replace(/\s*\(\s*\d+[\d.]*\s*(?:KB|MB|GB|bytes|B)\s*\)/gi, '').trim() || 'PDF Guide'
                   const category = product.category || item.category || 'Business Material'
                   const downloadUrl = product.asset_url || product.download_url || product.downloadUrl || item.asset_url || item.download_url || item.downloadUrl
                   const description = product.description || item.description

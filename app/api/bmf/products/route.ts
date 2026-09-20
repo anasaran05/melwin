@@ -46,12 +46,15 @@ export async function GET() {
       const parsedPrem = Number(p.discounted_price_inr ?? p.premium_price ?? calculatedPrem)
       const premPrice = regPrice === 0 ? 0 : isNaN(parsedPrem) ? 49 : parsedPrem
 
+      const rawFormat = p.format_badge || p.format || 'PDF Guide'
+      const cleanFormat = rawFormat.replace(/\s*\(\s*\d+[\d.]*\s*(?:KB|MB|GB|bytes|B)\s*\)/gi, '').trim()
+
       return {
         id: p.id,
         slug: p.slug || p.id,
         title: p.title,
         category: p.category || 'Growth',
-        format: p.format_badge || p.format || 'PDF Guide',
+        format: cleanFormat || 'PDF Guide',
         description: p.description || '',
         highlights: Array.isArray(p.highlights) ? p.highlights : [],
         regularPrice: regPrice,

@@ -13,22 +13,11 @@ import {
   ArrowLeft,
   Search,
   Download,
+  ShieldCheck,
+  Loader2,
   Check,
-  Zap,
   Users,
   LayoutDashboard,
-  ExternalLink,
-  ShieldCheck,
-  FileText,
-  FileSpreadsheet,
-  Video,
-  BookOpen,
-  Loader2,
-  X,
-  CreditCard,
-  CheckCircle2,
-  ArrowRight,
-  Gift,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -206,12 +195,15 @@ function BmfStoreContent() {
                 const parsedPrem = Number(p.discounted_price_inr ?? p.premium_price ?? calculatedPrem)
                 const premPrice = regPrice === 0 ? 0 : isNaN(parsedPrem) ? 49 : parsedPrem
 
+                const rawFmt = p.format_badge || p.format || 'PDF Guide'
+                const cleanFmt = rawFmt.replace(/\s*\(\s*\d+[\d.]*\s*(?:KB|MB|GB|bytes|B)\s*\)/gi, '').trim()
+
                 return {
                   id: p.id,
                   slug: p.slug || p.id,
                   title: p.title,
                   category: p.category || 'Growth',
-                  format: p.format_badge || p.format || 'PDF Guide',
+                  format: cleanFmt || 'PDF Guide',
                   description: p.description || '',
                   highlights: Array.isArray(p.highlights) ? p.highlights : [],
                   regularPrice: regPrice,
@@ -551,19 +543,6 @@ function BmfStoreContent() {
     })
   }, [products, activeCategory, searchQuery])
 
-  const getFormatIcon = (fileType: string) => {
-    switch (fileType) {
-      case 'docx':
-        return <FileText className="w-3.5 h-3.5 text-blue-600" />
-      case 'sheets':
-        return <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-      case 'video':
-        return <Video className="w-3.5 h-3.5 text-rose-500" />
-      default:
-        return <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-    }
-  }
-
   return (
     <main className="font-sans min-h-screen bg-[#fbfbfb] text-[#111111] relative overflow-x-hidden selection:bg-amber-100 selection:text-amber-900">
       {/* Background Subtle Accent Glow */}
@@ -700,22 +679,16 @@ function BmfStoreContent() {
                   className="flex flex-col justify-between rounded-3xl bg-white border border-stone-200/90 p-6 sm:p-7 shadow-xs hover:shadow-md transition-all hover:border-stone-300 relative overflow-hidden group"
                 >
                   <div>
-                    {/* Top Category & Format Tag */}
+                    {/* Top Category & Badges */}
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 text-[11px] font-bold">
                         {product.category}
                       </span>
-                      <div className="flex items-center gap-2">
-                        {isFreeResource && (
-                          <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                            Free Resource
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1.5 text-[11px] font-mono text-stone-500">
-                          {getFormatIcon(product.fileType)}
-                          <span>{product.format}</span>
+                      {isFreeResource && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                          Free Resource
                         </span>
-                      </div>
+                      )}
                     </div>
 
                     <h3 className="text-xl font-bold text-stone-950 tracking-tight mb-2 group-hover:text-amber-950 transition-colors">
