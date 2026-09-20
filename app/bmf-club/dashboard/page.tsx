@@ -256,8 +256,35 @@ function BmfMemberDashboardContent() {
   // Sync tab with URL search parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab')
-    if (tabParam === 'profile' || tabParam === 'jobs' || tabParam === 'events' || tabParam === 'settings' || tabParam === 'overview') {
+    if (tabParam === 'profile' || tabParam === 'jobs' || tabParam === 'events' || tabParam === 'settings' || tabParam === 'overview' || tabParam === 'purchases') {
       setActiveTab(tabParam as any)
+    }
+  }, [searchParams])
+
+  // Automatically handle return from Cashfree product checkout
+  useEffect(() => {
+    const orderId = searchParams.get('order_id')
+    const status = searchParams.get('status')
+    if (orderId && (status === 'success' || !status)) {
+      setActiveTab('purchases')
+      fetch('/api/cashfree/verify-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success) {
+            toast.success('Payment verified! Your purchased asset is ready.')
+            loadPurchasedProducts()
+          }
+        })
+        .catch((err) => console.warn('[Dashboard] Order verification error:', err))
+        .finally(() => {
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', '/bmf-club/dashboard?tab=purchases')
+          }
+        })
     }
   }, [searchParams])
 

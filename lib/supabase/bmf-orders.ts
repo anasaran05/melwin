@@ -189,15 +189,39 @@ export async function fulfillPaidPremiumOrder(params: {
     // 4. Branch for Digital Product Purchase vs Membership Subscription
     if (order.order_type === 'product' && order.product_id) {
       try {
-        await admin.from('bmf_product_purchases').insert({
+        let validProductId = order.product_id
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(validProductId)
+        if (!isUuid) {
+          const { data: prod } = await admin
+            .from('bmf_products')
+            .select('id')
+            .eq('slug', validProductId)
+            .maybeSingle()
+          if (prod?.id) {
+            validProductId = prod.id
+          }
+        }
+
+        const purchaseRecord = {
           user_id: userId || null,
           customer_email: customerEmail || 'guest@customer.com',
-          product_id: order.product_id,
+          product_id: validProductId,
           order_id: params.orderId,
           amount_paid: params.amount || order.amount,
           discount_applied_percent: order.metadata?.discount_applied_percent || 0,
           access_status: 'active',
-        })
+        }
+
+        const { error: insErr } = await admin
+          .from('bmf_product_purchases')
+          .insert(purchaseRecord)
+
+        if (insErr) {
+          console.warn('[Fulfillment] Schema insert error, trying publicAdmin:', insErr.message)
+          await publicAdmin
+            .from('bmf_product_purchases')
+            .insert(purchaseRecord)
+        }
       } catch (prodErr) {
         console.warn('[Fulfillment] Error recording product purchase (non-fatal):', prodErr)
       }

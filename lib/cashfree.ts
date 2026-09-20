@@ -189,24 +189,40 @@ export function verifyCashfreeWebhookSignature(
   signature: string
 ): boolean {
   try {
+    if (!signature || !timestamp) return false
+
     const config = getCashfreeConfig()
-    const secret = process.env.CASHFREE_WEBHOOK_SECRET || config.secretKey
-    if (!secret || !signature || !timestamp) return false
+    const webhookSecretEnv = process.env.CASHFREE_WEBHOOK_SECRET?.trim()
+    const candidateSecrets: string[] = []
 
-    // Cashfree signature algorithm: HMAC-SHA256(timestamp + rawBody, secret) -> base64
-    const generatedSignature = crypto
-      .createHmac('sha256', secret)
-      .update(timestamp + rawBody)
-      .digest('base64')
+    if (webhookSecretEnv && !webhookSecretEnv.toLowerCase().includes('placeholder')) {
+      candidateSecrets.push(webhookSecretEnv)
+    }
+    if (config.secretKey && !candidateSecrets.includes(config.secretKey)) {
+      candidateSecrets.push(config.secretKey)
+    }
 
-    const sigBuffer = Buffer.from(signature)
-    const genBuffer = Buffer.from(generatedSignature)
-
-    if (sigBuffer.length !== genBuffer.length) {
+    if (candidateSecrets.length === 0) {
+      console.warn('[Cashfree] No valid secret key available for webhook signature verification')
       return false
     }
 
-    return crypto.timingSafeEqual(sigBuffer, genBuffer)
+    // Cashfree signature algorithm: HMAC-SHA256(timestamp + rawBody, secret) -> base64
+    for (const secret of candidateSecrets) {
+      const generatedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(timestamp + rawBody)
+        .digest('base64')
+
+      const sigBuffer = Buffer.from(signature)
+      const genBuffer = Buffer.from(generatedSignature)
+
+      if (sigBuffer.length === genBuffer.length && crypto.timingSafeEqual(sigBuffer, genBuffer)) {
+        return true
+      }
+    }
+
+    return false
   } catch (error) {
     console.error('[Cashfree] Webhook signature verification error:', error)
     return false

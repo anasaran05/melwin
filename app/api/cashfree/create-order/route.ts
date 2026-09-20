@@ -83,29 +83,21 @@ export async function POST(request: NextRequest) {
         if (product) {
           finalProductTitle = product.title
           const reg = Number(product.regular_price ?? product.price_inr ?? 1999)
-          const validReg = isNaN(reg) || reg <= 0 ? 1999 : reg
-          const discountPercent = Number(product.premium_discount_percent ?? 50)
-          const calculatedPrem = Math.round(validReg * (1 - (isNaN(discountPercent) ? 50 : discountPercent) / 100))
-          const prem = Number(product.discounted_price_inr ?? product.premium_price ?? calculatedPrem)
-          const validPrem = isNaN(prem) || prem <= 0 ? Math.round(validReg * 0.5) : prem
-
-          orderAmount = isPremium ? validPrem : validReg
+          orderAmount = isNaN(reg) || reg <= 0 ? 1999 : reg
         } else if (initialProductPrice) {
           const parsed = Number(initialProductPrice)
-          const validPrice = isNaN(parsed) || parsed <= 0 ? 1999 : parsed
-          orderAmount = isPremium ? Math.round(validPrice * 0.5) : validPrice
+          orderAmount = isNaN(parsed) || parsed <= 0 ? 1999 : parsed
         } else {
-          orderAmount = isPremium ? 999.00 : 1999.00
+          orderAmount = 1999.00
         }
       } else if (initialProductPrice) {
         const parsed = Number(initialProductPrice)
-        const validPrice = isNaN(parsed) || parsed <= 0 ? 1999 : parsed
-        orderAmount = isPremium ? Math.round(validPrice * 0.5) : validPrice
+        orderAmount = isNaN(parsed) || parsed <= 0 ? 1999 : parsed
       } else {
-        orderAmount = isPremium ? 999.00 : 1999.00
+        orderAmount = 1999.00
       }
 
-      orderNote = `BMF Store: ${finalProductTitle}${isPremium ? ' (50% Member Discount Applied)' : ''}`
+      orderNote = `BMF Store: ${finalProductTitle}`
     } else {
       orderAmount = 799.00
       orderNote = 'BMF Club Premium Membership (1 Year Access)'
@@ -114,7 +106,7 @@ export async function POST(request: NextRequest) {
     const appOrigin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin || 'https://melwin.in'
     const returnUrl = redirectUrl || (
       orderType === 'product'
-        ? `${appOrigin}/bmf-club/store?order_id={order_id}&status=success&product_id=${productId || ''}`
+        ? `${appOrigin}/bmf-club/dashboard?tab=purchases&order_id={order_id}&status=success&product_id=${productId || ''}`
         : `${appOrigin}/bmf-club/pricing?order_id={order_id}&status=success`
     )
     const notifyUrl = `${appOrigin}/api/webhooks/cashfree`

@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { PricingModal } from '@/components/bmf-club/pricing-modal'
 import { getSupabaseBrowserClient } from '@/lib/supabase/bmf-members'
 import {
   ShoppingBag,
@@ -80,7 +79,6 @@ function BmfStoreContent() {
   const [isLoadingProducts, setIsLoadingProducts] = useState(true)
   const [activeCategory, setActiveCategory] = useState<string>('All')
   const [searchQuery, setSearchQuery] = useState<string>('')
-  const [isPricingModalOpen, setIsPricingModalOpen] = useState(false)
   const [isPremium, setIsPremium] = useState(false)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [purchasedProductIds, setPurchasedProductIds] = useState<Set<string>>(new Set())
@@ -91,9 +89,6 @@ function BmfStoreContent() {
   const [buyerEmail, setBuyerEmail] = useState('')
   const [buyerPhone, setBuyerPhone] = useState('')
   const [isCheckingOut, setIsCheckingOut] = useState(false)
-
-  // Celebration modal state when an asset is purchased or claimed
-  const [celebrationProduct, setCelebrationProduct] = useState<BmfProductItem | null>(null)
 
   // 1. Check user auth, premium status & purchased products
   useEffect(() => {
@@ -266,19 +261,8 @@ function BmfStoreContent() {
       const data = await res.json()
 
       if (data.success) {
-        const unlockedId = data.purchasedProduct || productId
-        if (unlockedId) {
-          setPurchasedProductIds((prev) => new Set([...Array.from(prev), unlockedId]))
-          const matched = products.find((p) => p.id === unlockedId)
-          if (matched) {
-            setCelebrationProduct(matched)
-          } else {
-            toast.success('Payment verified! Your digital asset is now unlocked.')
-          }
-        } else if (data.isPremium) {
-          setIsPremium(true)
-          toast.success('BMF Club Premium activated! 50% discount is now active across the store.')
-        }
+        toast.success('Payment verified! Taking you to your purchased assets...')
+        router.replace('/bmf-club/dashboard?tab=purchases')
       }
     } catch (err) {
       console.warn('[BMF Store] Order verification check error:', err)
@@ -371,7 +355,8 @@ function BmfStoreContent() {
     } catch (_) {}
 
     setPurchasedProductIds((prev) => new Set([...Array.from(prev), product.id, product.slug]))
-    setCelebrationProduct(product)
+    toast.success(`"${product.title}" unlocked! Opening your purchased assets...`)
+    router.push('/bmf-club/dashboard?tab=purchases')
   }
 
   // 4. Initiate Product Action (Buy, Download, or Claim Free)
@@ -411,21 +396,21 @@ function BmfStoreContent() {
     }
 
     setIsCheckingOut(true)
-    const selectedPrice = isPremium ? selectedProduct.premiumPrice : selectedProduct.regularPrice
+    const selectedPrice = selectedProduct.regularPrice
     try {
-      // Step 1: Create Product Order Session
-      const res = await fetch('/api/bmf/create-product-order', {
+      // Step 1: Create Product Order Session via Cashfree
+      const res = await fetch('/api/cashfree/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          orderType: 'product',
           productId: selectedProduct.id,
           productSlug: selectedProduct.slug,
           productTitle: selectedProduct.title,
+          productPrice: selectedPrice,
           customerName: buyerName || 'BMF Founder',
           customerEmail: buyerEmail,
           customerPhone: buyerPhone || '9999999999',
-          isPremiumBuyer: isPremium,
-          appliedPrice: selectedPrice,
         }),
       })
 
@@ -439,6 +424,10 @@ function BmfStoreContent() {
       const envMode = data.environment === 'sandbox' ? 'sandbox' : 'production'
       const cashfreeInstance = CashfreeSdk({ mode: envMode })
 
+      const purchasedItem = selectedProduct
+      // Close our details modal immediately so only Cashfree modal appears
+      setSelectedProduct(null)
+
       cashfreeInstance.checkout({
         paymentSessionId: data.paymentSessionId,
         redirectTarget: '_modal',
@@ -448,31 +437,31 @@ function BmfStoreContent() {
           return
         }
         if (result?.paymentDetails) {
-          toast.success('Payment submitted! Verifying transaction...')
+          toast.success('Payment successful! Taking you to your purchased assets...')
 
           const purchaseRecord = {
-            id: selectedProduct.id,
-            product_id: selectedProduct.id,
-            slug: selectedProduct.slug,
-            title: selectedProduct.title,
-            category: selectedProduct.category,
-            format: selectedProduct.format,
-            format_badge: selectedProduct.format,
-            description: selectedProduct.description,
-            downloadUrl: selectedProduct.downloadUrl,
-            asset_url: selectedProduct.downloadUrl,
-            regularPrice: selectedProduct.regularPrice,
+            id: purchasedItem.id,
+            product_id: purchasedItem.id,
+            slug: purchasedItem.slug,
+            title: purchasedItem.title,
+            category: purchasedItem.category,
+            format: purchasedItem.format,
+            format_badge: purchasedItem.format,
+            description: purchasedItem.description,
+            downloadUrl: purchasedItem.downloadUrl,
+            asset_url: purchasedItem.downloadUrl,
+            regularPrice: purchasedItem.regularPrice,
             amount_paid: selectedPrice,
             unlocked_at: new Date().toISOString(),
             access_status: 'active',
             product: {
-              id: selectedProduct.id,
-              title: selectedProduct.title,
-              category: selectedProduct.category,
-              format_badge: selectedProduct.format,
-              description: selectedProduct.description,
-              asset_url: selectedProduct.downloadUrl,
-              download_url: selectedProduct.downloadUrl,
+              id: purchasedItem.id,
+              title: purchasedItem.title,
+              category: purchasedItem.category,
+              format_badge: purchasedItem.format,
+              description: purchasedItem.description,
+              asset_url: purchasedItem.downloadUrl,
+              download_url: purchasedItem.downloadUrl,
             },
           }
 
@@ -480,7 +469,7 @@ function BmfStoreContent() {
             try {
               const raw = localStorage.getItem('bmf_purchased_products')
               const list = raw ? JSON.parse(raw) : []
-              const filtered = list.filter((p: any) => p.slug !== selectedProduct.slug && p.id !== selectedProduct.id)
+              const filtered = list.filter((p: any) => p.slug !== purchasedItem.slug && p.id !== purchasedItem.id)
               const updated = [purchaseRecord, ...filtered]
               localStorage.setItem('bmf_purchased_products', JSON.stringify(updated))
               window.dispatchEvent(new Event('storage'))
@@ -489,10 +478,17 @@ function BmfStoreContent() {
             }
           }
 
-          setPurchasedProductIds((prev) => new Set([...Array.from(prev), selectedProduct.id, selectedProduct.slug]))
-          setCelebrationProduct(selectedProduct)
-          setSelectedProduct(null)
-          verifyStoreOrder(data.orderId, selectedProduct.id)
+          setPurchasedProductIds((prev) => new Set([...Array.from(prev), purchasedItem.id, purchasedItem.slug]))
+
+          // Verify with backend in background
+          fetch('/api/cashfree/verify-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: data.orderId }),
+          }).catch((err) => console.warn('[Product Checkout] Background verification notice:', err))
+
+          // Directly go to user purchased items page!
+          router.push('/bmf-club/dashboard?tab=purchases')
         }
       })
     } catch (err: any) {
@@ -589,30 +585,9 @@ function BmfStoreContent() {
               </span>
             </h1>
             <p className="text-stone-600 text-xs sm:text-sm mt-3 leading-relaxed">
-              Real export frameworks, government grant checklists, cold outreach templates, and 1-lakh revenue playbooks.
-              Free community assets are 100% free to claim; premium blueprints are just ₹99 (or ₹49 with your BMF Pass).
+              Real export frameworks, government grant checklists, cold outreach templates, and startup revenue playbooks. Instant digital downloads and execution blueprints.
             </p>
           </div>
-
-          {/* Membership Status / Upgrade Callout for non-premium guests only */}
-          {!isPremium && (
-            <div className="shrink-0">
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                <div className="px-3.5 py-2 rounded-xl bg-white border border-stone-200 shadow-2xs flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-xs font-semibold text-stone-700">Free Community Plan</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPricingModalOpen(true)}
-                  className="px-4 sm:px-5 py-3 rounded-2xl bg-stone-950 hover:bg-stone-900 text-amber-300 font-bold text-xs tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 border border-amber-500/20"
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Get 50% Off With Pass — ₹799/yr</span>
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Filters & Search Toolbar */}
@@ -749,39 +724,16 @@ function BmfStoreContent() {
                             100% Free Community Resource
                           </div>
                         </div>
-                      ) : isPremium ? (
-                        // Premium Member Price Display
-                        <div>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-2xl font-black text-emerald-600">
-                              ₹{product.premiumPrice}
-                            </span>
-                            <span className="text-xs line-through text-stone-400 font-medium">
-                              ₹{product.regularPrice}
-                            </span>
-                          </div>
-                          <div className="text-[10px] font-bold text-emerald-700 flex items-center gap-1 mt-0.5">
-                            <Check className="w-3 h-3 text-emerald-600 shrink-0" />
-                            <span>50% Pass Discount Applied</span>
-                          </div>
-                        </div>
                       ) : (
-                        // Free User Price Display
+                        // Standard Product Price Display
                         <div>
                           <div className="flex items-baseline gap-2">
                             <span className="text-2xl font-black text-stone-950">
                               ₹{product.regularPrice}
                             </span>
                           </div>
-                          <div className="mt-0.5">
-                            <button
-                              type="button"
-                              onClick={() => setIsPricingModalOpen(true)}
-                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-100/70 hover:bg-amber-100 border border-amber-300/60 px-2 py-0.5 rounded-md transition-colors text-left"
-                            >
-                              <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" />
-                              <span>₹{product.premiumPrice} with BMF Pass (50% Off) →</span>
-                            </button>
+                          <div className="text-[10px] font-semibold text-stone-500 mt-0.5">
+                            Instant Digital Blueprint
                           </div>
                         </div>
                       )}
@@ -806,15 +758,6 @@ function BmfStoreContent() {
                         <Download className="w-3.5 h-3.5" />
                         <span>Get Free Asset</span>
                       </button>
-                    ) : isPremium ? (
-                      <button
-                        type="button"
-                        onClick={() => handleProductAction(product)}
-                        className="px-4 py-2.5 rounded-xl font-bold text-xs bg-amber-400 hover:bg-amber-300 text-stone-950 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
-                      >
-                        <Crown className="w-3.5 h-3.5 text-stone-900" />
-                        <span>Buy for ₹{product.premiumPrice}</span>
-                      </button>
                     ) : (
                       <button
                         type="button"
@@ -822,7 +765,7 @@ function BmfStoreContent() {
                         className="px-4 py-2.5 rounded-xl font-bold text-xs bg-stone-900 hover:bg-black text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
                       >
                         <ShoppingBag className="w-3.5 h-3.5 text-stone-300" />
-                        <span>Buy for ₹{product.regularPrice}</span>
+                        <span>Buy • ₹{product.regularPrice}</span>
                       </button>
                     )}
                   </div>
@@ -871,51 +814,17 @@ function BmfStoreContent() {
                   <div className="text-[11px] text-stone-500 font-medium">Payable Amount</div>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-stone-950">
-                      ₹{isPremium ? selectedProduct.premiumPrice : selectedProduct.regularPrice}
+                      ₹{selectedProduct.regularPrice}
                     </span>
-                    {isPremium && (
-                      <span className="text-xs line-through text-stone-400 font-medium">
-                        ₹{selectedProduct.regularPrice}
-                      </span>
-                    )}
                   </div>
                 </div>
 
-                {isPremium ? (
-                  <div className="text-right">
-                    <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold flex items-center gap-1">
-                      <Check className="w-3 h-3" /> 50% Member Discount
-                    </span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProduct(null)
-                      setIsPricingModalOpen(true)
-                    }}
-                    className="text-right text-[11px] font-bold text-amber-800 bg-amber-100/70 hover:bg-amber-100 px-2.5 py-1 rounded-lg border border-amber-300/60 transition-colors"
-                  >
-                    Get for ₹{selectedProduct.premiumPrice} with Pass →
-                  </button>
-                )}
+                <div className="text-right">
+                  <span className="px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
+                    One-Time Purchase
+                  </span>
+                </div>
               </div>
-
-              {!isPremium && (
-                <div className="mt-2.5 pt-2.5 border-t border-stone-200/60 flex items-center justify-between text-[11px] text-stone-600">
-                  <span>💡 Premium members get 50% off all assets</span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProduct(null)
-                      setIsPricingModalOpen(true)
-                    }}
-                    className="font-bold text-amber-800 hover:underline"
-                  >
-                    Upgrade for ₹799/yr
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Customer Details Form */}
@@ -979,7 +888,7 @@ function BmfStoreContent() {
                 ) : (
                   <>
                     <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Pay ₹{isPremium ? selectedProduct.premiumPrice : selectedProduct.regularPrice} with Cashfree</span>
+                    <span>Pay ₹{selectedProduct.regularPrice} with Cashfree</span>
                   </>
                 )}
               </button>
@@ -992,93 +901,21 @@ function BmfStoreContent() {
         </div>
       )}
 
-      {/* POST-PURCHASE & FREE CLAIM CELEBRATION DIALOG */}
-      {celebrationProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative text-center">
-            <button
-              type="button"
-              onClick={() => setCelebrationProduct(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            {/* Success Icon */}
-            <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-4 shadow-xs">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600" />
-            </div>
-
-            <h3 className="text-xl font-bold text-stone-950 tracking-tight mb-2">
-              🎉 Added to Your Dashboard!
-            </h3>
-            <p className="text-stone-600 text-xs sm:text-sm leading-relaxed mb-6">
-              You have unlocked lifetime access to <strong className="text-stone-900">{celebrationProduct.title}</strong>. It is now saved in your Founder Dashboard library.
-            </p>
-
-            <div className="flex flex-col gap-2.5">
-              {/* Primary CTA: Navigate to Dashboard Purchases */}
-              <Link
-                href="/bmf-club/dashboard?tab=purchases"
-                onClick={() => setCelebrationProduct(null)}
-                className="w-full py-3 px-4 rounded-xl bg-stone-950 hover:bg-stone-900 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
-              >
-                <LayoutDashboard className="w-4 h-4 text-amber-400" />
-                <span>Go to My Purchased Assets</span>
-                <ArrowRight className="w-3.5 h-3.5 text-stone-400" />
-              </Link>
-
-              {/* Secondary CTA: Download directly now */}
-              <button
-                type="button"
-                onClick={() => {
-                  openAssetLink(celebrationProduct)
-                  setCelebrationProduct(null)
-                }}
-                className="w-full py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-semibold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download File Directly</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCelebrationProduct(null)}
-                className="text-[11px] text-stone-500 hover:text-stone-900 transition-colors mt-2"
-              >
-                Continue Browsing Store
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Global Pricing Modal for Free Users wanting to upgrade to Premium */}
-      <PricingModal
-        isOpen={isPricingModalOpen}
-        onClose={() => setIsPricingModalOpen(false)}
-        onSuccess={() => {
-          setIsPricingModalOpen(false)
-          setIsPremium(true)
-          toast.success('Welcome to BMF Club Premium! 50% discount is now active.')
-        }}
-      />
-
       <Footer />
     </main>
   )
 }
 
 export default function BmfStorePage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    router.replace('/bmf-club')
-  }, [router])
-
   return (
-    <div className="min-h-screen bg-[#fbfbfb] flex items-center justify-center">
-      {/* BMF Store postponed - redirecting to /bmf-club */}
-    </div>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#fbfbfb] flex items-center justify-center text-stone-500 font-sans text-xs">
+          Loading BMF Store...
+        </div>
+      }
+    >
+      <BmfStoreContent />
+    </Suspense>
   )
 }
