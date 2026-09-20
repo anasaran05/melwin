@@ -2528,6 +2528,13 @@ function BmfMemberDashboardContent() {
   const navItems: NavItem[] = [
     { id: 'overview', label: 'Studio & 3D Card', icon: LayoutDashboard },
     { id: 'profile', label: 'Founder Profile Editor', icon: User },
+    { 
+      id: 'purchases', 
+      label: 'Purchased Items', 
+      icon: DownloadCloud, 
+      badge: purchasedItems.length > 0 ? purchasedItems.length : undefined, 
+      badgeColor: 'bg-emerald-500 text-white font-bold' 
+    },
     { id: 'intros', label: 'Warm Intros & Inquiries', icon: Handshake },
     { id: 'jobs', label: 'Post Startup Jobs', icon: Briefcase, badge: jobs.length },
     { id: 'events', label: 'Masterminds & Events', icon: Calendar, badge: 'Live' },
@@ -2620,6 +2627,26 @@ function BmfMemberDashboardContent() {
               )
             })}
 
+            {/* Marketplace & Digital Store Link */}
+            <div className="pt-3">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-neutral-500 px-3 py-1 mb-1">
+                Marketplace
+              </p>
+              <Link
+                href="/bmf-club/store"
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800 hover:border-emerald-500/40 text-neutral-300 hover:text-white group cursor-pointer shadow-xs"
+              >
+                <div className="flex items-center gap-3">
+                  <ShoppingBag className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  <span>BMF Store</span>
+                </div>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  Shop
+                </span>
+              </Link>
+            </div>
+
           </nav>
 
         </div>
@@ -2641,6 +2668,27 @@ function BmfMemberDashboardContent() {
                 <User className="w-4 h-4 text-neutral-400" />
                 <span>Edit Profile</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('purchases')
+                  setIsUserMenuOpen(false)
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer text-left"
+              >
+                <DownloadCloud className="w-4 h-4 text-emerald-400" />
+                <span>My Purchased Items ({purchasedItems.length})</span>
+              </button>
+
+              <Link
+                href="/bmf-club/store"
+                onClick={() => setIsUserMenuOpen(false)}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs text-neutral-300 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer text-left"
+              >
+                <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                <span>Browse BMF Store</span>
+              </Link>
 
               <button
                 type="button"
