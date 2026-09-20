@@ -55,58 +55,55 @@ export interface BmfSubscriptionRecord {
 export async function saveBmfOrder(orderData: BmfOrderRecord): Promise<{ success: boolean; error?: string }> {
   try {
     const admin = getSupabaseAdminClient()
+
+    // Enforce valid values that satisfy Postgres check constraints:
+    // plan_tier IN ('free', 'premium')
+    // billing_cycle IN ('annual', 'monthly', 'lifetime')
+    const safePlanTier = ['free', 'premium'].includes(String(orderData.plan_tier).toLowerCase())
+      ? orderData.plan_tier
+      : 'premium'
+
+    const safeBillingCycle = ['annual', 'monthly', 'lifetime'].includes(String(orderData.billing_cycle).toLowerCase())
+      ? orderData.billing_cycle
+      : 'annual'
+
+    const safeUserId =
+      orderData.user_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderData.user_id)
+        ? orderData.user_id
+        : null
+
+    const safeOrderType = orderData.order_type === 'product' ? 'product' : 'membership'
+
+    const payload = {
+      order_id: orderData.order_id,
+      user_id: safeUserId,
+      member_id: orderData.member_id || null,
+      order_type: safeOrderType,
+      product_id: orderData.product_id || null,
+      plan_tier: safePlanTier,
+      billing_cycle: safeBillingCycle,
+      amount: orderData.amount,
+      currency: orderData.currency || 'INR',
+      payment_gateway: orderData.payment_gateway || 'cashfree',
+      payment_session_id: orderData.payment_session_id || null,
+      status: orderData.status || 'created',
+      customer_name: orderData.customer_name || null,
+      customer_email: orderData.customer_email || null,
+      customer_phone: orderData.customer_phone || null,
+      metadata: orderData.metadata || {},
+      updated_at: new Date().toISOString(),
+    }
+
     const { error } = await admin
       .from('bmf_orders')
-      .upsert(
-        {
-          order_id: orderData.order_id,
-          user_id: orderData.user_id || null,
-          member_id: orderData.member_id || null,
-          order_type: orderData.order_type || 'membership',
-          product_id: orderData.product_id || null,
-          plan_tier: orderData.plan_tier || 'premium',
-          billing_cycle: orderData.billing_cycle || 'annual',
-          amount: orderData.amount,
-          currency: orderData.currency || 'INR',
-          payment_gateway: orderData.payment_gateway || 'cashfree',
-          payment_session_id: orderData.payment_session_id || null,
-          status: orderData.status || 'created',
-          customer_name: orderData.customer_name || null,
-          customer_email: orderData.customer_email || null,
-          customer_phone: orderData.customer_phone || null,
-          metadata: orderData.metadata || {},
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'order_id' }
-      )
+      .upsert(payload, { onConflict: 'order_id' })
 
     if (error) {
       console.warn('[BMF Orders] Error writing to bmf_club schema, falling back to public view:', error.message)
       const publicAdmin = getSupabasePublicAdminClient()
       const { error: pubError } = await publicAdmin
         .from('bmf_orders')
-        .upsert(
-          {
-            order_id: orderData.order_id,
-            user_id: orderData.user_id || null,
-            member_id: orderData.member_id || null,
-            order_type: orderData.order_type || 'membership',
-            product_id: orderData.product_id || null,
-            plan_tier: orderData.plan_tier || 'premium',
-            billing_cycle: orderData.billing_cycle || 'annual',
-            amount: orderData.amount,
-            currency: orderData.currency || 'INR',
-            payment_gateway: orderData.payment_gateway || 'cashfree',
-            payment_session_id: orderData.payment_session_id || null,
-            status: orderData.status || 'created',
-            customer_name: orderData.customer_name || null,
-            customer_email: orderData.customer_email || null,
-            customer_phone: orderData.customer_phone || null,
-            metadata: orderData.metadata || {},
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: 'order_id' }
-        )
+        .upsert(payload, { onConflict: 'order_id' })
 
       if (pubError) {
         console.error('[BMF Orders] Fallback failed:', pubError.message)
@@ -296,8 +293,46 @@ export async function fulfillPaidPremiumOrder(params: {
     }
 
     if (!order) {
-      console.error('[Fulfillment] Order not found for orderId:', params.orderId)
-      return { success: false, error: `Order ${params.orderId} not found` }
+      if (params.rawPayload) {
+        console.log('[Fulfillment] Order record not found initially, auto-recovering from verified Cashfree payload for orderId:', params.orderId)
+        const cfOrder = params.rawPayload?.data?.order || params.rawPayload?.order || {}
+        const cfTags = cfOrder.order_tags || {}
+        const cfCustomer = params.rawPayload?.data?.customer_details || params.rawPayload?.customer_details || {}
+
+        let resolvedProductId = cfTags.product_id || null
+        if (resolvedProductId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId)) {
+          try {
+            const { data: prod } = await admin.from('bmf_products').select('id').eq('slug', resolvedProductId).maybeSingle()
+            if (prod?.id) resolvedProductId = prod.id
+          } catch (_) {}
+        }
+
+        const autoOrder: BmfOrderRecord = {
+          order_id: params.orderId,
+          user_id: cfTags.user_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cfTags.user_id) ? cfTags.user_id : null,
+          order_type: cfTags.order_type === 'product' || params.orderId.startsWith('bmf_prod_') ? 'product' : 'membership',
+          product_id: resolvedProductId,
+          plan_tier: 'premium',
+          billing_cycle: 'annual',
+          amount: params.amount || cfOrder.order_amount || 0,
+          currency: cfOrder.order_currency || 'INR',
+          payment_gateway: 'cashfree',
+          status: 'created',
+          customer_name: cfCustomer.customer_name || 'BMF Founder',
+          customer_email: cfCustomer.customer_email || 'guest@customer.com',
+          customer_phone: cfCustomer.customer_phone || null,
+          metadata: {
+            product_title: cfTags.product_title || 'Digital Asset',
+            auto_recovered_from_webhook: true,
+          },
+        }
+
+        await saveBmfOrder(autoOrder)
+        order = autoOrder
+      } else {
+        console.error('[Fulfillment] Order not found for orderId:', params.orderId)
+        return { success: false, error: `Order ${params.orderId} not found` }
+      }
     }
 
     const wasAlreadyPaid = order.status === 'paid'

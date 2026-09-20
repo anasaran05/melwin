@@ -185,8 +185,8 @@ export async function POST(request: NextRequest) {
     await saveBmfOrder({
       order_id: orderId,
       user_id: userId,
-      plan_tier: orderType === 'product' ? 'product' : 'premium',
-      billing_cycle: orderType === 'product' ? 'one_time' : 'annual',
+      plan_tier: 'premium',
+      billing_cycle: 'annual',
       amount: orderAmount,
       currency: 'INR',
       payment_gateway: 'cashfree',
