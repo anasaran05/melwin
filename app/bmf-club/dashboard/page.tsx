@@ -373,7 +373,8 @@ function BmfMemberDashboardContent() {
                     userId: uid && !uid.startsWith('demo-') ? uid : undefined,
                     customerEmail: uemail || 'buildwithmelwin@gmail.com',
                     amountPaid: localItem.amount_paid || 0,
-                    discountPercent: 100,
+                    orderId: localItem.order_id || localItem.orderId || undefined,
+                    discountPercent: localItem.discount_applied_percent ?? (Number(localItem.amount_paid) > 0 ? 0 : 100),
                   }),
                 })
                   .then((r) => r.json())

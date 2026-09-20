@@ -121,6 +121,146 @@ export async function saveBmfOrder(orderData: BmfOrderRecord): Promise<{ success
 }
 
 /**
+ * Checks if a user already holds an active purchase for a specific product
+ */
+export async function checkExistingActivePurchase(params: {
+  userId?: string | null
+  customerEmail: string
+  productId: string
+}): Promise<{ alreadyPurchased: boolean; orderId?: string }> {
+  try {
+    const admin = getSupabaseAdminClient()
+    const publicAdmin = getSupabasePublicAdminClient()
+
+    let validProductId = params.productId
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(validProductId)
+    if (!isUuid) {
+      const { data: prod } = await admin
+        .from('bmf_products')
+        .select('id')
+        .eq('slug', validProductId)
+        .maybeSingle()
+      if (prod?.id) validProductId = prod.id
+    }
+
+    let matchQuery = admin
+      .from('bmf_product_purchases')
+      .select('id, order_id, access_status')
+      .eq('product_id', validProductId)
+      .eq('access_status', 'active')
+
+    if (params.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) {
+      matchQuery = matchQuery.or(`user_id.eq.${params.userId},customer_email.eq.${params.customerEmail}`)
+    } else {
+      matchQuery = matchQuery.eq('customer_email', params.customerEmail)
+    }
+
+    const { data: existing, error: matchErr } = await matchQuery.maybeSingle()
+    if (!matchErr && existing) {
+      return { alreadyPurchased: true, orderId: existing.order_id || undefined }
+    }
+
+    // Check public schema fallback
+    let pubQuery = publicAdmin
+      .from('bmf_product_purchases')
+      .select('id, order_id, access_status')
+      .eq('product_id', validProductId)
+      .eq('access_status', 'active')
+
+    if (params.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) {
+      pubQuery = pubQuery.or(`user_id.eq.${params.userId},customer_email.eq.${params.customerEmail}`)
+    } else {
+      pubQuery = pubQuery.eq('customer_email', params.customerEmail)
+    }
+
+    const { data: pubExisting } = await pubQuery.maybeSingle()
+    if (pubExisting) {
+      return { alreadyPurchased: true, orderId: pubExisting.order_id || undefined }
+    }
+
+    return { alreadyPurchased: false }
+  } catch (err) {
+    console.warn('[BMF Orders] Error checking existing purchase:', err)
+    return { alreadyPurchased: false }
+  }
+}
+
+/**
+ * Searches for an uncompleted order created within the last N minutes (default 15m)
+ * to reuse the order_id and payment_session_id, preventing duplicate charges.
+ */
+export async function findRecentPendingOrder(params: {
+  userId?: string | null
+  customerEmail: string
+  orderType: 'membership' | 'product'
+  productId?: string | null
+  amount: number
+  withinMinutes?: number
+}): Promise<{
+  order_id: string
+  payment_session_id: string
+  amount: number
+  currency: string
+} | null> {
+  try {
+    const admin = getSupabaseAdminClient()
+    const publicAdmin = getSupabasePublicAdminClient()
+    const minutes = params.withinMinutes || 15
+    const cutoffIso = new Date(Date.now() - minutes * 60 * 1000).toISOString()
+
+    const searchInClient = async (client: any) => {
+      let q = client
+        .from('bmf_orders')
+        .select('order_id, payment_session_id, amount, currency, status, created_at')
+        .eq('order_type', params.orderType)
+        .in('status', ['created', 'pending'])
+        .not('payment_session_id', 'is', null)
+        .gte('created_at', cutoffIso)
+        .order('created_at', { ascending: false })
+        .limit(1)
+
+      if (params.orderType === 'product' && params.productId) {
+        q = q.eq('product_id', params.productId)
+      }
+
+      if (params.userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(params.userId)) {
+        q = q.or(`user_id.eq.${params.userId},customer_email.eq.${params.customerEmail}`)
+      } else {
+        q = q.eq('customer_email', params.customerEmail)
+      }
+
+      const { data, error } = await q
+      if (!error && Array.isArray(data) && data.length > 0) {
+        return data[0]
+      }
+      return null
+    }
+
+    let candidate = await searchInClient(admin)
+    if (!candidate) {
+      candidate = await searchInClient(publicAdmin)
+    }
+
+    if (candidate && candidate.payment_session_id) {
+      // Validate amount matching so price discrepancies don't reuse mismatched sessions
+      if (Math.abs(Number(candidate.amount) - params.amount) < 0.01) {
+        return {
+          order_id: candidate.order_id,
+          payment_session_id: candidate.payment_session_id,
+          amount: Number(candidate.amount),
+          currency: candidate.currency || 'INR',
+        }
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.warn('[BMF Orders] Error finding recent pending order:', err)
+    return null
+  }
+}
+
+/**
  * Marks order as paid, records payment log, upserts subscription, and upgrades member profile
  */
 export async function fulfillPaidPremiumOrder(params: {
@@ -212,15 +352,41 @@ export async function fulfillPaidPremiumOrder(params: {
           access_status: 'active',
         }
 
-        const { error: insErr } = await admin
+        // Check if an existing purchase row exists to update or insert
+        let matchQuery = admin
           .from('bmf_product_purchases')
-          .insert(purchaseRecord)
+          .select('id, order_id')
+          .eq('product_id', validProductId)
 
-        if (insErr) {
-          console.warn('[Fulfillment] Schema insert error, trying publicAdmin:', insErr.message)
-          await publicAdmin
+        if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+          matchQuery = matchQuery.or(`user_id.eq.${userId},customer_email.eq.${customerEmail || ''}`)
+        } else {
+          matchQuery = matchQuery.eq('customer_email', customerEmail || '')
+        }
+
+        const { data: existingRec } = await matchQuery.maybeSingle()
+
+        if (existingRec) {
+          await admin
+            .from('bmf_product_purchases')
+            .update({
+              order_id: params.orderId,
+              amount_paid: params.amount || order.amount,
+              discount_applied_percent: order.metadata?.discount_applied_percent || 0,
+              access_status: 'active',
+            })
+            .eq('id', existingRec.id)
+        } else {
+          const { error: insErr } = await admin
             .from('bmf_product_purchases')
             .insert(purchaseRecord)
+
+          if (insErr) {
+            console.warn('[Fulfillment] Schema insert error, trying publicAdmin:', insErr.message)
+            await publicAdmin
+              .from('bmf_product_purchases')
+              .insert(purchaseRecord)
+          }
         }
       } catch (prodErr) {
         console.warn('[Fulfillment] Error recording product purchase (non-fatal):', prodErr)

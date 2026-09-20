@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createCashfreeOrder } from '@/lib/cashfree'
-import { saveBmfOrder } from '@/lib/supabase/bmf-orders'
+import { saveBmfOrder, checkExistingActivePurchase, findRecentPendingOrder } from '@/lib/supabase/bmf-orders'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,6 +103,47 @@ export async function POST(request: NextRequest) {
       orderNote = 'BMF Club Premium Membership (1 Year Access)'
     }
 
+    // 2. Prevent redundant purchase if user already owns this active product
+    if (orderType === 'product' && productId) {
+      const purchaseCheck = await checkExistingActivePurchase({
+        userId,
+        customerEmail: email,
+        productId,
+      })
+
+      if (purchaseCheck.alreadyPurchased) {
+        return NextResponse.json({
+          success: true,
+          alreadyPurchased: true,
+          orderId: purchaseCheck.orderId || null,
+          message: 'Asset already purchased and active.',
+        })
+      }
+    }
+
+    // 3. Deduplication: Check if there is an active pending order created within the last 15 minutes
+    const existingRecentOrder = await findRecentPendingOrder({
+      userId,
+      customerEmail: email,
+      orderType: orderType === 'product' ? 'product' : 'membership',
+      productId: productId || null,
+      amount: orderAmount,
+      withinMinutes: 15,
+    })
+
+    if (existingRecentOrder && existingRecentOrder.payment_session_id) {
+      console.log(`[API Create Order] Reusing 15-minute active pending order: ${existingRecentOrder.order_id}`)
+      return NextResponse.json({
+        success: true,
+        reused: true,
+        orderId: existingRecentOrder.order_id,
+        paymentSessionId: existingRecentOrder.payment_session_id,
+        amount: existingRecentOrder.amount,
+        currency: existingRecentOrder.currency || 'INR',
+        environment: process.env.CASHFREE_ENVIRONMENT || process.env.NEXT_PUBLIC_CASHFREE_ENV || 'production',
+      })
+    }
+
     const appOrigin = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin || 'https://melwin.in'
     const returnUrl = redirectUrl || (
       orderType === 'product'
@@ -111,7 +152,7 @@ export async function POST(request: NextRequest) {
     )
     const notifyUrl = `${appOrigin}/api/webhooks/cashfree`
 
-    // 2. Call Cashfree PG Order API
+    // 4. Call Cashfree PG Order API
     const cashfreeOrder = await createCashfreeOrder({
       orderId,
       orderAmount,

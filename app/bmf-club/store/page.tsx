@@ -83,12 +83,11 @@ function BmfStoreContent() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [purchasedProductIds, setPurchasedProductIds] = useState<Set<string>>(new Set())
 
-  // Checkout modal state for individual product purchase
-  const [selectedProduct, setSelectedProduct] = useState<BmfProductItem | null>(null)
+  // Direct buy state
   const [buyerName, setBuyerName] = useState('')
   const [buyerEmail, setBuyerEmail] = useState('')
   const [buyerPhone, setBuyerPhone] = useState('')
-  const [isCheckingOut, setIsCheckingOut] = useState(false)
+  const [loadingProductId, setLoadingProductId] = useState<string | null>(null)
 
   // 1. Check user auth, premium status & purchased products
   useEffect(() => {
@@ -360,7 +359,7 @@ function BmfStoreContent() {
   }
 
   // 4. Initiate Product Action (Buy, Download, or Claim Free)
-  const handleProductAction = (product: BmfProductItem) => {
+  const handleProductAction = async (product: BmfProductItem) => {
     // If already owned, give access immediately
     if (purchasedProductIds.has(product.id) || purchasedProductIds.has(product.slug)) {
       openAssetLink(product)
@@ -373,8 +372,8 @@ function BmfStoreContent() {
       return
     }
 
-    // Paid item: open Cashfree checkout modal
-    setSelectedProduct(product)
+    // Direct Cashfree checkout without intermediate popup
+    await handleDirectBuy(product)
   }
 
   const openAssetLink = (product: BmfProductItem) => {
@@ -385,48 +384,81 @@ function BmfStoreContent() {
     }
   }
 
-  // 5. Submit Cashfree Checkout for Paid Product
-  const handleBuyProduct = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault()
-    if (!selectedProduct) return
+  // 5. Direct Cashfree Checkout for Paid Product
+  const handleDirectBuy = async (product: BmfProductItem) => {
+    if (loadingProductId) return
 
-    if (!buyerEmail || !buyerEmail.includes('@')) {
-      toast.error('Please enter a valid email address for delivery.')
-      return
+    setLoadingProductId(product.id)
+
+    // Resolve customer email reliably from state, user or local storage
+    let emailToUse = buyerEmail || currentUser?.email
+    if (!emailToUse && typeof window !== 'undefined') {
+      emailToUse = localStorage.getItem('bmf_current_user_email') || ''
+      if (!emailToUse) {
+        const stored = localStorage.getItem('bmf_current_member')
+        if (stored) {
+          try {
+            emailToUse = JSON.parse(stored).email || ''
+          } catch (_) {}
+        }
+      }
+    }
+    if (!emailToUse) {
+      emailToUse = 'founder@bmfclub.com'
     }
 
-    setIsCheckingOut(true)
-    const selectedPrice = selectedProduct.regularPrice
+    let nameToUse = buyerName || currentUser?.user_metadata?.full_name || currentUser?.user_metadata?.name || 'BMF Founder'
+    if (!buyerName && typeof window !== 'undefined') {
+      const stored = localStorage.getItem('bmf_current_member')
+      if (stored) {
+        try {
+          nameToUse = JSON.parse(stored).full_name || nameToUse
+        } catch (_) {}
+      }
+    }
+
+    let phoneToUse = buyerPhone || currentUser?.phone || '9999999999'
+    const selectedPrice = product.regularPrice
+
     try {
-      // Step 1: Create Product Order Session via Cashfree
+      // Step 1: Create or Reuse Order Session via Cashfree
       const res = await fetch('/api/cashfree/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderType: 'product',
-          productId: selectedProduct.id,
-          productSlug: selectedProduct.slug,
-          productTitle: selectedProduct.title,
+          productId: product.id,
+          productSlug: product.slug,
+          productTitle: product.title,
           productPrice: selectedPrice,
-          customerName: buyerName || 'BMF Founder',
-          customerEmail: buyerEmail,
-          customerPhone: buyerPhone || '9999999999',
+          customerName: nameToUse,
+          customerEmail: emailToUse,
+          customerPhone: phoneToUse,
         }),
       })
 
       const data = await res.json()
+
+      // If already purchased, redirect immediately
+      if (data.alreadyPurchased) {
+        toast.success(`You already own "${product.title}"! Taking you to your dashboard...`)
+        setPurchasedProductIds((prev) => new Set([...Array.from(prev), product.id, product.slug]))
+        router.push('/bmf-club/dashboard?tab=purchases')
+        return
+      }
+
       if (!res.ok || !data.success || !data.paymentSessionId) {
         throw new Error(data.error || 'Failed to initiate payment gateway.')
       }
 
-      // Step 2: Open Cashfree Modal
+      if (data.reused) {
+        console.log(`[BMF Store] Reused active 15m order session: ${data.orderId}`)
+      }
+
+      // Step 2: Open Cashfree Modal Directly
       const CashfreeSdk = await loadCashfreeSdk()
       const envMode = data.environment === 'sandbox' ? 'sandbox' : 'production'
       const cashfreeInstance = CashfreeSdk({ mode: envMode })
-
-      const purchasedItem = selectedProduct
-      // Close our details modal immediately so only Cashfree modal appears
-      setSelectedProduct(null)
 
       cashfreeInstance.checkout({
         paymentSessionId: data.paymentSessionId,
@@ -440,28 +472,30 @@ function BmfStoreContent() {
           toast.success('Payment successful! Taking you to your purchased assets...')
 
           const purchaseRecord = {
-            id: purchasedItem.id,
-            product_id: purchasedItem.id,
-            slug: purchasedItem.slug,
-            title: purchasedItem.title,
-            category: purchasedItem.category,
-            format: purchasedItem.format,
-            format_badge: purchasedItem.format,
-            description: purchasedItem.description,
-            downloadUrl: purchasedItem.downloadUrl,
-            asset_url: purchasedItem.downloadUrl,
-            regularPrice: purchasedItem.regularPrice,
+            id: product.id,
+            product_id: product.id,
+            order_id: data.orderId,
+            slug: product.slug,
+            title: product.title,
+            category: product.category,
+            format: product.format,
+            format_badge: product.format,
+            description: product.description,
+            downloadUrl: product.downloadUrl,
+            asset_url: product.downloadUrl,
+            regularPrice: product.regularPrice,
             amount_paid: selectedPrice,
+            discount_applied_percent: 0,
             unlocked_at: new Date().toISOString(),
             access_status: 'active',
             product: {
-              id: purchasedItem.id,
-              title: purchasedItem.title,
-              category: purchasedItem.category,
-              format_badge: purchasedItem.format,
-              description: purchasedItem.description,
-              asset_url: purchasedItem.downloadUrl,
-              download_url: purchasedItem.downloadUrl,
+              id: product.id,
+              title: product.title,
+              category: product.category,
+              format_badge: product.format,
+              description: product.description,
+              asset_url: product.downloadUrl,
+              download_url: product.downloadUrl,
             },
           }
 
@@ -469,7 +503,7 @@ function BmfStoreContent() {
             try {
               const raw = localStorage.getItem('bmf_purchased_products')
               const list = raw ? JSON.parse(raw) : []
-              const filtered = list.filter((p: any) => p.slug !== purchasedItem.slug && p.id !== purchasedItem.id)
+              const filtered = list.filter((p: any) => p.slug !== product.slug && p.id !== product.id)
               const updated = [purchaseRecord, ...filtered]
               localStorage.setItem('bmf_purchased_products', JSON.stringify(updated))
               window.dispatchEvent(new Event('storage'))
@@ -478,7 +512,7 @@ function BmfStoreContent() {
             }
           }
 
-          setPurchasedProductIds((prev) => new Set([...Array.from(prev), purchasedItem.id, purchasedItem.slug]))
+          setPurchasedProductIds((prev) => new Set([...Array.from(prev), product.id, product.slug]))
 
           // Verify with backend in background
           fetch('/api/cashfree/verify-order', {
@@ -495,7 +529,7 @@ function BmfStoreContent() {
       console.error('[Product Checkout] Error:', err)
       toast.error(err.message || 'Payment initiation failed. Please try again.')
     } finally {
-      setIsCheckingOut(false)
+      setLoadingProductId(null)
     }
   }
 
@@ -761,11 +795,21 @@ function BmfStoreContent() {
                     ) : (
                       <button
                         type="button"
+                        disabled={loadingProductId === product.id}
                         onClick={() => handleProductAction(product)}
-                        className="px-4 py-2.5 rounded-xl font-bold text-xs bg-stone-900 hover:bg-black text-white transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+                        className="px-4 py-2.5 rounded-xl font-bold text-xs bg-stone-900 hover:bg-black text-amber-300 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        <ShoppingBag className="w-3.5 h-3.5 text-stone-300" />
-                        <span>Buy • ₹{product.regularPrice}</span>
+                        {loadingProductId === product.id ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
+                            <span>Opening...</span>
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingBag className="w-3.5 h-3.5 text-stone-300" />
+                            <span>Buy • ₹{product.regularPrice}</span>
+                          </>
+                        )}
                       </button>
                     )}
                   </div>
@@ -781,125 +825,6 @@ function BmfStoreContent() {
           </div>
         )}
       </div>
-
-      {/* Individual Product Checkout Modal */}
-      {selectedProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white border border-stone-200 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl relative">
-            <button
-              type="button"
-              onClick={() => setSelectedProduct(null)}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-stone-400 hover:text-stone-600 hover:bg-stone-100 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="flex items-center gap-2 mb-3">
-              <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold">
-                {selectedProduct.category}
-              </span>
-              <span className="text-[10px] font-mono text-stone-400">
-                {selectedProduct.format}
-              </span>
-            </div>
-
-            <h3 className="text-lg font-bold text-stone-950 tracking-tight mb-2">
-              {selectedProduct.title}
-            </h3>
-
-            {/* Price Box */}
-            <div className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200/80 mb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[11px] text-stone-500 font-medium">Payable Amount</div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-stone-950">
-                      ₹{selectedProduct.regularPrice}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 text-[10px] font-bold">
-                    One-Time Purchase
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Customer Details Form */}
-            <div className="space-y-3 mb-6">
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={buyerName}
-                  onChange={(e) => setBuyerName(e.target.value)}
-                  placeholder="Founder Name"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Email Address <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={buyerEmail}
-                  onChange={(e) => setBuyerEmail(e.target.value)}
-                  placeholder="founder@startup.com"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
-                />
-                <p className="text-[10px] text-stone-400 mt-1">
-                  Instant asset download link will be dispatched to this email.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-semibold text-stone-600 mb-1">
-                  Phone (Optional)
-                </label>
-                <input
-                  type="tel"
-                  value={buyerPhone}
-                  onChange={(e) => setBuyerPhone(e.target.value)}
-                  placeholder="9876543210"
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                disabled={isCheckingOut}
-                onClick={() => handleBuyProduct()}
-                className="w-full py-3 rounded-xl bg-stone-950 hover:bg-stone-900 text-amber-300 font-bold text-xs tracking-wide transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-95 disabled:opacity-50"
-              >
-                {isCheckingOut ? (
-                  <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Opening Payment Gateway...</span>
-                  </>
-                ) : (
-                  <>
-                    <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Pay ₹{selectedProduct.regularPrice} with Cashfree</span>
-                  </>
-                )}
-              </button>
-
-              <p className="text-[10px] text-center text-stone-400 mt-1">
-                Secured via Cashfree (UPI, Cards, NetBanking). Instant digital fulfillment.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <Footer />
     </main>

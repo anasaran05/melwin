@@ -194,23 +194,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 2. Check if purchase already exists for this email & product
-    const { data: existingPurchase } = await admin
+    // 2. Check if purchase already exists to prevent duplicate inserts and backfill order_id if missing
+    let existingQuery = admin
       .from('bmf_product_purchases')
       .select('*')
-      .eq('customer_email', email)
       .eq('product_id', resolvedProductId)
-      .maybeSingle()
+
+    if (userId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)) {
+      existingQuery = existingQuery.or(`user_id.eq.${userId},customer_email.eq.${email}`)
+    } else {
+      existingQuery = existingQuery.eq('customer_email', email)
+    }
+
+    const { data: existingPurchase } = await existingQuery.maybeSingle()
 
     if (existingPurchase) {
+      if (orderId && !existingPurchase.order_id) {
+        await admin
+          .from('bmf_product_purchases')
+          .update({
+            order_id: orderId,
+            amount_paid: Number(amountPaid) || 0,
+            discount_applied_percent: Number(discountPercent) || 0,
+          })
+          .eq('id', existingPurchase.id)
+      }
       return NextResponse.json({
         success: true,
-        purchase: { ...existingPurchase, product: productDetails },
-        message: 'Already recorded in database',
+        purchase: { ...existingPurchase, order_id: orderId || existingPurchase.order_id, product: productDetails },
+        message: 'Purchase already recorded in database',
       })
     }
 
-    // 3. Insert purchase record into bmf_product_purchases
+    // 4. Insert purchase record into bmf_product_purchases
     const purchasePayload: any = {
       customer_email: email,
       product_id: resolvedProductId,
