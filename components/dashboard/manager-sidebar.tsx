@@ -31,6 +31,7 @@ import {
   UserCheck,
   ExternalLink,
   Boxes,
+  ShoppingBag,
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -123,6 +124,12 @@ export function ManagerSidebar({ activeClientId, onOpenCreateClient, onClose }: 
       href: '/dashboard/manager/bmf-review?tab=registrations',
       icon: Ticket,
       active: pathname.includes('/bmf-review') && currentTab === 'registrations',
+    },
+    {
+      name: 'Store Purchases & Orders',
+      href: '/dashboard/manager/bmf-review?tab=orders',
+      icon: ShoppingBag,
+      active: pathname.includes('/bmf-review') && currentTab === 'orders',
     },
   ];
 

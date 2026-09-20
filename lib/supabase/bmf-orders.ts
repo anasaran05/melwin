@@ -1,4 +1,5 @@
 import { getSupabaseAdminClient, getSupabasePublicAdminClient } from './admin'
+import { sendStorePurchaseAlert } from '@/lib/notifications/admin-alerts'
 
 export interface BmfOrderRecord {
   id?: string
@@ -299,6 +300,8 @@ export async function fulfillPaidPremiumOrder(params: {
       return { success: false, error: `Order ${params.orderId} not found` }
     }
 
+    const wasAlreadyPaid = order.status === 'paid'
+
     // 2. Update order status to 'paid'
     const nowIso = new Date().toISOString()
     await admin
@@ -328,8 +331,8 @@ export async function fulfillPaidPremiumOrder(params: {
 
     // 4. Branch for Digital Product Purchase vs Membership Subscription
     if (order.order_type === 'product' && order.product_id) {
+      let validProductId = order.product_id
       try {
-        let validProductId = order.product_id
         const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(validProductId)
         if (!isUuid) {
           const { data: prod } = await admin
@@ -390,6 +393,44 @@ export async function fulfillPaidPremiumOrder(params: {
         }
       } catch (prodErr) {
         console.warn('[Fulfillment] Error recording product purchase (non-fatal):', prodErr)
+      }
+
+      // Dispatch Telegram & Discord Alerts (guarded against duplicate alerts)
+      if (!wasAlreadyPaid) {
+        let productTitle = order.metadata?.product_title || 'BMF Digital Asset'
+        let downloadUrl = order.metadata?.asset_url || null
+
+        try {
+          const { data: prodData } = await admin
+            .from('bmf_products')
+            .select('title, asset_url, download_url')
+            .eq('id', validProductId)
+            .maybeSingle()
+
+          if (prodData) {
+            productTitle = prodData.title || productTitle
+            downloadUrl = prodData.asset_url || prodData.download_url || downloadUrl
+          }
+        } catch (_) {}
+
+        try {
+          await sendStorePurchaseAlert({
+            orderId: params.orderId,
+            productId: validProductId,
+            productTitle,
+            amount: params.amount || order.amount || 0,
+            currency: order.currency || 'INR',
+            customerName: order.customer_name || 'BMF Founder',
+            customerEmail: order.customer_email || 'guest@customer.com',
+            customerPhone: order.customer_phone || null,
+            downloadUrl,
+            paymentMethod: params.paymentMethod || 'Cashfree PG',
+            cfPaymentId: params.cfPaymentId || null,
+            discountAppliedPercent: order.metadata?.discount_applied_percent || 0,
+          })
+        } catch (alertErr) {
+          console.error('[Fulfillment] Error dispatching store purchase alert:', alertErr)
+        }
       }
 
       console.log(`[Fulfillment] Successfully fulfilled digital product ${order.product_id} for order ${params.orderId}`)

@@ -253,3 +253,146 @@ export async function sendAdminIntroResponseAlert(payload: IntroResponseNotifica
 
   await Promise.allSettled(tasks)
 }
+
+export interface StorePurchaseNotificationPayload {
+  orderId: string
+  productId?: string | null
+  productTitle: string
+  amount: number
+  currency?: string
+  customerName: string
+  customerEmail: string
+  customerPhone?: string | null
+  downloadUrl?: string | null
+  paymentMethod?: string | null
+  cfPaymentId?: string | null
+  discountAppliedPercent?: number
+}
+
+/**
+ * Dispatches real-time alerts to Telegram and Discord when a digital asset is purchased in the BMF Store
+ */
+export async function sendStorePurchaseAlert(payload: StorePurchaseNotificationPayload): Promise<{
+  telegram: boolean
+  discord: boolean
+}> {
+  const tasks: Promise<any>[] = []
+  let telegramSent = false
+  let discordSent = false
+
+  // 1. Telegram Dispatch (HTML Mode for 100% Reliable Parsing)
+  const { token: telegramBotToken, chatId: telegramChatId } = getTelegramConfig()
+
+  if (telegramBotToken && telegramChatId) {
+    const safeTitle = escapeHtml(payload.productTitle)
+    const safeName = escapeHtml(payload.customerName)
+    const safeEmail = escapeHtml(payload.customerEmail)
+    const safePhone = escapeHtml(payload.customerPhone || 'N/A')
+    const safeOrderId = escapeHtml(payload.orderId)
+    const safeGateway = escapeHtml(payload.paymentMethod ? `Cashfree (${payload.paymentMethod})` : 'Cashfree PG')
+    const safeAssetUrl = payload.downloadUrl ? escapeHtml(payload.downloadUrl) : ''
+
+    const telegramHtml = [
+      `🛍️ <b>NEW BMF STORE PURCHASE!</b> 💰`,
+      ``,
+      `📦 <b>Product:</b> ${safeTitle}`,
+      `💵 <b>Amount Paid:</b> ₹${payload.amount}${payload.discountAppliedPercent ? ` (${payload.discountAppliedPercent}% off)` : ''}`,
+      `👤 <b>Customer:</b> ${safeName}`,
+      `📧 <b>Email:</b> ${safeEmail}`,
+      `📱 <b>Phone:</b> ${safePhone}`,
+      `🧾 <b>Order ID:</b> <code>${safeOrderId}</code>`,
+      `💳 <b>Payment Gateway:</b> ${safeGateway}`,
+      safeAssetUrl ? `🔗 <b>Asset Download:</b> <a href="${safeAssetUrl}">Click Here</a>` : `🔗 <b>Fulfillment:</b> Unlocked in Member Dashboard`,
+      ``,
+      `⚡ <i>Instant digital fulfillment active.</i>`
+    ].join('\n')
+
+    tasks.push(
+      (async () => {
+        try {
+          const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: telegramHtml,
+              parse_mode: 'HTML',
+              disable_web_page_preview: true,
+            }),
+          })
+          if (res.ok) {
+            telegramSent = true
+          } else {
+            const errData = await res.text()
+            console.error('[Telegram Store Purchase Alert Error]:', res.status, errData)
+          }
+        } catch (err) {
+          console.error('[Telegram Store Purchase Alert Network Error]:', err)
+        }
+      })()
+    )
+  } else {
+    console.warn('[Telegram Alert Notice]: Missing TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID')
+  }
+
+  // 2. Discord Webhook Dispatch
+  const discordWebhookUrl = getDiscordWebhookUrl()
+
+  if (discordWebhookUrl) {
+    const fields: any[] = [
+      { name: '📦 Product', value: payload.productTitle, inline: false },
+      { name: '💰 Amount Paid', value: `₹${payload.amount}`, inline: true },
+      { name: '👤 Customer', value: payload.customerName || 'BMF Founder', inline: true },
+      { name: '📧 Email', value: payload.customerEmail, inline: true },
+      { name: '📱 Phone', value: payload.customerPhone || 'N/A', inline: true },
+      { name: '🧾 Order ID', value: `\`${payload.orderId}\``, inline: false },
+    ]
+
+    if (payload.downloadUrl) {
+      fields.push({
+        name: '🔗 Download Asset',
+        value: `[Open Document](${payload.downloadUrl})`,
+        inline: false,
+      })
+    }
+
+    const discordEmbed = {
+      username: 'BMF Club Store Bot',
+      embeds: [
+        {
+          title: '🛍️ New Store Purchase Unlocked!',
+          description: `**${payload.customerName || 'A customer'}** just bought **${payload.productTitle}** for **₹${payload.amount}**!`,
+          color: 0x10b981, // Emerald green
+          fields,
+          footer: {
+            text: 'BMF Digital Assets • Cashfree Gateway',
+          },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }
+
+    tasks.push(
+      (async () => {
+        try {
+          const res = await fetch(discordWebhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(discordEmbed),
+          })
+          if (res.ok) {
+            discordSent = true
+          } else {
+            console.error('[Discord Store Purchase Alert Error]:', res.status)
+          }
+        } catch (err) {
+          console.error('[Discord Store Purchase Alert Error]:', err)
+        }
+      })()
+    )
+  }
+
+  await Promise.allSettled(tasks)
+  return { telegram: telegramSent, discord: discordSent }
+}
+

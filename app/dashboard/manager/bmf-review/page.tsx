@@ -76,10 +76,10 @@ import { Button } from '@/components/ui/button'
 function BmfAdminReviewContent() {
   const searchParams = useSearchParams()
   const tabParam = searchParams.get('tab')
-  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros' | 'products'>('showcases')
+  const [mainTab, setMainTab] = useState<'showcases' | 'events' | 'registrations' | 'cards' | 'intros' | 'products' | 'orders'>('showcases')
 
   useEffect(() => {
-    if (tabParam && ['showcases', 'events', 'registrations', 'cards', 'intros', 'products'].includes(tabParam)) {
+    if (tabParam && ['showcases', 'events', 'registrations', 'cards', 'intros', 'products', 'orders'].includes(tabParam)) {
       setMainTab(tabParam as any)
     }
   }, [tabParam])
@@ -183,6 +183,15 @@ function BmfAdminReviewContent() {
     display_order: 0,
   })
 
+  // Store Orders & Purchases State
+  const [orders, setOrders] = useState<any[]>([])
+  const [orderMetrics, setOrderMetrics] = useState<any>(null)
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false)
+  const [orderSearch, setOrderSearch] = useState('')
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'paid' | 'pending' | 'failed'>('all')
+  const [orderTypeFilter, setOrderTypeFilter] = useState<'all' | 'product' | 'membership'>('all')
+  const [copiedOrderId, setCopiedOrderId] = useState<string | null>(null)
+
   const [isLoading, setIsLoading] = useState(true)
 
   const loadAdminProducts = async () => {
@@ -200,6 +209,62 @@ function BmfAdminReviewContent() {
     }
   }
 
+  const loadAdminOrders = async () => {
+    setIsLoadingOrders(true)
+    try {
+      const res = await fetch('/api/bmf/admin-orders')
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setOrders(data.orders || [])
+        setOrderMetrics(data.metrics || null)
+      }
+    } catch (err) {
+      console.error('Failed to load admin orders:', err)
+    } finally {
+      setIsLoadingOrders(false)
+    }
+  }
+
+  const handleExportOrdersCsv = () => {
+    if (!orders.length) return
+    const headers = [
+      'Order ID',
+      'Status',
+      'Order Type',
+      'Product Title',
+      'Customer Name',
+      'Customer Email',
+      'Customer Phone',
+      'Amount Paid',
+      'Discount %',
+      'Cashfree Order ID',
+      'Payment ID',
+      'Created At'
+    ]
+    const rows = orders.map((o) => [
+      `"${o.order_id || o.id}"`,
+      `"${o.status}"`,
+      `"${o.order_type || 'product'}"`,
+      `"${(o.product_title || o.product?.title || '').replace(/"/g, '""')}"`,
+      `"${(o.customer_name || '').replace(/"/g, '""')}"`,
+      `"${o.customer_email || ''}"`,
+      `"${o.customer_phone || ''}"`,
+      `"${o.amount_paid || 0}"`,
+      `"${o.discount_applied_percent || 0}"`,
+      `"${o.cashfree_order_id || ''}"`,
+      `"${o.payment_id || ''}"`,
+      `"${o.created_at || ''}"`
+    ])
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n')
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `bmf_orders_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
   const loadData = async () => {
     setIsLoading(true)
     try {
@@ -215,13 +280,19 @@ function BmfAdminReviewContent() {
       setRegistrations(regData)
       setCards(cardsData)
       setIntros(introsData)
-      await loadAdminProducts()
+      await Promise.all([loadAdminProducts(), loadAdminOrders()])
     } catch (err) {
       console.error(err)
     } finally {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    if (mainTab === 'orders') {
+      loadAdminOrders()
+    }
+  }, [mainTab])
 
   const handleOpenCreateProduct = () => {
     setEditingProduct(null)
@@ -872,6 +943,23 @@ function BmfAdminReviewContent() {
           {products.filter((p) => !p.is_published).length > 0 && (
             <span className="bg-slate-400 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
               {products.filter((p) => !p.is_published).length} draft
+            </span>
+          )}
+        </button>
+
+        <button
+          onClick={() => setMainTab('orders')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 border ${
+            mainTab === 'orders'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <CreditCard className="w-3.5 h-3.5" />
+          <span>Store Orders & Sales ({orders.length})</span>
+          {orders.filter((o) => o.status === 'paid').length > 0 && (
+            <span className="bg-emerald-500 text-white text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full">
+              {orders.filter((o) => o.status === 'paid').length} paid
             </span>
           )}
         </button>
@@ -2316,6 +2404,378 @@ function BmfAdminReviewContent() {
                         >
                           <Plus className="w-3.5 h-3.5 mr-1" /> Add Your First Product
                         </Button>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* TAB 7: STORE ORDERS, PURCHASES & SALES */}
+      {/* ========================================================= */}
+      {mainTab === 'orders' && (
+        <div className="space-y-6 text-left">
+          {/* Top Header & Actions */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+                <CreditCard className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <span>Store Purchases, Orders & Revenue</span>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    {orders.length} Total Orders
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Live transactions from Cashfree payments across digital store products and membership upgrades.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <Button
+                type="button"
+                onClick={loadAdminOrders}
+                variant="outline"
+                disabled={isLoadingOrders}
+                className="bg-white hover:bg-slate-50 border-slate-200 text-xs rounded-xl px-3.5 py-2 flex items-center gap-1.5 cursor-pointer text-slate-700 shadow-xs"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingOrders ? 'animate-spin text-emerald-600' : ''}`} />
+                <span>Refresh</span>
+              </Button>
+
+              <Button
+                type="button"
+                onClick={handleExportOrdersCsv}
+                variant="outline"
+                disabled={orders.length === 0}
+                className="bg-white hover:bg-slate-50 border-slate-200 text-xs rounded-xl px-3.5 py-2 flex items-center gap-1.5 cursor-pointer text-slate-700 shadow-xs"
+              >
+                <Download className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Export CSV</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Revenue & Order KPI Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Gross Revenue</span>
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center text-xs font-bold font-mono">
+                  ₹
+                </div>
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight font-mono">
+                ₹{(orderMetrics?.totalGrossRevenue ?? orders.filter((o) => o.status === 'paid').reduce((s, o) => s + Number(o.amount_paid || 0), 0)).toLocaleString('en-IN')}
+              </div>
+              <p className="text-[10px] text-emerald-600 font-medium mt-1">Paid transaction volume</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Paid Orders</span>
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight font-mono">
+                {orderMetrics?.totalPaidOrders ?? orders.filter((o) => o.status === 'paid').length}
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium mt-1">Delivered & verified</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Pending / Abandoned</span>
+                <Clock className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight font-mono">
+                {orderMetrics?.totalPendingOrders ?? orders.filter((o) => o.status === 'pending').length}
+              </div>
+              <p className="text-[10px] text-amber-600 font-medium mt-1">Payment initiated / dropoff</p>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+              <div className="flex items-center justify-between text-slate-400 mb-1.5">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Unique Customers</span>
+                <Users className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="text-2xl font-black text-slate-900 tracking-tight font-mono">
+                {orderMetrics?.uniqueCustomers ?? new Set(orders.map((o) => o.customer_email).filter(Boolean)).size}
+              </div>
+              <p className="text-[10px] text-slate-500 font-medium mt-1">Verified buyer emails</p>
+            </div>
+          </div>
+
+          {/* Filters Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200/80">
+                <button
+                  onClick={() => setOrderStatusFilter('all')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    orderStatusFilter === 'all' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  All ({orders.length})
+                </button>
+                <button
+                  onClick={() => setOrderStatusFilter('paid')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    orderStatusFilter === 'paid' ? 'bg-emerald-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Paid ({orders.filter((o) => o.status === 'paid').length})
+                </button>
+                <button
+                  onClick={() => setOrderStatusFilter('pending')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    orderStatusFilter === 'pending' ? 'bg-amber-400 text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Pending ({orders.filter((o) => o.status === 'pending').length})
+                </button>
+                <button
+                  onClick={() => setOrderStatusFilter('failed')}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    orderStatusFilter === 'failed' ? 'bg-rose-500 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Failed ({orders.filter((o) => o.status === 'failed').length})
+                </button>
+              </div>
+
+              <select
+                value={orderTypeFilter}
+                onChange={(e) => setOrderTypeFilter(e.target.value as any)}
+                className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              >
+                <option value="all">All Order Types</option>
+                <option value="product">Digital Products</option>
+                <option value="membership">Membership Upgrades</option>
+              </select>
+            </div>
+
+            <div className="relative w-full sm:w-64">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={orderSearch}
+                onChange={(e) => setOrderSearch(e.target.value)}
+                placeholder="Search orders, emails, items..."
+                className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
+              />
+            </div>
+          </div>
+
+          {/* Orders Table */}
+          <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50/80 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                    <th className="py-3 px-4">Order ID & Date</th>
+                    <th className="py-3 px-4">Customer</th>
+                    <th className="py-3 px-4">Item / Product</th>
+                    <th className="py-3 px-4">Amount</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Asset & Access</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {orders
+                    .filter((order) => {
+                      if (orderStatusFilter !== 'all' && order.status !== orderStatusFilter) return false
+                      if (orderTypeFilter !== 'all') {
+                        const type = order.order_type || 'product'
+                        if (type !== orderTypeFilter) return false
+                      }
+                      if (orderSearch.trim()) {
+                        const q = orderSearch.toLowerCase()
+                        const idMatch = (order.order_id || order.id || '').toLowerCase().includes(q)
+                        const emailMatch = (order.customer_email || '').toLowerCase().includes(q)
+                        const nameMatch = (order.customer_name || '').toLowerCase().includes(q)
+                        const itemMatch = (order.product_title || order.product?.title || '').toLowerCase().includes(q)
+                        const cfIdMatch = (order.cashfree_order_id || '').toLowerCase().includes(q)
+                        if (!idMatch && !emailMatch && !nameMatch && !itemMatch && !cfIdMatch) return false
+                      }
+                      return true
+                    })
+                    .map((order) => {
+                      const isPaid = order.status === 'paid'
+                      const isPending = order.status === 'pending'
+                      const isFailed = order.status === 'failed'
+                      const displayOrderId = order.order_id || order.id
+                      const assetUrl = order.asset_url || order.product?.asset_url
+
+                      return (
+                        <tr key={order.id} className="hover:bg-slate-50/70 transition-colors">
+                          {/* Order ID & Date */}
+                          <td className="py-3.5 px-4 align-top">
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] font-bold text-slate-900">
+                              <span className="truncate max-w-[170px]" title={displayOrderId}>
+                                {displayOrderId}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(displayOrderId)
+                                  setCopiedOrderId(displayOrderId)
+                                  setTimeout(() => setCopiedOrderId(null), 2000)
+                                }}
+                                className="text-slate-400 hover:text-slate-700 cursor-pointer p-0.5"
+                                title="Copy Order ID"
+                              >
+                                {copiedOrderId === displayOrderId ? (
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                ) : (
+                                  <Copy className="w-3 h-3" />
+                                )}
+                              </button>
+                            </div>
+                            <div className="text-[10px] text-slate-400 font-medium mt-1 flex items-center gap-1">
+                              <Calendar className="w-3 h-3 shrink-0" />
+                              <span>
+                                {order.created_at
+                                  ? new Date(order.created_at).toLocaleDateString('en-IN', {
+                                      day: '2-digit',
+                                      month: 'short',
+                                      year: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })
+                                  : '—'}
+                              </span>
+                            </div>
+                            {order.cashfree_order_id && (
+                              <div className="text-[9px] font-mono text-slate-400 mt-0.5 truncate max-w-[170px]">
+                                CF: {order.cashfree_order_id}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Customer Info */}
+                          <td className="py-3.5 px-4 align-top">
+                            <div className="font-semibold text-slate-900">
+                              {order.customer_name || 'Anonymous Founder'}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono flex items-center gap-1 mt-0.5">
+                              <Mail className="w-3 h-3 shrink-0 text-slate-400" />
+                              <a
+                                href={`mailto:${order.customer_email}`}
+                                className="hover:text-emerald-600 hover:underline truncate max-w-[180px]"
+                              >
+                                {order.customer_email || '—'}
+                              </a>
+                            </div>
+                            {order.customer_phone && (
+                              <div className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5 font-mono">
+                                <Phone className="w-3 h-3 shrink-0 text-slate-400" />
+                                <span>{order.customer_phone}</span>
+                                <a
+                                  href={`https://wa.me/${order.customer_phone.replace(/\D/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-emerald-600 hover:text-emerald-700 ml-1 inline-flex items-center text-[9px] font-bold"
+                                  title="Chat on WhatsApp"
+                                >
+                                  WhatsApp
+                                </a>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Item / Product */}
+                          <td className="py-3.5 px-4 align-top max-w-[240px]">
+                            <div className="font-bold text-slate-900 line-clamp-2">
+                              {order.product_title || order.product?.title || (order.order_type === 'membership' ? 'BMF Executive Pass' : 'Store Asset')}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                                {order.order_type === 'membership' ? 'Membership' : (order.product_category || order.product?.category || 'Resource')}
+                              </span>
+                              {order.product?.format_badge && (
+                                <span className="text-[9px] font-mono font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  {order.product.format_badge}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+
+                          {/* Amount */}
+                          <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                            <div className="font-mono text-sm font-black text-slate-900">
+                              ₹{Number(order.amount_paid || 0).toLocaleString('en-IN')}
+                            </div>
+                            {Number(order.discount_applied_percent) > 0 && (
+                              <span className="inline-block text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200 mt-0.5">
+                                {order.discount_applied_percent}% OFF
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-3.5 px-4 align-top whitespace-nowrap">
+                            {isPaid && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                Paid
+                              </span>
+                            )}
+                            {isPending && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                <Clock className="w-3 h-3 text-amber-500" />
+                                Pending
+                              </span>
+                            )}
+                            {isFailed && (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
+                                <XCircle className="w-3 h-3 text-rose-500" />
+                                Failed
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Asset & Access */}
+                          <td className="py-3.5 px-4 align-top text-right whitespace-nowrap">
+                            {assetUrl ? (
+                              <a
+                                href={assetUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+                              >
+                                <span>View Asset</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-slate-400 italic">
+                                {order.order_type === 'membership' ? 'Auto-activated' : 'No link'}
+                              </span>
+                            )}
+                            {order.access_status && (
+                              <div className="text-[9px] font-mono text-slate-400 mt-1">
+                                Access: <span className="font-bold text-slate-600">{order.access_status}</span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+
+                  {orders.length === 0 && !isLoadingOrders && (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        <CreditCard className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+                        <p className="text-xs font-semibold">No store orders recorded yet.</p>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          When users complete purchases via Cashfree, orders will automatically populate here.
+                        </p>
                       </td>
                     </tr>
                   )}
