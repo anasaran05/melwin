@@ -1470,6 +1470,27 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       sanitizedMember.company_logo = await ensureHostedMediaUrl(sanitizedMember.company_logo, 'companies', user.id)
     }
 
+    // Strictly whitelist user-editable fields. Privileged fields (is_verified, is_approved, is_featured, membership_tier, etc.)
+    // MUST NEVER be modified via client-side profile saves.
+    const allowedUserFields: Record<string, any> = {}
+    if (sanitizedMember.full_name !== undefined) allowedUserFields.full_name = sanitizedMember.full_name
+    if (sanitizedMember.role !== undefined) allowedUserFields.role = sanitizedMember.role
+    if (sanitizedMember.company_name !== undefined) allowedUserFields.company_name = sanitizedMember.company_name
+    if (sanitizedMember.company_logo !== undefined) allowedUserFields.company_logo = sanitizedMember.company_logo
+    if (sanitizedMember.avatar_url !== undefined) allowedUserFields.avatar_url = sanitizedMember.avatar_url
+    if (sanitizedMember.category !== undefined) allowedUserFields.category = sanitizedMember.category
+    if (sanitizedMember.tagline !== undefined) allowedUserFields.tagline = sanitizedMember.tagline
+    if (sanitizedMember.description !== undefined) allowedUserFields.description = sanitizedMember.description
+    if (sanitizedMember.stage !== undefined) allowedUserFields.stage = sanitizedMember.stage
+    if (sanitizedMember.metrics !== undefined) allowedUserFields.metrics = sanitizedMember.metrics
+    if (sanitizedMember.location !== undefined) allowedUserFields.location = sanitizedMember.location
+    if (sanitizedMember.team_size !== undefined) allowedUserFields.team_size = sanitizedMember.team_size
+    if (sanitizedMember.linkedin_url !== undefined) allowedUserFields.linkedin_url = sanitizedMember.linkedin_url
+    if (sanitizedMember.twitter_url !== undefined) allowedUserFields.twitter_url = sanitizedMember.twitter_url
+    if (sanitizedMember.website_url !== undefined) allowedUserFields.website_url = sanitizedMember.website_url
+    if (sanitizedMember.card_theme !== undefined) allowedUserFields.card_theme = sanitizedMember.card_theme
+    if (sanitizedMember.is_onboarding_completed !== undefined) allowedUserFields.is_onboarding_completed = sanitizedMember.is_onboarding_completed
+
     // Check if profile exists by user_id or id
     const { data: existing } = await supabase
       .from('bmf_members')
@@ -1483,7 +1504,7 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       const { error } = await supabase
         .from('bmf_members')
         .update({
-          ...sanitizedMember,
+          ...allowedUserFields,
           user_id: user.id,
           email: user.email || sanitizedMember.email,
           updated_at: new Date().toISOString(),
@@ -1494,10 +1515,17 @@ export async function saveBmfMemberProfile(member: Partial<BmfMember>): Promise<
       const { error } = await supabase
         .from('bmf_members')
         .insert({
-          id: sanitizedMember.id || user.id,
+          id: member.id || user.id,
           user_id: user.id,
           email: user.email || sanitizedMember.email,
-          ...sanitizedMember,
+          ...allowedUserFields,
+          is_verified: false,
+          is_approved: false,
+          is_featured: false,
+          membership_tier: 'free',
+          review_status: 'pending',
+          badge_title: 'Founder',
+          priority_order: 100,
           updated_at: new Date().toISOString(),
         })
       saveErr = error
@@ -1592,11 +1620,16 @@ export async function submitShowcaseApplication(
     const supabase = getSupabaseBrowserClient()
     const payload = {
       ...member,
+      is_verified: false,
       is_approved: false,
+      is_featured: false,
       review_status: 'pending' as const,
       admin_feedback: null,
       updated_at: new Date().toISOString(),
     }
+    delete (payload as any).membership_tier
+    delete (payload as any).role
+    delete (payload as any).priority_order
 
     if (!supabase) {
       if (typeof window !== 'undefined') {

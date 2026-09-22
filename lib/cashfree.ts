@@ -228,3 +228,175 @@ export function verifyCashfreeWebhookSignature(
     return false
   }
 }
+
+export type DetectedPaymentCategory = 'webinar' | 'event' | 'product' | 'membership' | 'consultation' | 'custom'
+
+export interface DetectedPaymentInfo {
+  category: DetectedPaymentCategory
+  orderId: string
+  amount: number
+  customerName: string
+  customerEmail: string
+  customerPhone?: string
+  cfPaymentId: string
+  paymentStatus: string
+  paymentMethod: string
+  bankReference?: string
+  productId?: string
+  eventId?: string
+  formCode?: string
+  formTitle?: string
+  notes?: string
+}
+
+/**
+ * Robust classifier for Cashfree Webhook Payloads
+ * Supports PG API orders, Payment Forms, and custom checkout flows.
+ */
+export function detectCashfreePaymentType(payload: any): DetectedPaymentInfo {
+  const data = payload?.data || {}
+  const order = data.order || payload.order || {}
+  const payment = data.payment || payload.payment || {}
+  const customerDetails = data.customer_details || payload.customer_details || order.customer_details || {}
+  const tags = order.order_tags || data.order_tags || payload.order_tags || {}
+
+  const orderId = String(order.order_id || payload.order_id || `cf_order_${Date.now()}`)
+  const amount = Number(payment.payment_amount || order.order_amount || 0)
+  const cfPaymentId = String(payment.cf_payment_id || payment.payment_id || `cf_pay_${Date.now()}`)
+  const paymentStatus = String(payment.payment_status || (String(payload.type || '').includes('SUCCESS') ? 'SUCCESS' : 'PENDING')).toUpperCase()
+  const paymentMethod = typeof payment.payment_method === 'object' 
+    ? JSON.stringify(payment.payment_method) 
+    : String(payment.payment_method || 'cashfree')
+  const bankReference = payment.bank_reference || null
+
+  const customerName = customerDetails.customer_name || customerDetails.name || 'BMF Customer'
+  const customerEmail = (customerDetails.customer_email || customerDetails.email || '').toLowerCase().trim()
+  const customerPhone = customerDetails.customer_phone || customerDetails.phone || undefined
+
+  // Identify form code or form title if delivered from a Cashfree hosted form
+  const rawString = JSON.stringify(payload).toLowerCase()
+  const formCode = 
+    tags.form_code || 
+    tags.code || 
+    data.form_code || 
+    data.form_id || 
+    payload.form_code ||
+    (rawString.includes('from-idea-to-1-lakh-webinar') ? 'from-idea-to-1-lakh-webinar' : undefined)
+
+  const formTitle = 
+    tags.form_title || 
+    tags.title || 
+    data.form_title || 
+    payload.form_title || 
+    (formCode === 'from-idea-to-1-lakh-webinar' ? 'From Idea to First ₹1 Lakh: The Early-Stage Founder Playbook' : undefined)
+
+  // 1. Check for Event / Webinar
+  const isWebinarByCode = formCode === 'from-idea-to-1-lakh-webinar' || rawString.includes('from-idea-to-1-lakh-webinar')
+  const isEventByTag = tags.order_type === 'event' || tags.order_type === 'webinar' || Boolean(tags.event_id)
+  const isEventByString = rawString.includes('webinar') || rawString.includes('masterclass') || rawString.includes('workshop')
+
+  if (isWebinarByCode || isEventByTag || isEventByString) {
+    return {
+      category: 'webinar',
+      orderId,
+      amount,
+      customerName,
+      customerEmail,
+      customerPhone,
+      cfPaymentId,
+      paymentStatus,
+      paymentMethod,
+      bankReference,
+      eventId: tags.event_id || (isWebinarByCode ? '9c2225b0-e13a-4450-b5df-1082e0da0d89' : undefined),
+      formCode,
+      formTitle: formTitle || 'BMF Founder Webinar',
+      notes: `Webinar registration via Cashfree Form: ${formCode || 'Direct'}`,
+    }
+  }
+
+  // 2. Check for Store Digital Asset Product
+  const isProductById = orderId.startsWith('bmf_prod_')
+  const isProductByTag = tags.order_type === 'product' || Boolean(tags.product_id)
+  const isProductByString = rawString.includes('store') || rawString.includes('digital asset')
+
+  if (isProductById || isProductByTag || isProductByString) {
+    return {
+      category: 'product',
+      orderId,
+      amount,
+      customerName,
+      customerEmail,
+      customerPhone,
+      cfPaymentId,
+      paymentStatus,
+      paymentMethod,
+      bankReference,
+      productId: tags.product_id || undefined,
+      formCode,
+      formTitle: tags.product_title || 'BMF Digital Asset',
+      notes: tags.product_title || 'Store Product Purchase',
+    }
+  }
+
+  // 3. Check for Consultation
+  const isConsultation = tags.order_type === 'consultation' || rawString.includes('consultation') || rawString.includes('1-on-1 strategy')
+
+  if (isConsultation) {
+    return {
+      category: 'consultation',
+      orderId,
+      amount,
+      customerName,
+      customerEmail,
+      customerPhone,
+      cfPaymentId,
+      paymentStatus,
+      paymentMethod,
+      bankReference,
+      formCode,
+      formTitle: '1-on-1 Advisory & Strategy Consultation',
+      notes: 'Strategy Consultation Booking',
+    }
+  }
+
+  // 4. Check for BMF Membership
+  const isMembershipById = orderId.startsWith('bmf_prem_')
+  const isMembershipByTag = tags.order_type === 'membership' || tags.plan === 'premium'
+  const isMembershipByAmount = amount === 799
+
+  if (isMembershipById || isMembershipByTag || isMembershipByAmount) {
+    return {
+      category: 'membership',
+      orderId,
+      amount,
+      customerName,
+      customerEmail,
+      customerPhone,
+      cfPaymentId,
+      paymentStatus,
+      paymentMethod,
+      bankReference,
+      formCode,
+      formTitle: 'BMF Club Premium Annual Membership',
+      notes: 'BMF Club Premium Pass',
+    }
+  }
+
+  // 5. Fallback Custom Order
+  return {
+    category: 'custom',
+    orderId,
+    amount,
+    customerName,
+    customerEmail,
+    customerPhone,
+    cfPaymentId,
+    paymentStatus,
+    paymentMethod,
+    bankReference,
+    formCode,
+    formTitle: formTitle || 'BMF Payment',
+    notes: 'Custom Payment Received',
+  }
+}
+

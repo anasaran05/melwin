@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { verifyCashfreeWebhookSignature } from '@/lib/cashfree'
+import { verifyCashfreeWebhookSignature, detectCashfreePaymentType } from '@/lib/cashfree'
 import { fulfillPaidPremiumOrder } from '@/lib/supabase/bmf-orders'
 
 export const dynamic = 'force-dynamic'
@@ -85,37 +85,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid webhook signature' }, { status: 400 })
     }
 
-    const cfPaymentId = payment.cf_payment_id || String(payment.payment_id || '')
-    const paymentStatus = payment.payment_status || (eventType.includes('SUCCESS') ? 'SUCCESS' : '')
-    const amount = payment.payment_amount || order.order_amount || 799
+    // 4. Classify payment payload using the multi-type detector
+    const detected = detectCashfreePaymentType(payload)
+    console.log(`[Cashfree Webhook] Classified event: ${eventType} as [${detected.category.toUpperCase()}] for Order: ${detected.orderId}, Amount: ₹${detected.amount}`)
 
-    console.log(`[Cashfree Webhook] Received ${eventType} for order: ${orderId}, status: ${paymentStatus}`)
-
-    // 4. Check for Payment Success and Fulfill
     const isSuccess =
       eventType === 'PAYMENT_SUCCESS_WEBHOOK' ||
       eventType === 'ORDER_PAID_SUCCESS' ||
-      paymentStatus === 'SUCCESS'
+      detected.paymentStatus === 'SUCCESS'
 
-    if (isSuccess && orderId) {
-      const fulfillmentResult = await fulfillPaidPremiumOrder({
-        orderId,
-        cfPaymentId: cfPaymentId || `cf_${Date.now()}`,
-        paymentMethod: JSON.stringify(payment.payment_method || {}),
-        amount,
-        bankReference: payment.bank_reference,
-        rawPayload: payload,
-      })
-
-      if (!fulfillmentResult.success) {
-        console.error('[Cashfree Webhook] Order fulfillment error:', fulfillmentResult.error)
-        return NextResponse.json({ error: fulfillmentResult.error }, { status: 500 })
-      }
-
-      console.log(`[Cashfree Webhook] Successfully processed and fulfilled: ${orderId}`)
+    // 5. Handle non-success events (e.g. failed, cancelled, dropped) gracefully without fulfilling
+    if (!isSuccess) {
+      console.log(`[Cashfree Webhook] Non-success status [${detected.paymentStatus}] for order: ${detected.orderId}. Acknowledged without fulfillment.`)
+      return NextResponse.json({ status: 'OK', message: `Event ${eventType} acknowledged with non-success status` })
     }
 
-    return NextResponse.json({ status: 'OK', received: true })
+    // 6. Fulfill according to payment type with strict idempotency
+    const fulfillmentResult = await fulfillPaidPremiumOrder({
+      orderId: detected.orderId,
+      cfPaymentId: detected.cfPaymentId,
+      paymentMethod: detected.paymentMethod,
+      amount: detected.amount,
+      bankReference: detected.bankReference,
+      rawPayload: payload,
+    })
+
+    if (!fulfillmentResult.success) {
+      console.error('[Cashfree Webhook] Fulfillment error:', fulfillmentResult.error)
+      return NextResponse.json({ error: fulfillmentResult.error }, { status: 500 })
+    }
+
+    console.log(`[Cashfree Webhook] Successfully processed [${detected.category.toUpperCase()}] for order ${detected.orderId}`)
+    return NextResponse.json({
+      status: 'OK',
+      received: true,
+      category: detected.category,
+      orderId: detected.orderId,
+    })
   } catch (error: any) {
     console.error('[Cashfree Webhook] Error processing webhook:', error)
     return NextResponse.json(

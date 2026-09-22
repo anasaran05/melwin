@@ -51,6 +51,7 @@ export function MemberFlipCard({
   const [isIntroModalOpen, setIsIntroModalOpen] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const isFeatured = Boolean(member.is_featured)
+  const isVerified = Boolean(member.is_verified)
   const cardTheme = isFeatured ? getCardTheme(member.card_theme) : getCardTheme('obsidian')
 
   // Zero-network synchronous card ownership determination
@@ -180,15 +181,15 @@ export function MemberFlipCard({
 
           {/* Bottom Inside Text: Member Name, Role, and Company Name (3 lines) */}
           <div className="absolute inset-x-0 bottom-0 p-2 sm:p-3.5 z-10 flex flex-col justify-end space-y-0.5 text-left">
-            {/* Line 1: Full Name & Verified Blue Tick (Only for Featured Founders) */}
+            {/* Line 1: Full Name & Verified Blue Tick (Strictly for Verified Founders) */}
             <div className="flex items-center gap-1 sm:gap-1.5 min-w-0">
               <h3 className="text-xs sm:text-lg font-black tracking-tight text-white drop-shadow-md leading-tight truncate">
                 {member.full_name}
               </h3>
-              {isFeatured && (
+              {isVerified && (
                 <svg 
                   viewBox="0 0 24 24" 
-                  aria-label="Verified Spotlight Founder" 
+                  aria-label="Verified Founder" 
                   className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#1d9bf0] shrink-0 drop-shadow-sm fill-current"
                 >
                   <path d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.67-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.34 2.19c-1.39-.46-2.9-.2-3.91.81s-1.27 2.52-.81 3.91c-1.31.67-2.19 1.91-2.19 3.34s.88 2.67 2.19 3.34c-.46 1.39-.2 2.9.81 3.91s2.52 1.27 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.67-.88 3.34-2.19c1.39.46 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34zm-11.75 4.75l-4-4 1.41-1.41 2.59 2.58 6.59-6.58 1.41 1.41-8 8z" />

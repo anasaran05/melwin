@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { CARD_TIERS, CardTier } from '@/lib/supabase/bmf-cards'
+import { verifyAdminAuth } from '@/lib/auth/admin-auth'
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Enforce strict Admin authorization check
+    const authCheck = await verifyAdminAuth()
+    if (!authCheck.authorized) {
+      return NextResponse.json(
+        { success: false, error: authCheck.error || 'Unauthorized' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { cardId, action, feedback, tier } = body
 

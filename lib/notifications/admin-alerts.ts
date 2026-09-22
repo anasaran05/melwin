@@ -396,3 +396,224 @@ export async function sendStorePurchaseAlert(payload: StorePurchaseNotificationP
   return { telegram: telegramSent, discord: discordSent }
 }
 
+export interface WebinarRegistrationAlertPayload {
+  orderId: string
+  eventId: string
+  eventTitle: string
+  ticketCode: string
+  customerName: string
+  customerEmail: string
+  customerPhone?: string | null
+  amount: number
+  paymentMethod?: string | null
+  cfPaymentId?: string | null
+  formCode?: string | null
+}
+
+/**
+ * Dispatches real-time alerts to Telegram and Discord when an attendee signs up for a webinar / event
+ */
+export async function sendWebinarRegistrationAlert(payload: WebinarRegistrationAlertPayload): Promise<{
+  telegram: boolean
+  discord: boolean
+}> {
+  const tasks: Promise<any>[] = []
+  let telegramSent = false
+  let discordSent = false
+
+  const { token: telegramBotToken, chatId: telegramChatId } = getTelegramConfig()
+
+  if (telegramBotToken && telegramChatId) {
+    const safeTitle = escapeHtml(payload.eventTitle)
+    const safeName = escapeHtml(payload.customerName)
+    const safeEmail = escapeHtml(payload.customerEmail)
+    const safePhone = escapeHtml(payload.customerPhone || 'N/A')
+    const safeOrderId = escapeHtml(payload.orderId)
+    const safeTicketCode = escapeHtml(payload.ticketCode)
+    const safeGateway = escapeHtml(payload.paymentMethod ? `Cashfree (${payload.paymentMethod})` : 'Cashfree Payment Form')
+
+    const telegramHtml = [
+      `🎟️ <b>NEW WEBINAR / EVENT REGISTRATION!</b> 🚀`,
+      ``,
+      `🎯 <b>Event:</b> ${safeTitle}`,
+      `🎫 <b>Ticket Code:</b> <code>${safeTicketCode}</code>`,
+      `💵 <b>Amount Paid:</b> ₹${payload.amount}`,
+      `👤 <b>Attendee:</b> ${safeName}`,
+      `📧 <b>Email:</b> ${safeEmail}`,
+      `📱 <b>Phone:</b> ${safePhone}`,
+      `🧾 <b>Order ID:</b> <code>${safeOrderId}</code>`,
+      `💳 <b>Gateway:</b> ${safeGateway}`,
+      payload.formCode ? `📝 <b>Form Code:</b> <code>${escapeHtml(payload.formCode)}</code>` : '',
+      ``,
+      `⚡ <i>Automated RSVP confirmation email dispatched.</i>`
+    ].filter(Boolean).join('\n')
+
+    tasks.push(
+      (async () => {
+        try {
+          const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: telegramHtml,
+              parse_mode: 'HTML',
+              disable_web_page_preview: true,
+            }),
+          })
+          if (res.ok) telegramSent = true
+        } catch (err) {
+          console.error('[Telegram Webinar Alert Network Error]:', err)
+        }
+      })()
+    )
+  }
+
+  const discordWebhookUrl = getDiscordWebhookUrl()
+  if (discordWebhookUrl) {
+    const fields: any[] = [
+      { name: '🎯 Event / Webinar', value: payload.eventTitle, inline: false },
+      { name: '🎫 Ticket Code', value: `\`${payload.ticketCode}\``, inline: true },
+      { name: '💰 Amount Paid', value: `₹${payload.amount}`, inline: true },
+      { name: '👤 Attendee', value: payload.customerName || 'Attendee', inline: true },
+      { name: '📧 Email', value: payload.customerEmail, inline: true },
+      { name: '📱 Phone', value: payload.customerPhone || 'N/A', inline: true },
+      { name: '🧾 Order ID', value: `\`${payload.orderId}\``, inline: false },
+    ]
+
+    const discordEmbed = {
+      username: 'BMF Events Bot',
+      embeds: [
+        {
+          title: '🎟️ New Webinar Registration Confirmed!',
+          description: `**${payload.customerName}** registered for **${payload.eventTitle}**!`,
+          color: 0x6366f1, // Indigo
+          fields,
+          footer: {
+            text: 'BMF Events • Cashfree Payment Forms',
+          },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }
+
+    tasks.push(
+      fetch(discordWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(discordEmbed),
+      }).then(() => { discordSent = true }).catch((err) => console.error('[Discord Webinar Alert Error]:', err))
+    )
+  }
+
+  await Promise.allSettled(tasks)
+  return { telegram: telegramSent, discord: discordSent }
+}
+
+export interface MembershipPurchaseAlertPayload {
+  orderId: string
+  customerName: string
+  customerEmail: string
+  customerPhone?: string | null
+  amount: number
+  tier: string
+  billingCycle: string
+  paymentMethod?: string | null
+  cfPaymentId?: string | null
+}
+
+/**
+ * Dispatches real-time alerts to Telegram and Discord when a founder joins BMF Club Premium
+ */
+export async function sendMembershipPurchaseAlert(payload: MembershipPurchaseAlertPayload): Promise<{
+  telegram: boolean
+  discord: boolean
+}> {
+  const tasks: Promise<any>[] = []
+  let telegramSent = false
+  let discordSent = false
+
+  const { token: telegramBotToken, chatId: telegramChatId } = getTelegramConfig()
+
+  if (telegramBotToken && telegramChatId) {
+    const safeName = escapeHtml(payload.customerName)
+    const safeEmail = escapeHtml(payload.customerEmail)
+    const safePhone = escapeHtml(payload.customerPhone || 'N/A')
+    const safeOrderId = escapeHtml(payload.orderId)
+    const safeGateway = escapeHtml(payload.paymentMethod ? `Cashfree (${payload.paymentMethod})` : 'Cashfree PG')
+
+    const telegramHtml = [
+      `🌟 <b>NEW BMF CLUB PREMIUM MEMBER!</b> 👑`,
+      ``,
+      `👤 <b>Founder:</b> ${safeName}`,
+      `📧 <b>Email:</b> ${safeEmail}`,
+      `📱 <b>Phone:</b> ${safePhone}`,
+      `💵 <b>Amount:</b> ₹${payload.amount} (${payload.billingCycle})`,
+      `🏷️ <b>Tier:</b> ${payload.tier.toUpperCase()}`,
+      `🧾 <b>Order ID:</b> <code>${safeOrderId}</code>`,
+      `💳 <b>Payment Gateway:</b> ${safeGateway}`,
+      ``,
+      `⚡ <i>Obsidian Executive Pass & Featured Founder status activated.</i>`
+    ].join('\n')
+
+    tasks.push(
+      (async () => {
+        try {
+          const res = await fetch(`https://api.telegram.org/bot${telegramBotToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: telegramHtml,
+              parse_mode: 'HTML',
+              disable_web_page_preview: true,
+            }),
+          })
+          if (res.ok) telegramSent = true
+        } catch (err) {
+          console.error('[Telegram Membership Alert Network Error]:', err)
+        }
+      })()
+    )
+  }
+
+  const discordWebhookUrl = getDiscordWebhookUrl()
+  if (discordWebhookUrl) {
+    const fields: any[] = [
+      { name: '👑 Membership Tier', value: payload.tier.toUpperCase(), inline: true },
+      { name: '💰 Amount Paid', value: `₹${payload.amount} (${payload.billingCycle})`, inline: true },
+      { name: '👤 Founder', value: payload.customerName || 'Founder', inline: true },
+      { name: '📧 Email', value: payload.customerEmail, inline: true },
+      { name: '📱 Phone', value: payload.customerPhone || 'N/A', inline: true },
+      { name: '🧾 Order ID', value: `\`${payload.orderId}\``, inline: false },
+    ]
+
+    const discordEmbed = {
+      username: 'BMF Club VIP Bot',
+      embeds: [
+        {
+          title: '🌟 New Founder Upgraded to Premium Member!',
+          description: `**${payload.customerName}** has joined the BMF Club as a **${payload.tier.toUpperCase()}** member!`,
+          color: 0xf59e0b, // Amber Gold
+          fields,
+          footer: {
+            text: 'BMF Club VIP • Cashfree Gateway',
+          },
+          timestamp: new Date().toISOString(),
+        },
+      ],
+    }
+
+    tasks.push(
+      fetch(discordWebhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(discordEmbed),
+      }).then(() => { discordSent = true }).catch((err) => console.error('[Discord Membership Alert Error]:', err))
+    )
+  }
+
+  await Promise.allSettled(tasks)
+  return { telegram: telegramSent, discord: discordSent }
+}
+

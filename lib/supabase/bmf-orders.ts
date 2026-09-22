@@ -1,13 +1,23 @@
 import { getSupabaseAdminClient, getSupabasePublicAdminClient } from './admin'
-import { sendStorePurchaseAlert } from '@/lib/notifications/admin-alerts'
+import {
+  sendStorePurchaseAlert,
+  sendWebinarRegistrationAlert,
+  sendMembershipPurchaseAlert,
+} from '@/lib/notifications/admin-alerts'
+import { sendEventRsvpConfirmationEmail } from '@/lib/email/resend'
+import { detectCashfreePaymentType } from '@/lib/cashfree'
+
+export type BmfOrderType = 'membership' | 'product' | 'webinar' | 'event' | 'consultation' | 'custom'
 
 export interface BmfOrderRecord {
   id?: string
   order_id: string
   user_id?: string | null
   member_id?: string | null
-  order_type?: 'membership' | 'product'
+  order_type?: BmfOrderType
   product_id?: string | null
+  event_id?: string | null
+  form_code?: string | null
   plan_tier: 'free' | 'premium' | 'product' | string
   billing_cycle: 'annual' | 'monthly' | 'lifetime' | 'one_time' | string
   amount: number
@@ -50,15 +60,13 @@ export interface BmfSubscriptionRecord {
 }
 
 /**
- * Creates an order record in bmf_orders
+ * Creates or updates an order record in bmf_orders
  */
 export async function saveBmfOrder(orderData: BmfOrderRecord): Promise<{ success: boolean; error?: string }> {
   try {
     const admin = getSupabaseAdminClient()
 
     // Enforce valid values that satisfy Postgres check constraints:
-    // plan_tier IN ('free', 'premium')
-    // billing_cycle IN ('annual', 'monthly', 'lifetime')
     const safePlanTier = ['free', 'premium'].includes(String(orderData.plan_tier).toLowerCase())
       ? orderData.plan_tier
       : 'premium'
@@ -72,9 +80,11 @@ export async function saveBmfOrder(orderData: BmfOrderRecord): Promise<{ success
         ? orderData.user_id
         : null
 
-    const safeOrderType = orderData.order_type === 'product' ? 'product' : 'membership'
+    const validOrderTypes = ['membership', 'product', 'webinar', 'event', 'consultation', 'custom']
+    const requestedOrderType = String(orderData.order_type || 'membership').toLowerCase()
+    const safeOrderType = validOrderTypes.includes(requestedOrderType) ? requestedOrderType : 'custom'
 
-    const payload = {
+    const payload: any = {
       order_id: orderData.order_id,
       user_id: safeUserId,
       member_id: orderData.member_id || null,
@@ -90,24 +100,44 @@ export async function saveBmfOrder(orderData: BmfOrderRecord): Promise<{ success
       customer_name: orderData.customer_name || null,
       customer_email: orderData.customer_email || null,
       customer_phone: orderData.customer_phone || null,
-      metadata: orderData.metadata || {},
+      metadata: {
+        ...(orderData.metadata || {}),
+        true_order_type: safeOrderType,
+        event_id: orderData.event_id || orderData.metadata?.event_id,
+        form_code: orderData.form_code || orderData.metadata?.form_code,
+      },
       updated_at: new Date().toISOString(),
     }
 
-    const { error } = await admin
+    if (orderData.event_id) payload.event_id = orderData.event_id
+    if (orderData.form_code) payload.form_code = orderData.form_code
+
+    let { error } = await admin
       .from('bmf_orders')
       .upsert(payload, { onConflict: 'order_id' })
 
     if (error) {
-      console.warn('[BMF Orders] Error writing to bmf_club schema, falling back to public view:', error.message)
-      const publicAdmin = getSupabasePublicAdminClient()
-      const { error: pubError } = await publicAdmin
-        .from('bmf_orders')
-        .upsert(payload, { onConflict: 'order_id' })
+      // If DB constraint still only allows 'membership' | 'product', fallback gracefully with metadata preserved
+      if (error.message?.includes('order_type') || error.message?.includes('check constraint')) {
+        console.warn('[BMF Orders] Falling back to product order_type due to legacy DB check constraint:', error.message)
+        payload.order_type = safeOrderType === 'membership' ? 'membership' : 'product'
+        delete payload.event_id
+        delete payload.form_code
+        const retry = await admin.from('bmf_orders').upsert(payload, { onConflict: 'order_id' })
+        error = retry.error
+      }
 
-      if (pubError) {
-        console.error('[BMF Orders] Fallback failed:', pubError.message)
-        return { success: false, error: pubError.message }
+      if (error) {
+        console.warn('[BMF Orders] Error writing to bmf_club schema, falling back to public view:', error.message)
+        const publicAdmin = getSupabasePublicAdminClient()
+        const { error: pubError } = await publicAdmin
+          .from('bmf_orders')
+          .upsert(payload, { onConflict: 'order_id' })
+
+        if (pubError) {
+          console.error('[BMF Orders] Fallback failed:', pubError.message)
+          return { success: false, error: pubError.message }
+        }
       }
     }
 
@@ -259,7 +289,150 @@ export async function findRecentPendingOrder(params: {
 }
 
 /**
- * Marks order as paid, records payment log, upserts subscription, and upgrades member profile
+ * Dedicated fulfillment handler for Webinar and Event Ticket registrations.
+ * Inserts into bmf_event_registrations, increments registered_count, sends RSVP email and alerts.
+ * NOTE: This NEVER touches bmf_members, NEVER upgrades membership tier, and NEVER grants a verified tick!
+ */
+export async function fulfillEventOrWebinarOrder(params: {
+  order: any
+  orderId: string
+  cfPaymentId?: string
+  paymentMethod?: string
+  amount?: number
+  bankReference?: string
+  rawPayload?: any
+  wasAlreadyPaid?: boolean
+}): Promise<{ success: boolean; error?: string; ticketCode?: string }> {
+  try {
+    const admin = getSupabaseAdminClient()
+    const publicAdmin = getSupabasePublicAdminClient()
+
+    const customerEmail = (params.order.customer_email || params.rawPayload?.data?.customer_details?.customer_email || 'attendee@customer.com').toLowerCase().trim()
+    const customerName = params.order.customer_name || params.rawPayload?.data?.customer_details?.customer_name || 'Webinar Attendee'
+    const customerPhone = params.order.customer_phone || params.rawPayload?.data?.customer_details?.customer_phone || null
+
+    // Determine target event
+    let targetEventId = params.order.event_id || params.order.metadata?.event_id
+    const formCode = params.order.form_code || params.order.metadata?.form_code
+
+    // If targetEventId not specified, lookup by formCode or fallback to main webinar
+    if (!targetEventId) {
+      if (formCode === 'from-idea-to-1-lakh-webinar' || JSON.stringify(params.rawPayload || {}).includes('from-idea-to-1-lakh-webinar')) {
+        targetEventId = '9c2225b0-e13a-4450-b5df-1082e0da0d89'
+      }
+    }
+
+    // Fetch event details
+    let eventTitle = 'From Idea to First ₹1 Lakh: The Early-Stage Founder Playbook'
+    let eventDate = 'September 26–27, 2026'
+    let eventLocation = 'Live Interactive Online Webinar'
+
+    if (targetEventId) {
+      const { data: eventData } = await admin
+        .from('bmf_events')
+        .select('*')
+        .eq('id', targetEventId)
+        .maybeSingle()
+
+      if (eventData) {
+        eventTitle = eventData.title || eventTitle
+        eventDate = eventData.event_date || eventDate
+        eventLocation = eventData.location_venue || eventData.location_city || eventLocation
+      }
+    }
+
+    // Idempotency: Check if an approved registration already exists for this order or email+event
+    let existingRegQuery = admin
+      .from('bmf_event_registrations')
+      .select('id, ticket_code')
+      .eq('email', customerEmail)
+
+    if (targetEventId) {
+      existingRegQuery = existingRegQuery.eq('event_id', targetEventId)
+    }
+
+    const { data: existingReg } = await existingRegQuery.maybeSingle()
+
+    let ticketCode = existingReg?.ticket_code
+    let isNewRegistration = false
+
+    if (!existingReg) {
+      ticketCode = `BMF-WEB-${Math.floor(100000 + Math.random() * 900000)}`
+      isNewRegistration = true
+
+      const regRecord = {
+        event_id: targetEventId || '9c2225b0-e13a-4450-b5df-1082e0da0d89',
+        user_id: params.order.user_id || null,
+        full_name: customerName,
+        email: customerEmail,
+        phone: customerPhone,
+        status: 'approved',
+        ticket_code: ticketCode,
+        notes: `Paid ₹${params.amount || params.order.amount} via Cashfree (Order: ${params.orderId})`,
+      }
+
+      const { error: regErr } = await admin.from('bmf_event_registrations').insert(regRecord)
+      if (regErr) {
+        console.warn('[Event Fulfillment] Error writing to bmf_club schema, trying public view:', regErr.message)
+        await publicAdmin.from('bmf_event_registrations').insert(regRecord)
+      }
+
+      // Increment registered count on target event
+      if (targetEventId) {
+        try {
+          const { data: currentEvent } = await admin.from('bmf_events').select('registered_count').eq('id', targetEventId).maybeSingle()
+          await admin.from('bmf_events').update({ registered_count: (currentEvent?.registered_count || 0) + 1 }).eq('id', targetEventId)
+        } catch (_) {}
+      }
+    }
+
+    // Dispatch RSVP Confirmation Email via Resend (guarded against duplicate sends)
+    if (isNewRegistration && !params.wasAlreadyPaid) {
+      try {
+        await sendEventRsvpConfirmationEmail({
+          to: customerEmail,
+          attendeeName: customerName,
+          eventTitle,
+          eventDate,
+          location: eventLocation,
+          status: 'approved',
+          ticketCode: ticketCode || `BMF-${params.orderId.slice(-6)}`,
+        })
+      } catch (emailErr) {
+        console.error('[Event Fulfillment] Error dispatching RSVP email:', emailErr)
+      }
+
+      // Dispatch Telegram & Discord Alerts
+      try {
+        await sendWebinarRegistrationAlert({
+          orderId: params.orderId,
+          eventId: targetEventId || '9c2225b0-e13a-4450-b5df-1082e0da0d89',
+          eventTitle,
+          ticketCode: ticketCode || `BMF-${params.orderId.slice(-6)}`,
+          customerName,
+          customerEmail,
+          customerPhone,
+          amount: params.amount || params.order.amount || 99,
+          paymentMethod: params.paymentMethod,
+          cfPaymentId: params.cfPaymentId,
+          formCode: formCode || null,
+        })
+      } catch (alertErr) {
+        console.error('[Event Fulfillment] Error dispatching webinar alert:', alertErr)
+      }
+    }
+
+    console.log(`[Event Fulfillment] Successfully registered attendee ${customerEmail} for webinar ${targetEventId || eventTitle}`)
+    return { success: true, ticketCode }
+  } catch (err: any) {
+    console.error('[Event Fulfillment] Error fulfilling webinar order:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Marks order as paid, records payment log, and routes fulfillment to the appropriate handler
+ * (Digital Product, Webinar/Event, or Membership).
  */
 export async function fulfillPaidPremiumOrder(params: {
   orderId: string
@@ -268,7 +441,7 @@ export async function fulfillPaidPremiumOrder(params: {
   amount?: number
   bankReference?: string
   rawPayload?: any
-}): Promise<{ success: boolean; error?: string; upgradedUser?: string; purchasedProduct?: string }> {
+}): Promise<{ success: boolean; error?: string; upgradedUser?: string; purchasedProduct?: string; registeredEvent?: string }> {
   try {
     const admin = getSupabaseAdminClient()
     const publicAdmin = getSupabasePublicAdminClient()
@@ -299,7 +472,10 @@ export async function fulfillPaidPremiumOrder(params: {
         const cfTags = cfOrder.order_tags || {}
         const cfCustomer = params.rawPayload?.data?.customer_details || params.rawPayload?.customer_details || {}
 
-        let resolvedProductId = cfTags.product_id || null
+        // Use smart classifier to determine real payment intent
+        const detected = detectCashfreePaymentType(params.rawPayload)
+
+        let resolvedProductId = cfTags.product_id || detected.productId || null
         if (resolvedProductId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(resolvedProductId)) {
           try {
             const { data: prod } = await admin.from('bmf_products').select('id').eq('slug', resolvedProductId).maybeSingle()
@@ -310,19 +486,24 @@ export async function fulfillPaidPremiumOrder(params: {
         const autoOrder: BmfOrderRecord = {
           order_id: params.orderId,
           user_id: cfTags.user_id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cfTags.user_id) ? cfTags.user_id : null,
-          order_type: cfTags.order_type === 'product' || params.orderId.startsWith('bmf_prod_') ? 'product' : 'membership',
+          order_type: detected.category,
           product_id: resolvedProductId,
-          plan_tier: 'premium',
+          event_id: detected.eventId,
+          form_code: detected.formCode,
+          plan_tier: detected.category === 'membership' ? 'premium' : 'product',
           billing_cycle: 'annual',
-          amount: params.amount || cfOrder.order_amount || 0,
+          amount: params.amount || detected.amount || cfOrder.order_amount || 0,
           currency: cfOrder.order_currency || 'INR',
           payment_gateway: 'cashfree',
           status: 'created',
-          customer_name: cfCustomer.customer_name || 'BMF Founder',
-          customer_email: cfCustomer.customer_email || 'guest@customer.com',
-          customer_phone: cfCustomer.customer_phone || null,
+          customer_name: detected.customerName || cfCustomer.customer_name || 'BMF Customer',
+          customer_email: detected.customerEmail || cfCustomer.customer_email || 'guest@customer.com',
+          customer_phone: detected.customerPhone || cfCustomer.customer_phone || null,
           metadata: {
-            product_title: cfTags.product_title || 'Digital Asset',
+            detected_category: detected.category,
+            form_code: detected.formCode,
+            form_title: detected.formTitle,
+            product_title: cfTags.product_title || detected.formTitle || 'Digital Asset',
             auto_recovered_from_webhook: true,
           },
         }
@@ -336,6 +517,22 @@ export async function fulfillPaidPremiumOrder(params: {
     }
 
     const wasAlreadyPaid = order.status === 'paid'
+
+    // Strict Idempotency Check:
+    // If order was already marked paid AND payment ID was recorded, return immediately to avoid repeating actions
+    if (params.cfPaymentId && wasAlreadyPaid) {
+      const { data: existingPayment } = await admin
+        .from('bmf_payments')
+        .select('id, payment_status')
+        .eq('cf_payment_id', params.cfPaymentId)
+        .eq('payment_status', 'SUCCESS')
+        .maybeSingle()
+
+      if (existingPayment) {
+        console.log(`[Fulfillment] Payment ${params.cfPaymentId} already successfully recorded for order ${params.orderId}. Acknowledging with 200 OK without re-running actions.`)
+        return { success: true }
+      }
+    }
 
     // 2. Update order status to 'paid'
     const nowIso = new Date().toISOString()
@@ -472,12 +669,61 @@ export async function fulfillPaidPremiumOrder(params: {
       return { success: true, purchasedProduct: order.product_id }
     }
 
-    // 5. Calculate subscription expiry (1 year from now for annual)
+    // 5. Branch for Webinar & Event Ticket Registrations
+    const isWebinarOrder =
+      order.order_type === 'webinar' ||
+      order.order_type === 'event' ||
+      Boolean(order.event_id) ||
+      Boolean(order.metadata?.event_id) ||
+      Boolean(order.form_code) ||
+      Boolean(order.metadata?.form_code) ||
+      order.metadata?.detected_category === 'webinar' ||
+      JSON.stringify(order).includes('from-idea-to-1-lakh-webinar')
+
+    if (isWebinarOrder) {
+      const eventResult = await fulfillEventOrWebinarOrder({
+        order,
+        orderId: params.orderId,
+        cfPaymentId: params.cfPaymentId,
+        paymentMethod: params.paymentMethod,
+        amount: params.amount || order.amount,
+        bankReference: params.bankReference,
+        rawPayload: params.rawPayload,
+        wasAlreadyPaid,
+      })
+
+      // IMPORTANT: Terminate here. NEVER touch bmf_members, NEVER upgrade membership tier, NEVER grant verified tick!
+      return {
+        success: eventResult.success,
+        error: eventResult.error,
+        registeredEvent: order.event_id || order.metadata?.event_id || 'from-idea-to-1-lakh-webinar',
+      }
+    }
+
+    // 6. Branch for Consultation Bookings & Custom Payments
+    if (order.order_type === 'consultation' || order.order_type === 'custom') {
+      console.log(`[Fulfillment] Successfully recorded custom/consultation order ${params.orderId}`)
+      return { success: true }
+    }
+
+    // 7. BMF Club Membership Upgrades ONLY!
+    // Reaches here ONLY if order_type is explicitly 'membership' or starts with 'bmf_prem_'
+    const isRealMembership =
+      order.order_type === 'membership' ||
+      params.orderId.startsWith('bmf_prem_') ||
+      order.metadata?.true_order_type === 'membership'
+
+    if (!isRealMembership) {
+      console.log(`[Fulfillment] Non-membership order ${params.orderId} processed cleanly without membership side-effects.`)
+      return { success: true }
+    }
+
+    // 8. Calculate subscription expiry (1 year from now for annual)
     const validUntilDate = new Date()
     validUntilDate.setFullYear(validUntilDate.getFullYear() + 1)
     const validUntilIso = validUntilDate.toISOString()
 
-    // 6. Upsert subscription in bmf_subscriptions
+    // 9. Upsert subscription in bmf_subscriptions
     if (userId) {
       const subRecord = {
         user_id: userId,
@@ -583,6 +829,17 @@ export async function fulfillPaidPremiumOrder(params: {
 
     // 8. Dispatch Alert to Discord & Telegram
     try {
+      await sendMembershipPurchaseAlert({
+        orderId: params.orderId,
+        customerName: order.customer_name || 'BMF Founder',
+        customerEmail: order.customer_email || 'founder@customer.com',
+        customerPhone: order.customer_phone || null,
+        amount: params.amount || order.amount || 799,
+        tier: 'premium',
+        billingCycle: order.billing_cycle || 'annual',
+        paymentMethod: params.paymentMethod,
+        cfPaymentId: params.cfPaymentId,
+      })
       await dispatchAdminNotification({
         orderId: params.orderId,
         amount: params.amount || order.amount || 799,

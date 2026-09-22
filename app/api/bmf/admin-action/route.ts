@@ -2,9 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { sendShowcaseApprovedEmail, sendShowcaseRevisionEmail } from '@/lib/email/resend'
 import { clearMembersServerCache } from '@/app/api/bmf/members/route'
+import { verifyAdminAuth } from '@/lib/auth/admin-auth'
 
 export async function POST(request: NextRequest) {
   try {
+    // 1. Enforce strict Admin authorization check
+    const authCheck = await verifyAdminAuth()
+    if (!authCheck.authorized) {
+      return NextResponse.json(
+        { success: false, error: authCheck.error || 'Unauthorized' },
+        { status: 403 }
+      )
+    }
+
     const body = await request.json()
     const { memberId, action, feedback } = body
 
