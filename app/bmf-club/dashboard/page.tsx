@@ -1301,10 +1301,35 @@ function BmfMemberDashboardContent() {
         is_onboarding_completed: true,
       }
 
-      const saveRes = await saveBmfMemberProfile(updatedMember)
-      if (!saveRes.success) {
-        setOnboardingError(saveRes.error || 'Failed to save onboarding details.')
-        return
+      // Persist onboarding details and auto-approve founder via service-role endpoint
+      try {
+        const response = await fetch('/api/bmf/onboarding/complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: profile.user_id || profile.id,
+            userEmail: profile.email,
+            ...updatedMember,
+            phone_number: onboardingForm.phone_number.trim(),
+            whatsapp_number: onboardingForm.phone_number.trim(),
+          }),
+        })
+        const completeData = await response.json()
+        if (!response.ok || !completeData.success) {
+          // Fallback to client save if endpoint returns error
+          const saveRes = await saveBmfMemberProfile(updatedMember)
+          if (!saveRes.success) {
+            setOnboardingError(saveRes.error || completeData.error || 'Failed to save onboarding details.')
+            return
+          }
+        }
+      } catch (err) {
+        // Fallback to client save on network failure
+        const saveRes = await saveBmfMemberProfile(updatedMember)
+        if (!saveRes.success) {
+          setOnboardingError(saveRes.error || 'Failed to save onboarding details.')
+          return
+        }
       }
 
       await saveFounderContactDetails(profile.user_id || profile.id, {
