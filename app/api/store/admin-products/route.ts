@@ -10,22 +10,133 @@ export async function GET() {
   try {
     const publicAdmin = getSupabasePublicAdminClient()
 
-    let products: any[] = []
-    const { data, error } = await publicAdmin
-      .from('store_products')
-      .select('*')
-      .order('display_order', { ascending: true })
+    // 1. Fetch products, purchases, and orders concurrently
+    const [productsRes, purchasesRes, storeOrdersRes, bmfOrdersRes] = await Promise.all([
+      publicAdmin
+        .from('store_products')
+        .select('*')
+        .order('display_order', { ascending: true }),
+      publicAdmin
+        .from('store_purchases')
+        .select('id, product_id, amount_paid, access_status, order_id, customer_email')
+        .eq('access_status', 'active'),
+      publicAdmin
+        .from('store_orders')
+        .select('id, order_id, order_amount, status, items')
+        .eq('status', 'paid'),
+      publicAdmin
+        .from('bmf_orders')
+        .select('id, order_id, amount, status, order_type, metadata')
+        .eq('status', 'paid'),
+    ])
 
-    if (!error && data && data.length > 0) {
-      products = data
-    } else {
-      // Fallback query to bmf_products
+    let rawProducts: any[] = productsRes.data || []
+    if (!rawProducts.length) {
       const { data: bmfData } = await publicAdmin
         .from('bmf_products')
         .select('*')
         .order('display_order', { ascending: true })
-      products = bmfData || []
+      rawProducts = bmfData || []
     }
+
+    const purchases = purchasesRes.data || []
+    const storeOrders = storeOrdersRes.data || []
+    const bmfOrders = bmfOrdersRes.data || []
+
+    // 2. Precisely align and compute purchase units for every product
+    const products = await Promise.all(
+      rawProducts.map(async (p) => {
+        // Matches from store_purchases
+        const pPurchases = purchases.filter((pu) => pu.product_id === p.id)
+
+        // Matches from store_orders
+        const pStoreOrders = storeOrders.filter((so) => {
+          if (!Array.isArray(so.items)) return false
+          return so.items.some(
+            (item: any) =>
+              item.product_id === p.id ||
+              item.slug === p.slug ||
+              (item.title && p.title && item.title.toLowerCase().trim() === p.title.toLowerCase().trim())
+          )
+        })
+
+        // Matches from legacy/supplemental bmf_orders
+        const pBmfOrders = bmfOrders.filter((bo) => {
+          const meta = bo.metadata || {}
+          const metaTitle = (meta.product_title || '').toLowerCase().trim()
+          const pTitle = (p.title || '').toLowerCase().trim()
+          return (
+            bo.product_id === p.id ||
+            (metaTitle && pTitle && metaTitle === pTitle) ||
+            (meta.slug && meta.slug === p.slug)
+          )
+        })
+
+        // Deduplicate orders / transactions
+        const uniqueTxKeys = new Set<string>()
+        let paidUnits = 0
+        let freeUnits = 0
+        let revenueGenerated = 0
+
+        // Process store_purchases
+        pPurchases.forEach((pu) => {
+          const key = pu.order_id || `purchase_${pu.id}`
+          if (!uniqueTxKeys.has(key)) {
+            uniqueTxKeys.add(key)
+            const amt = Number(pu.amount_paid || 0)
+            revenueGenerated += amt
+            if (amt > 0) paidUnits++
+            else freeUnits++
+          }
+        })
+
+        // Process store_orders
+        pStoreOrders.forEach((so) => {
+          const key = so.order_id || `order_${so.id}`
+          if (!uniqueTxKeys.has(key)) {
+            uniqueTxKeys.add(key)
+            const amt = Number(so.order_amount || 0)
+            revenueGenerated += amt
+            if (amt > 0) paidUnits++
+            else freeUnits++
+          }
+        })
+
+        // Process bmf_orders
+        pBmfOrders.forEach((bo) => {
+          const key = bo.order_id || `bmf_${bo.id}`
+          if (!uniqueTxKeys.has(key)) {
+            uniqueTxKeys.add(key)
+            const amt = Number(bo.amount || 0)
+            revenueGenerated += amt
+            if (amt > 0) paidUnits++
+            else freeUnits++
+          }
+        })
+
+        const calculatedUnits = uniqueTxKeys.size
+        const finalUnits = Math.max(calculatedUnits, Number(p.sales_count || 0))
+
+        // Synchronize store_products.sales_count in database if drifting
+        if (p.sales_count !== finalUnits) {
+          try {
+            await publicAdmin
+              .from('store_products')
+              .update({ sales_count: finalUnits })
+              .eq('id', p.id)
+          } catch (_) {}
+        }
+
+        return {
+          ...p,
+          sales_count: finalUnits,
+          purchase_units: finalUnits,
+          paid_units: paidUnits,
+          free_units: freeUnits,
+          revenue_generated: revenueGenerated,
+        }
+      })
+    )
 
     return NextResponse.json({ success: true, count: products.length, products })
   } catch (err: any) {

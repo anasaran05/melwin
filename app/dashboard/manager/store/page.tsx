@@ -52,6 +52,10 @@ interface AdminProduct {
   thumbnail_url?: string | null
   author_name: string
   sales_count: number
+  purchase_units?: number
+  paid_units?: number
+  free_units?: number
+  revenue_generated?: number
   is_published: boolean
   display_order: number
 }
@@ -163,6 +167,10 @@ export default function ManagerStoreDashboardPage() {
       .filter((o) => o.status === 'paid')
       .reduce((sum, o) => sum + (Number(o.order_amount) || 0), 0)
   }, [orders])
+
+  const totalUnitsPurchased = useMemo(() => {
+    return products.reduce((sum, p) => sum + (p.purchase_units ?? p.sales_count ?? 0), 0)
+  }, [products])
 
   const openCreateModal = () => {
     setEditingProduct(null)
@@ -370,7 +378,7 @@ export default function ManagerStoreDashboardPage() {
       </div>
 
       {/* Overview Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800">
           <span className="text-xs text-neutral-400 font-medium">Total Store Revenue</span>
           <div className="mt-1 flex items-baseline gap-1">
@@ -379,6 +387,17 @@ export default function ManagerStoreDashboardPage() {
             </span>
           </div>
           <p className="text-[11px] text-neutral-500 mt-1">Processed securely via Cashfree</p>
+        </div>
+
+        <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800">
+          <span className="text-xs text-neutral-400 font-medium">Total Units Purchased</span>
+          <div className="mt-1 flex items-baseline gap-1.5">
+            <span className="text-2xl font-black text-white">
+              {totalUnitsPurchased}
+            </span>
+            <span className="text-xs font-semibold text-neutral-400">units</span>
+          </div>
+          <p className="text-[11px] text-neutral-500 mt-1">Aggregated across all store assets</p>
         </div>
 
         <div className="p-5 rounded-2xl bg-neutral-900/60 border border-neutral-800">
@@ -468,7 +487,7 @@ export default function ManagerStoreDashboardPage() {
                     <th className="p-3.5">Format</th>
                     <th className="p-3.5">Pricing</th>
                     <th className="p-3.5">Channels</th>
-                    <th className="p-3.5">Sales</th>
+                    <th className="p-3.5">Purchase Units</th>
                     <th className="p-3.5">Status</th>
                     <th className="p-3.5 text-right">Actions</th>
                   </tr>
@@ -515,7 +534,37 @@ export default function ManagerStoreDashboardPage() {
                           )}
                         </div>
                       </td>
-                      <td className="p-3.5 font-bold text-white">{p.sales_count || 0}</td>
+                      <td className="p-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-black text-white">
+                            {p.purchase_units ?? p.sales_count ?? 0}
+                          </span>
+                          <span className="text-[11px] font-semibold text-neutral-400">
+                            {(p.purchase_units ?? p.sales_count ?? 0) === 1 ? 'unit' : 'units'}
+                          </span>
+                        </div>
+                        {(p.purchase_units ?? p.sales_count ?? 0) > 0 ? (
+                          <div className="text-[10px] mt-0.5">
+                            {(p.revenue_generated || 0) > 0 ? (
+                              <span className="text-emerald-400 font-semibold">
+                                ₹{(p.revenue_generated || 0).toLocaleString('en-IN')} rev
+                              </span>
+                            ) : (
+                              <span className="text-sky-400 font-medium">Free claims</span>
+                            )}
+                            {p.paid_units !== undefined &&
+                              p.free_units !== undefined &&
+                              p.paid_units > 0 &&
+                              p.free_units > 0 && (
+                                <span className="text-neutral-500 ml-1">
+                                  ({p.paid_units} paid · {p.free_units} free)
+                                </span>
+                              )}
+                          </div>
+                        ) : (
+                          <div className="text-[10px] text-neutral-600 mt-0.5">0 units</div>
+                        )}
+                      </td>
                       <td className="p-3.5">
                         {p.is_published ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400">
