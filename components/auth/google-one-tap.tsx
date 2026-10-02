@@ -52,6 +52,9 @@ export function GoogleOneTap({
   const initializedRef = React.useRef(false)
 
   const isBmfPage = pathname?.startsWith('/bmf') || false
+  const isStorePage = pathname?.startsWith('/store') || false
+  const isAllowedPage = isBmfPage || isStorePage
+
   const isAuthOrDashboardPage = 
     pathname?.includes('/dashboard') || 
     pathname?.includes('/reset-password') || 
@@ -62,8 +65,8 @@ export function GoogleOneTap({
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   useEffect(() => {
-    // If on dashboard, password reset, or navigating away from public BMF pages, dismiss any open Google One Tap prompt
-    if (!isBmfPage || isAuthOrDashboardPage) {
+    // If not on allowed pages, or on auth/dashboard, dismiss any open Google One Tap prompt
+    if (!isAllowedPage || isAuthOrDashboardPage) {
       if (typeof window !== 'undefined' && window.google?.accounts?.id?.cancel) {
         try {
           window.google.accounts.id.cancel()
@@ -86,8 +89,8 @@ export function GoogleOneTap({
           return // User already logged in, do not display One Tap prompt
         }
 
-        // Also check local demo storage
-        if (typeof window !== 'undefined' && localStorage.getItem('bmf_current_user_email')) {
+        // For BMF Club, also check demo storage
+        if (isBmfPage && typeof window !== 'undefined' && localStorage.getItem('bmf_current_user_email')) {
           return
         }
 
@@ -121,10 +124,19 @@ export function GoogleOneTap({
               }
 
               if (data?.user) {
-                if (typeof window !== 'undefined') {
+                if (isBmfPage && typeof window !== 'undefined') {
                   localStorage.setItem('bmf_current_user_email', data.user.email || '')
                 }
-                const destination = redirectTo || (typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : '/bmf-club/dashboard')
+                if (isStorePage && typeof window !== 'undefined') {
+                  localStorage.setItem('store_customer_email', data.user.email || '')
+                }
+
+                if (onSuccess) {
+                  onSuccess(data.user)
+                }
+
+                const defaultDest = isStorePage ? '/store' : '/bmf-club/dashboard'
+                const destination = redirectTo || (typeof window !== 'undefined' ? `${window.location.pathname}${window.location.search}` : defaultDest)
                 router.push(destination)
                 router.refresh()
               }
@@ -156,10 +168,10 @@ export function GoogleOneTap({
     }
 
     initializeGoogleOneTap()
-  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isBmfPage, isAuthOrDashboardPage, pathname])
+  }, [scriptLoaded, googleClientId, autoPrompt, redirectTo, onSuccess, router, isAllowedPage, isBmfPage, isStorePage, isAuthOrDashboardPage, pathname])
 
-  // Only load the external script and initialize on public BMF Club routes (never on dashboard or auth pages)
-  if (!isBmfPage || isAuthOrDashboardPage) {
+  // Only load external script on allowed public routes
+  if (!isAllowedPage || isAuthOrDashboardPage) {
     return null
   }
 
@@ -173,4 +185,3 @@ export function GoogleOneTap({
 }
 
 export default GoogleOneTap
-

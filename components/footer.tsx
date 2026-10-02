@@ -36,6 +36,7 @@ export function Footer() {
             <div className="flex flex-wrap gap-2.5 max-w-[480px]">
               {[
                 { name: 'Home', href: '/' },
+                { name: 'Store (Vault)', href: '/store' },
                 { name: 'About Me', href: '/about' },
                 { name: 'Services', href: '/services' },
                 { name: 'BMF Club', href: '/bmf-club' },

@@ -101,6 +101,31 @@ export async function POST(request: NextRequest) {
     }
 
     // 6. Fulfill according to payment type with strict idempotency
+    if (detected.orderId.startsWith('store_ord_') || detected.orderId.startsWith('store_prod_')) {
+      const { fulfillPublicStoreOrder } = await import('@/lib/supabase/store')
+      const storeResult = await fulfillPublicStoreOrder({
+        orderId: detected.orderId,
+        cfPaymentId: detected.cfPaymentId,
+        paymentMethod: detected.paymentMethod,
+        amount: detected.amount,
+        bankReference: detected.bankReference,
+        rawPayload: payload,
+      })
+
+      if (!storeResult.success) {
+        console.error('[Cashfree Webhook] Store fulfillment error:', storeResult.error)
+        return NextResponse.json({ error: storeResult.error }, { status: 500 })
+      }
+
+      console.log(`[Cashfree Webhook] Successfully fulfilled public store order ${detected.orderId}`)
+      return NextResponse.json({
+        status: 'OK',
+        received: true,
+        category: 'store_product',
+        orderId: detected.orderId,
+      })
+    }
+
     const fulfillmentResult = await fulfillPaidPremiumOrder({
       orderId: detected.orderId,
       cfPaymentId: detected.cfPaymentId,

@@ -315,8 +315,8 @@ export function detectCashfreePaymentType(payload: any): DetectedPaymentInfo {
   }
 
   // 2. Check for Store Digital Asset Product
-  const isProductById = orderId.startsWith('bmf_prod_')
-  const isProductByTag = tags.order_type === 'product' || Boolean(tags.product_id)
+  const isProductById = orderId.startsWith('bmf_prod_') || orderId.startsWith('store_ord_') || orderId.startsWith('store_prod_')
+  const isProductByTag = tags.order_type === 'product' || tags.order_type === 'store_product' || Boolean(tags.product_id) || Boolean(tags.product_ids)
   const isProductByString = rawString.includes('store') || rawString.includes('digital asset')
 
   if (isProductById || isProductByTag || isProductByString) {
@@ -333,7 +333,7 @@ export function detectCashfreePaymentType(payload: any): DetectedPaymentInfo {
       bankReference,
       productId: tags.product_id || undefined,
       formCode,
-      formTitle: tags.product_title || 'BMF Digital Asset',
+      formTitle: tags.product_title || 'Digital Asset',
       notes: tags.product_title || 'Store Product Purchase',
     }
   }

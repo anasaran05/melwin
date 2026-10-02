@@ -649,9 +649,8 @@ export function getSupabaseBrowserClient() {
 
 const userProfileCache = new Map<string, { profile: BmfMember; timestamp: number }>()
 
-export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
-  const defaultFallback = INITIAL_BMF_MEMBERS[0]
-  if (!user) return defaultFallback
+export async function ensureOrFetchUserProfile(user: any, autoCreate: boolean = false): Promise<BmfMember | null> {
+  if (!user) return null
 
   const userId = user.id || user.email || 'guest'
   const cached = userProfileCache.get(userId)
@@ -673,14 +672,7 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
           return { ...parsed, email: email || parsed.email, full_name: parsed.full_name || fullName, avatar_url: parsed.avatar_url || avatarUrl }
         }
       }
-      return {
-        ...defaultFallback,
-        id: user.id || 'demo-user',
-        user_id: user.id || null,
-        full_name: fullName,
-        email,
-        avatar_url: avatarUrl,
-      }
+      return null
     }
 
     // Check if member profile exists by user_id or email
@@ -691,7 +683,6 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
       .limit(1)
       .maybeSingle()
 
-    let resultProfile: BmfMember
     if (existingMember) {
       if (!existingMember.user_id && user.id) {
         await supabase
@@ -699,64 +690,81 @@ export async function ensureOrFetchUserProfile(user: any): Promise<BmfMember> {
           .update({ user_id: user.id, updated_at: new Date().toISOString() })
           .eq('id', existingMember.id)
       }
-      resultProfile = existingMember as BmfMember
-    } else {
-      // Create new founder profile from authenticated user metadata with clean empty fields
-      const newProfile: Partial<BmfMember> = {
-        user_id: user.id,
-        email,
-        full_name: fullName !== 'Verified Founder' ? fullName : '',
-        role: '',
-        company_name: '',
-        company_logo: '',
-        avatar_url: avatarUrl,
-        category: '',
-        tagline: '',
-        description: '',
-        stage: '',
-        metrics: '',
-        location: '',
-        team_size: '',
-        phone_number: '',
-        whatsapp_number: '',
-        is_verified: true,
-        is_approved: false,
-        review_status: 'pending',
-        is_featured: false,
-        card_theme: 'obsidian',
-        is_onboarding_completed: false,
-      }
-
-      const { data: inserted, error: insertError } = await supabase
-        .from('bmf_members')
-        .insert([newProfile])
-        .select()
-        .single()
-
-      if (inserted && !insertError) {
-        resultProfile = inserted as BmfMember
-      } else {
-        resultProfile = {
-          ...defaultFallback,
-          ...newProfile,
-          id: user.id,
-        } as BmfMember
-      }
+      const resultProfile = existingMember as BmfMember
+      userProfileCache.set(userId, { profile: resultProfile, timestamp: Date.now() })
+      return resultProfile
     }
 
-    userProfileCache.set(userId, { profile: resultProfile, timestamp: Date.now() })
-    return resultProfile
+    // STRICT: Do NOT automatically create a BMF Founder record for normal app/store logins!
+    // A record in bmf_members is ONLY created when explicitly requested (e.g. membership purchase or application).
+    if (!autoCreate) {
+      return null
+    }
+
+    return await createNewBmfMemberProfile(user)
   } catch (err) {
-    console.error('Error ensuring member profile:', err)
-    return {
-      ...defaultFallback,
-      id: user.id || 'demo-user',
-      user_id: user.id || null,
-      full_name: fullName,
-      email,
-      avatar_url: avatarUrl,
+    console.error('Error fetching member profile:', err)
+    return null
+  }
+}
+
+/**
+ * Explicitly creates a new BMF Founder Member profile.
+ * Only called during intentional BMF Club onboarding or pass application.
+ */
+export async function createNewBmfMemberProfile(user: any, profileOverrides?: Partial<BmfMember>): Promise<BmfMember> {
+  const fullName = user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'Verified Founder'
+  const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture || getFounderFallbackAvatar(fullName)
+  const email = user.email || ''
+
+  const newProfile: Partial<BmfMember> = {
+    user_id: user.id,
+    email,
+    full_name: fullName !== 'Verified Founder' ? fullName : '',
+    role: '',
+    company_name: '',
+    company_logo: '',
+    avatar_url: avatarUrl,
+    category: '',
+    tagline: '',
+    description: '',
+    stage: '',
+    metrics: '',
+    location: '',
+    team_size: '',
+    phone_number: '',
+    whatsapp_number: '',
+    is_verified: true,
+    is_approved: false,
+    review_status: 'pending',
+    is_featured: false,
+    card_theme: 'obsidian',
+    is_onboarding_completed: false,
+    ...(profileOverrides || {}),
+  }
+
+  const supabase = getSupabaseBrowserClient()
+  if (supabase) {
+    const { data: inserted, error: insertError } = await supabase
+      .from('bmf_members')
+      .insert([newProfile])
+      .select()
+      .single()
+
+    if (inserted && !insertError) {
+      const profile = inserted as BmfMember
+      const userId = user.id || user.email || 'guest'
+      userProfileCache.set(userId, { profile, timestamp: Date.now() })
+      return profile
     }
   }
+
+  const fallback = {
+    ...INITIAL_BMF_MEMBERS[0],
+    ...newProfile,
+    id: user.id || 'new-member',
+  } as BmfMember
+  return fallback
 }
 
 export function isUploadedAvatar(url?: string | null): boolean {

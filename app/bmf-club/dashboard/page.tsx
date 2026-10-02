@@ -502,6 +502,11 @@ function BmfMemberDashboardContent() {
           }
           setIsAuthenticated(true)
           const memberProfile = await ensureOrFetchUserProfile(authedUser)
+          if (!memberProfile) {
+            // Not a BMF Club Member: Redirect to /store/purchases so store buyers aren't forced into founder onboarding
+            router.replace('/store/purchases')
+            return
+          }
           setProfile(memberProfile)
           setProfileForm(memberProfile)
           setPhoneNumber(memberProfile.phone_number || '')
@@ -856,8 +861,12 @@ function BmfMemberDashboardContent() {
             if (destination && destination !== '/bmf-club/dashboard') {
               router.push(destination)
             } else {
-              setIsAuthenticated(true)
               const memberProfile = await ensureOrFetchUserProfile(data.user)
+              if (!memberProfile) {
+                router.replace('/store/purchases')
+                return
+              }
+              setIsAuthenticated(true)
               setProfile(memberProfile)
               setProfileForm(memberProfile)
             }
@@ -896,8 +905,12 @@ function BmfMemberDashboardContent() {
         if (destination && destination !== '/bmf-club/dashboard') {
           router.push(destination)
         } else {
-          setIsAuthenticated(true)
           const memberProfile = await ensureOrFetchUserProfile(data.user)
+          if (!memberProfile) {
+            router.replace('/store/purchases')
+            return
+          }
+          setIsAuthenticated(true)
           setProfile(memberProfile)
           setProfileForm(memberProfile)
         }
@@ -1028,8 +1041,13 @@ function BmfMemberDashboardContent() {
           setIsAuthenticated(true)
           if (verifyData.user) {
             const memberProfile = await ensureOrFetchUserProfile(verifyData.user)
-            setProfile(memberProfile)
-            setProfileForm(memberProfile)
+            if (memberProfile) {
+              setProfile(memberProfile)
+              setProfileForm(memberProfile)
+            } else {
+              router.replace('/store/purchases')
+              return
+            }
           }
         }
       }, 900)

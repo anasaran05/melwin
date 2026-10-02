@@ -990,4 +990,92 @@ export async function sendAuthPasswordResetOtpEmail({
   }
 }
 
+export interface SendStoreAssetDeliveryEmailParams {
+  to: string
+  productTitle: string
+  formatBadge?: string
+  amountPaid: number
+  downloadUrl?: string | null
+  orderId: string
+}
+
+export async function sendStoreAssetDeliveryEmail({
+  to,
+  productTitle,
+  formatBadge = 'Digital Asset',
+  amountPaid,
+  downloadUrl,
+  orderId,
+}: SendStoreAssetDeliveryEmailParams): Promise<{ success: boolean; id?: string; error?: string }> {
+  try {
+    const resend = getResendClient()
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #fafafa; color: #171717; margin: 0; padding: 40px 20px; }
+            .card { max-width: 580px; margin: 0 auto; background: #ffffff; border: 1px solid #e5e5e5; border-radius: 20px; padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }
+            .badge { display: inline-block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 4px 12px; border-radius: 100px; margin-bottom: 20px; }
+            h1 { font-size: 24px; font-weight: 900; line-height: 1.25; margin: 0 0 12px 0; color: #0a0a0a; }
+            p { font-size: 14px; line-height: 1.6; color: #525252; margin: 0 0 20px 0; }
+            .product-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 14px; padding: 20px; margin: 24px 0; }
+            .btn { display: inline-block; background: #059669; color: #ffffff !important; font-weight: 800; font-size: 14px; text-decoration: none; padding: 14px 32px; border-radius: 12px; margin-top: 10px; }
+            .footer { font-size: 11px; color: #a3a3a3; text-align: center; margin-top: 32px; border-top: 1px solid #f5f5f5; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <span class="badge">Purchase Confirmed &bull; Unlocked</span>
+            <h1>Your Digital Assets Are Ready! 🎉</h1>
+            <p>Thank you for your purchase from <strong>The Vault Store</strong>. Your digital download link and order receipt are confirmed below.</p>
+            
+            <div class="product-box">
+              <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #059669; background: #d1fae5; padding: 2px 8px; border-radius: 6px;">${formatBadge}</span>
+              <h2 style="font-size: 17px; font-weight: 800; color: #0f172a; margin: 8px 0 4px 0;">${productTitle}</h2>
+              <div style="font-size: 13px; color: #64748b; margin-bottom: 16px;">Order ID: <code>${orderId}</code> &bull; Amount Paid: <strong>₹${amountPaid}</strong></div>
+              
+              ${downloadUrl ? `<div style="text-align: center; margin: 16px 0;"><a href="${downloadUrl}" class="btn">Download Your Asset &rarr;</a></div>` : ''}
+              <div style="text-align: center; margin-top: 12px;">
+                <a href="https://melwin.in/store/purchases" style="font-size: 12px; color: #059669; font-weight: 600; text-decoration: underline;">View In My Purchases Library</a>
+              </div>
+            </div>
+
+            <p style="font-size: 12px; color: #737373;">Lifetime access is tied to your email (<code>${to}</code>). You can re-download this asset at any time directly through the store portal.</p>
+
+            <div class="footer">
+              <p style="margin: 0; font-weight: 600; color: #737373;">The Vault Store &bull; Build With Melwin</p>
+              <p style="margin: 4px 0 0 0;">Internal Operating Systems, Pitch Decks & Frameworks</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `
+
+    if (!resend) {
+      console.log(`[Resend Mock Email Dispatch to ${to}]: Store asset delivery for ${productTitle}`)
+      return { success: true, id: 'mock-store-delivery-id' }
+    }
+
+    const { data, error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to,
+      subject: `📦 Download Ready: ${productTitle}`,
+      html,
+    })
+
+    if (error) {
+      console.error('[Resend Error]:', error)
+      return { success: false, error: error.message }
+    }
+
+    return { success: true, id: data?.id }
+  } catch (err: any) {
+    console.error('[Email Send Error]:', err)
+    return { success: false, error: err.message || 'Failed to dispatch store delivery email' }
+  }
+}
+
+
 

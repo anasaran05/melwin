@@ -23,6 +23,7 @@ export function TopEventAnnouncementBanner({
   // Exclude login page, dashboard, internal/admin pages, and the event overview page itself
   if (
     pathname?.startsWith('/bmf-club/login') ||
+    pathname?.startsWith('/store/login') ||
     pathname?.startsWith('/bmf-club/dashboard') ||
     pathname?.startsWith('/dashboard') ||
     pathname?.startsWith('/admin') ||

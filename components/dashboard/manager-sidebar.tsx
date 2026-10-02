@@ -126,9 +126,15 @@ export function ManagerSidebar({ activeClientId, onOpenCreateClient, onClose }: 
       active: pathname.includes('/bmf-review') && currentTab === 'registrations',
     },
     {
-      name: 'Store Purchases & Orders',
-      href: '/dashboard/manager/bmf-review?tab=orders',
+      name: 'Digital Store & Assets',
+      href: '/dashboard/manager/store',
       icon: ShoppingBag,
+      active: pathname.startsWith('/dashboard/manager/store'),
+    },
+    {
+      name: 'Store Orders & Purchases',
+      href: '/dashboard/manager/bmf-review?tab=orders',
+      icon: Ticket,
       active: pathname.includes('/bmf-review') && currentTab === 'orders',
     },
   ];
