@@ -8,6 +8,11 @@ function getResendClient(): Resend | null {
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'BMF Admissions <contact@buildwithmelwin.com>'
 
+export function isDummyTestEmail(email: string): boolean {
+  if (!email) return true
+  return /@(example\.(com|org|net)|test\.com|domain\.com|invalid)$/i.test(email.trim())
+}
+
 export interface SendApprovalEmailParams {
   to: string
   founderName: string
@@ -1052,6 +1057,11 @@ export async function sendStoreAssetDeliveryEmail({
         </body>
       </html>
     `
+
+    if (isDummyTestEmail(to)) {
+      console.log(`[Resend Mock Email Dispatch to ${to}]: Skipped dummy test domain for ${productTitle}`)
+      return { success: true, id: 'mock-store-delivery-id' }
+    }
 
     if (!resend) {
       console.log(`[Resend Mock Email Dispatch to ${to}]: Store asset delivery for ${productTitle}`)

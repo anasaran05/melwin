@@ -37,6 +37,20 @@ export function BioSection() {
               <span>Join founder's club (Free)</span>
             </Link>
             <Link 
+              href="/store" 
+              className="relative overflow-hidden emerald-banner-bg text-emerald-100 border border-emerald-500/40 rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:text-white transition-all text-center flex items-center justify-center hover:scale-105 active:scale-95 shadow-sm group"
+            >
+              {/* Moving Shimmer Beam Overlay */}
+              <div
+                className="pointer-events-none absolute inset-0 emerald-shimmer-beam opacity-60"
+                style={{
+                  background: 'linear-gradient(90deg, transparent 0%, rgba(16, 185, 129, 0.12) 30%, rgba(52, 211, 153, 0.45) 50%, rgba(16, 185, 129, 0.12) 70%, transparent 100%)',
+                  width: '100%',
+                }}
+              />
+              <span className="relative z-10 font-bold tracking-wide">Store</span>
+            </Link>
+            <Link 
               href="/agency" 
               className="bg-white text-[#111111] rounded-full py-2.5 px-5 font-semibold text-xs sm:text-sm hover:bg-black hover:text-white transition-all border border-gray-300 text-center hover:scale-105 active:scale-95 shadow-xs"
             >

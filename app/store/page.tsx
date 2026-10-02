@@ -211,29 +211,20 @@ function StoreCatalogContent() {
                 </button>
               )}
             </div>
-
-            <div className="text-[11px] sm:text-xs text-neutral-500 font-medium whitespace-nowrap hidden lg:block">
-              <span>
-                Showing <span className="text-neutral-900 font-bold">{filteredProducts.length}</span> verified assets
-              </span>
-            </div>
           </div>
         </div>
 
-        {/* Mobile / Tablet asset count & clear query */}
-        <div className="flex items-center justify-between text-[11px] text-neutral-500 font-medium lg:hidden -mt-2">
-          <span>
-            Showing <span className="text-neutral-900 font-bold">{filteredProducts.length}</span> verified assets
-          </span>
-          {searchQuery && (
+        {/* Mobile / Tablet clear query */}
+        {searchQuery && (
+          <div className="flex justify-end text-[11px] font-medium lg:hidden -mt-2">
             <button
               onClick={() => setSearchQuery('')}
               className="text-emerald-700 font-bold hover:underline text-xs cursor-pointer"
             >
               Clear Search
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Product Cards Grid */}
         {isLoading ? (
@@ -281,97 +272,130 @@ function StoreCatalogContent() {
               return (
                 <div
                   key={product.id}
-                  className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 transition-all duration-200 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50"
+                  className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50"
                 >
-                  <div className="p-4 sm:p-6 space-y-3 sm:space-y-4">
-                    {/* Top Row: Category, Format & Wishlist */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 border border-emerald-200/80 text-emerald-800">
-                          {product.category}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-700 border border-neutral-200">
-                          {product.format_badge}
-                        </span>
+                  {/* Top: 4:3 Aspect Ratio Thumbnail */}
+                  <div
+                    onClick={() => setPreviewProduct(product)}
+                    className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 cursor-pointer select-none"
+                  >
+                    {product.thumbnail_url ? (
+                      <img
+                        src={product.thumbnail_url}
+                        alt={product.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      /* Dark Executive Mockup Graphic */
+                      <div className="relative w-full h-full bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 flex flex-col justify-between p-4 overflow-hidden">
+                        {/* Glow highlights */}
+                        <div className="absolute -top-12 -right-12 w-44 h-44 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+                        <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-700/10 rounded-full blur-xl pointer-events-none" />
+                        
+                        {/* Geometric dot texture */}
+                        <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+
+                        {/* 3D Floating Document Sheet Mockup */}
+                        <div className="relative z-10 m-auto w-[84%] aspect-[1.35/1] rounded-xl bg-gradient-to-b from-neutral-800/95 to-neutral-900/98 border border-white/10 shadow-2xl p-3.5 flex flex-col justify-between group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-300">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                              <span className="text-[9px] font-mono tracking-wider uppercase text-emerald-300 font-bold">
+                                {product.category}
+                              </span>
+                            </div>
+                            <span className="text-[8px] font-mono text-neutral-400 font-medium px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
+                              {product.format_badge}
+                            </span>
+                          </div>
+
+                          <div className="my-auto py-1">
+                            <p className="text-[12px] sm:text-[13px] font-extrabold text-white leading-tight line-clamp-2 drop-shadow-xs">
+                              {product.title}
+                            </p>
+                            {product.subtitle && (
+                              <p className="text-[9px] text-neutral-400 mt-1 line-clamp-1">
+                                {product.subtitle}
+                              </p>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[8px] text-neutral-400 font-mono">
+                            <span>MELWIN VAULT</span>
+                            <span className="text-emerald-400 font-bold">VERIFIED</span>
+                          </div>
+                        </div>
                       </div>
+                    )}
 
-                      <button
-                        onClick={() => toggleFavorite(product.id)}
-                        className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                          favorited
-                            ? 'bg-red-50 border-red-200 text-red-500'
-                            : 'bg-white border-neutral-200 text-neutral-400 hover:text-neutral-700 hover:bg-neutral-50 shadow-2xs'
-                        }`}
-                        title="Save to favorites"
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />
-                      </button>
-                    </div>
+                    {/* Floating Wishlist Heart (top-right) */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleFavorite(product.id)
+                      }}
+                      className={`absolute top-3 right-3 z-20 p-2 rounded-xl backdrop-blur-md transition-all cursor-pointer shadow-md ${
+                        favorited
+                          ? 'bg-red-500 text-white border border-red-400'
+                          : 'bg-black/50 hover:bg-black/75 border border-white/20 text-white/90 hover:text-white hover:scale-105'
+                      }`}
+                      title="Save to favorites"
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />
+                    </button>
+                  </div>
 
-                    {/* Title & Description */}
-                    <div>
+                  {/* Card Content: Title & Short Description */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
                       <h3
                         onClick={() => setPreviewProduct(product)}
-                        className="text-base font-bold text-neutral-950 group-hover:text-emerald-700 transition-colors cursor-pointer line-clamp-2 leading-snug"
+                        className="text-sm sm:text-base font-bold text-neutral-950 group-hover:text-emerald-700 transition-colors cursor-pointer line-clamp-2 leading-snug"
+                        title={product.title}
                       >
                         {product.title}
                       </h3>
-                      {product.subtitle && (
-                        <p className="text-[11px] text-neutral-500 mt-1 line-clamp-1 font-medium">
-                          {product.subtitle}
-                        </p>
-                      )}
+                      <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
+                        {product.subtitle || product.description}
+                      </p>
                     </div>
 
-                    <p className="text-xs text-neutral-600 line-clamp-3 leading-relaxed">
-                      {product.description}
-                    </p>
-
-                    {/* Highlights bullets preview */}
-                    {Array.isArray(product.highlights) && product.highlights.length > 0 && (
-                      <div className="space-y-1.5 pt-3 border-t border-neutral-100">
-                        {product.highlights.slice(0, 2).map((h, i) => (
-                          <div key={i} className="flex items-center gap-2 text-[11px] text-neutral-700 truncate">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span className="truncate">{h}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card Bottom: Pricing & Actions */}
-                  <div className="p-4 sm:p-6 pt-3 sm:pt-3.5 border-t border-neutral-100 bg-neutral-50/60 flex items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-lg font-black text-neutral-950">
-                          {price === 0 ? 'FREE' : `₹${price.toLocaleString('en-IN')}`}
-                        </span>
-                        {product.regular_price > price && (
-                          <span className="text-xs text-neutral-400 line-through">
-                            ₹{product.regular_price.toLocaleString('en-IN')}
+                    {/* Card Bottom: Pricing & Actions */}
+                    <div className="pt-4 mt-4 border-t border-neutral-100 flex items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-base sm:text-lg font-black text-neutral-950">
+                            {price === 0 ? 'FREE' : `₹${price.toLocaleString('en-IN')}`}
                           </span>
-                        )}
+                          {product.regular_price > price && (
+                            <span className="text-[11px] text-neutral-400 line-through">
+                              ₹{product.regular_price.toLocaleString('en-IN')}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-neutral-400 font-medium">Instant Download</span>
                       </div>
-                      <span className="text-[10px] text-neutral-500 font-medium">Instant Download</span>
-                    </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setPreviewProduct(product)}
-                        className="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900 border border-neutral-200 shadow-2xs transition-colors cursor-pointer"
-                        title="Preview details"
-                      >
-                        <Eye className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPreviewProduct(product)}
+                          className="p-2 sm:p-2.5 rounded-xl bg-white hover:bg-neutral-100 text-neutral-700 hover:text-neutral-900 border border-neutral-200 shadow-2xs transition-colors cursor-pointer"
+                          title="Preview details"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
 
-                      <button
-                        onClick={() => handleDirectBuy(product)}
-                        className="px-3 py-2 sm:px-3.5 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-[0.98] shadow-sm shadow-emerald-600/20 cursor-pointer"
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5" />
-                        <span>{price === 0 ? 'Claim' : 'Buy Now'}</span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDirectBuy(product)}
+                          className="px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all active:scale-[0.98] shadow-sm shadow-emerald-600/20 cursor-pointer"
+                        >
+                          <ShoppingBag className="w-3.5 h-3.5" />
+                          <span>{price === 0 ? 'Claim' : 'Buy Now'}</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>

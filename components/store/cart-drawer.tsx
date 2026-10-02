@@ -163,6 +163,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
       // Handle Free Asset Unlock
       if (data.isFree) {
         clearCart()
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('store_customer_email', email)
+        }
         toast.success(data.message || 'Assets unlocked successfully!')
         window.location.href = data.redirectUrl || '/store/purchases'
         return

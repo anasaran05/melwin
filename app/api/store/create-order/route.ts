@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getSupabasePublicAdminClient } from '@/lib/supabase/admin'
 import { createCashfreeOrder } from '@/lib/cashfree'
-import { fetchStoreProductBySlug } from '@/lib/supabase/store'
+import { fulfillPublicStoreOrder, fetchStoreProductBySlug } from '@/lib/supabase/store'
 
 export const dynamic = 'force-dynamic'
 
@@ -103,37 +103,60 @@ export async function POST(request: NextRequest) {
 
     const totalAmount = itemsToProcess.reduce((sum, item) => sum + (Number(item.price) || 0), 0)
 
-    const randomSuffix = Math.random().toString(36).substring(2, 7)
-    const timestamp = Math.floor(Date.now() / 1000)
-    const orderId = `store_ord_${timestamp}_${randomSuffix}`
-
-    // 3. Free Asset Claim (₹0)
+    // 3. Free Asset Claim (₹0) - Instant unlock without creating orders or sending emails
     if (totalAmount === 0) {
       for (const item of itemsToProcess) {
-        await publicAdmin.from('store_purchases').upsert(
-          {
+        let resolvedId = item.id
+        if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.id)) {
+          const { data: foundProd } = await publicAdmin
+            .from('store_products')
+            .select('id')
+            .eq('slug', item.slug || item.id)
+            .maybeSingle()
+          if (foundProd?.id) resolvedId = foundProd.id
+        }
+
+        const { data: existing } = await publicAdmin
+          .from('store_purchases')
+          .select('id')
+          .eq('product_id', resolvedId)
+          .eq('customer_email', email)
+          .maybeSingle()
+
+        if (existing) {
+          await publicAdmin
+            .from('store_purchases')
+            .update({
+              access_status: 'active',
+              amount_paid: 0,
+            })
+            .eq('id', existing.id)
+        } else {
+          await publicAdmin.from('store_purchases').insert({
             user_id: userId,
             customer_email: email,
-            product_id: item.id,
-            order_id: orderId,
+            product_id: resolvedId,
+            order_id: null,
             amount_paid: 0,
             access_status: 'active',
             channel: 'public_store',
-          },
-          { onConflict: 'customer_email,product_id' }
-        )
+          })
+        }
       }
 
       return NextResponse.json({
         success: true,
         isFree: true,
-        orderId,
         message: 'Asset unlocked! Redirecting to your library...',
-        redirectUrl: `/store/purchases?order_id=${orderId}&status=claimed`,
+        redirectUrl: '/store/purchases?status=claimed',
       })
     }
 
-    // 4. Save Pending Order in store_orders
+    // 4. Paid Orders Only - Generate Real Order ID & Order Note
+    const randomSuffix = Math.random().toString(36).substring(2, 7)
+    const timestamp = Math.floor(Date.now() / 1000)
+    const orderId = `store_ord_${timestamp}_${randomSuffix}`
+
     const orderItemsJson = itemsToProcess.map((item) => ({
       product_id: item.id,
       slug: item.slug,
@@ -142,6 +165,8 @@ export async function POST(request: NextRequest) {
     }))
 
     const firstProductTitle = itemsToProcess[0]?.title || 'Digital Asset'
+
+    // 4. Paid Orders Note
     const orderNote =
       itemsToProcess.length > 1
         ? `Store Bundle (${itemsToProcess.length} Items): ${firstProductTitle}`

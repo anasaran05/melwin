@@ -73,12 +73,18 @@ function StorePurchasesContent() {
     initUser()
   }, [])
 
-  // 2. Handle return from Cashfree with order_id verification
+  // 2. Handle return from checkout (paid Cashfree order verification or free claim toast)
   useEffect(() => {
-    if (orderIdParam && (statusParam === 'success' || !statusParam)) {
+    if (orderIdParam) {
       verifyCashfreeOrder(orderIdParam)
     }
-  }, [orderIdParam, statusParam])
+  }, [orderIdParam])
+
+  useEffect(() => {
+    if (statusParam === 'claimed') {
+      toast.success('Asset unlocked! Your download links are ready below.')
+    }
+  }, [statusParam])
 
   const verifyCashfreeOrder = async (orderId: string) => {
     setIsVerifyingOrder(true)
@@ -90,10 +96,17 @@ function StorePurchasesContent() {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('Payment verified! Your assets are unlocked below.')
+        if (statusParam === 'claimed') {
+          toast.success('Asset unlocked! Your download links are ready below.')
+        } else {
+          toast.success('Payment verified! Your assets are unlocked below.')
+        }
         if (data.customerEmail) {
           setCustomerEmail(data.customerEmail)
           setLookupEmail(data.customerEmail)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('store_customer_email', data.customerEmail)
+          }
           loadCustomerPurchases(data.customerEmail)
         }
       }
@@ -171,29 +184,6 @@ function StorePurchasesContent() {
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
-        {/* Payment Success Alert if returning from Cashfree */}
-        {orderIdParam && (
-          <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-start sm:items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-700 shrink-0">
-                <CheckCircle2 className="w-5 h-5 stroke-[2.2]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-neutral-950">Order Confirmed & Unlocked</h3>
-                <p className="text-xs text-neutral-600">
-                  Order ID: <span className="font-mono text-emerald-800 font-semibold">{orderIdParam}</span>. Your download links are ready below.
-                </p>
-              </div>
-            </div>
-            {isVerifyingOrder && (
-              <div className="flex items-center gap-2 text-xs text-emerald-700 font-medium">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="hidden sm:inline">Verifying...</span>
-              </div>
-            )}
-          </div>
-        )}
-
         {/* Dashboard Title & Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-neutral-200 pb-5">
           <div className="space-y-1">
@@ -298,7 +288,7 @@ function StorePurchasesContent() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {purchases.map((purchase) => {
                   const prod = purchase.product
                   const title = prod?.title || 'Purchased Digital Asset'
@@ -309,67 +299,127 @@ function StorePurchasesContent() {
                   return (
                     <div
                       key={purchase.id}
-                      className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-300 transition-all shadow-xs flex flex-col justify-between space-y-4"
+                      className="group rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-lg hover:shadow-neutral-200/50"
                     >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-800">
+                      {/* Top: 4:3 Thumbnail */}
+                      <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 select-none">
+                        {prod?.thumbnail_url ? (
+                          <img
+                            src={prod.thumbnail_url}
+                            alt={title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          /* Dark Executive Mockup Graphic */
+                          <div className="relative w-full h-full bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 flex flex-col justify-between p-4 overflow-hidden">
+                            <div className="absolute -top-12 -right-12 w-44 h-44 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none" />
+                            <div className="absolute -bottom-10 -left-10 w-36 h-36 bg-emerald-700/10 rounded-full blur-xl pointer-events-none" />
+                            <div className="absolute inset-0 opacity-[0.06] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:12px_12px] pointer-events-none" />
+
+                            <div className="relative z-10 m-auto w-[84%] aspect-[1.35/1] rounded-xl bg-gradient-to-b from-neutral-800/95 to-neutral-900/98 border border-white/10 shadow-2xl p-3.5 flex flex-col justify-between group-hover:scale-105 group-hover:-translate-y-1 transition-all duration-300">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                                  <span className="text-[9px] font-mono tracking-wider uppercase text-emerald-300 font-bold">
+                                    {prod?.category || 'Vault Asset'}
+                                  </span>
+                                </div>
+                                <span className="text-[8px] font-mono text-neutral-400 font-medium px-1.5 py-0.5 rounded bg-white/5 border border-white/5">
+                                  {format}
+                                </span>
+                              </div>
+
+                              <div className="my-auto py-1">
+                                <p className="text-[12px] sm:text-[13px] font-extrabold text-white leading-tight line-clamp-2 drop-shadow-xs">
+                                  {title}
+                                </p>
+                                {prod?.subtitle && (
+                                  <p className="text-[9px] text-neutral-400 mt-1 line-clamp-1">
+                                    {prod.subtitle}
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[8px] text-neutral-400 font-mono">
+                                <span>MELWIN VAULT</span>
+                                <span className="text-emerald-400 font-bold">UNLOCKED</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Top Format Badge */}
+                        <div className="absolute top-3 left-3 z-10">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-neutral-950/80 backdrop-blur-md border border-white/15 text-white shadow-md">
                             {format}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 font-mono">
-                            {new Date(purchase.created_at).toLocaleDateString('en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
                           </span>
                         </div>
 
-                        <div>
-                          <h3 className="text-sm font-bold text-neutral-950 leading-snug">{title}</h3>
+                        {/* Top Unlocked Badge */}
+                        <div className="absolute top-3 right-3 z-10">
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold tracking-wide bg-emerald-600/90 backdrop-blur-md border border-emerald-400/30 text-white shadow-md flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>Unlocked</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Card Content & Action Footer */}
+                      <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-4">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-neutral-400 font-mono">
+                            <span>{prod?.category || 'Digital Vault Asset'}</span>
+                            <span>
+                              {new Date(purchase.created_at).toLocaleDateString('en-IN', {
+                                day: 'numeric',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
+                          </div>
+
+                          <h3 className="text-sm sm:text-base font-bold text-neutral-950 leading-snug line-clamp-2">
+                            {title}
+                          </h3>
+
                           {prod?.subtitle && (
-                            <p className="text-[11px] text-neutral-500 mt-0.5 line-clamp-1">
+                            <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
                               {prod.subtitle}
                             </p>
                           )}
                         </div>
 
-                        {prod?.description && (
-                          <p className="text-xs text-neutral-600 line-clamp-2 leading-relaxed">
-                            {prod.description}
-                          </p>
-                        )}
-                      </div>
+                        {/* Download Action & Receipt */}
+                        <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-1.5 text-[11px] text-neutral-500">
+                            <Receipt className="w-3.5 h-3.5 text-neutral-400" />
+                            <span>Paid: ₹{purchase.amount_paid.toLocaleString('en-IN')}</span>
+                          </div>
 
-                      {/* Download Action & Receipt */}
-                      <div className="pt-3 border-t border-neutral-100 flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-500">
-                          <Receipt className="w-3.5 h-3.5 text-neutral-400" />
-                          <span>Paid: ₹{purchase.amount_paid.toLocaleString('en-IN')}</span>
-                        </div>
+                          <div className="flex items-center gap-2">
+                            {previewLink && (
+                              <a
+                                href={previewLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 sm:px-3 sm:py-2 rounded-xl bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+                                title="Open Preview"
+                              >
+                                <ExternalLink className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Preview</span>
+                              </a>
+                            )}
 
-                        <div className="flex items-center gap-2">
-                          {previewLink && (
                             <a
-                              href={previewLink}
+                              href={downloadLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-3 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/20 active:scale-95"
                             >
-                              <ExternalLink className="w-3 h-3" />
-                              <span>View</span>
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Download Asset</span>
                             </a>
-                          )}
-
-                          <a
-                            href={downloadLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/20 active:scale-95"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>Download Asset</span>
-                          </a>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -400,30 +450,53 @@ function StorePurchasesContent() {
                 </Link>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {favoriteProducts.map((p) => (
                   <div
                     key={p.id}
-                    className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-neutral-300 shadow-xs flex flex-col justify-between space-y-3"
+                    className="group rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 shadow-xs flex flex-col justify-between overflow-hidden transition-all duration-300"
                   >
-                    <div>
-                      <span className="inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-neutral-100 text-neutral-700 mb-2">
-                        {p.format_badge}
-                      </span>
-                      <h4 className="text-sm font-bold text-neutral-950 line-clamp-1">{p.title}</h4>
-                      <p className="text-xs text-neutral-500 line-clamp-2 mt-1 leading-relaxed">{p.description}</p>
+                    {/* Top: 4:3 Thumbnail */}
+                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 select-none">
+                      {p.thumbnail_url ? (
+                        <img
+                          src={p.thumbnail_url}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="relative w-full h-full bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 flex flex-col justify-between p-4 overflow-hidden">
+                          <div className="relative z-10 m-auto w-[84%] aspect-[1.35/1] rounded-xl bg-neutral-900 border border-white/10 p-3 flex flex-col justify-between">
+                            <span className="text-[8px] font-mono text-neutral-400 font-medium">{p.format_badge}</span>
+                            <p className="text-[12px] font-bold text-white line-clamp-2">{p.title}</p>
+                            <span className="text-[8px] font-mono text-emerald-400 font-bold">{p.category}</span>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-neutral-950/80 backdrop-blur-md border border-white/15 text-white">
+                          {p.format_badge}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-                      <span className="text-sm font-black text-neutral-950">
-                        ₹{(p.sale_price || p.regular_price).toLocaleString('en-IN')}
-                      </span>
-                      <Link
-                        href="/store"
-                        className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition-colors shadow-2xs"
-                      >
-                        Buy Now
-                      </Link>
+                    <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                      <div>
+                        <h4 className="text-sm font-bold text-neutral-950 line-clamp-1">{p.title}</h4>
+                        <p className="text-xs text-neutral-500 line-clamp-2 mt-1 leading-relaxed">{p.description}</p>
+                      </div>
+
+                      <div className="pt-3 border-t border-neutral-100 flex items-center justify-between">
+                        <span className="text-sm font-black text-neutral-950">
+                          ₹{(p.sale_price || p.regular_price).toLocaleString('en-IN')}
+                        </span>
+                        <Link
+                          href="/store"
+                          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-xs hover:bg-emerald-500 transition-colors shadow-2xs"
+                        >
+                          Buy Now
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}

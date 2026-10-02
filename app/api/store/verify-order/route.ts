@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCashfreeOrder, getCashfreeOrderPayments } from '@/lib/cashfree'
 import { fulfillPublicStoreOrder } from '@/lib/supabase/store'
+import { getSupabasePublicAdminClient } from '@/lib/supabase/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +13,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Order ID is required' }, { status: 400 })
     }
 
-    // 1. Fetch order details from Cashfree directly
+    // 1. Check local order status first (fast-path for free claims & already fulfilled orders)
+    const publicAdmin = getSupabasePublicAdminClient()
+    const { data: storeOrder } = await publicAdmin
+      .from('store_orders')
+      .select('*')
+      .eq('order_id', orderId)
+      .maybeSingle()
+
+    if (storeOrder && (storeOrder.status === 'paid' || storeOrder.payment_gateway === 'free_claim')) {
+      return NextResponse.json({
+        success: true,
+        orderId,
+        status: 'PAID',
+        amount: storeOrder.order_amount,
+        customerEmail: storeOrder.customer_email,
+      })
+    }
+
+    // 2. Fetch order details from Cashfree directly
     const cfOrder = await getCashfreeOrder(orderId)
     const isPaid = cfOrder.order_status === 'PAID'
 

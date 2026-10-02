@@ -360,18 +360,6 @@ export async function fulfillPublicStoreOrder(params: {
         await publicAdmin.from('store_purchases').insert(purchaseRecord)
       }
 
-      // Dual write to bmf_product_purchases for total backward compatibility
-      try {
-        await publicAdmin.from('bmf_product_purchases').insert({
-          user_id: userId,
-          customer_email: customerEmail,
-          product_id: resolvedId,
-          order_id: params.orderId,
-          amount_paid: params.amount || order.order_amount || 0,
-          access_status: 'active',
-        })
-      } catch (_) {}
-
       // Increment product sales count & fetch details for fulfillment delivery
       let productDetails: any = null
       try {
@@ -389,22 +377,25 @@ export async function fulfillPublicStoreOrder(params: {
         }
       } catch (_) {}
 
-      // 4. Send Instant Digital Delivery Email to Customer via Resend
+      // 4. Send Instant Digital Delivery Email via Resend ONLY for paid transactions
+      const isPaidTransaction = (params.amount || order.order_amount || 0) > 0
       const prodTitle = productDetails?.title || 'Store Digital Asset'
       const prodUrl = productDetails?.asset_url || null
       const formatBadge = productDetails?.format_badge || 'Digital Asset'
 
-      try {
-        await sendStoreAssetDeliveryEmail({
-          to: customerEmail,
-          productTitle: prodTitle,
-          formatBadge,
-          amountPaid: params.amount || order.order_amount || 0,
-          downloadUrl: prodUrl,
-          orderId: params.orderId,
-        })
-      } catch (emailErr) {
-        console.error('[Store Fulfillment] Email dispatch error:', emailErr)
+      if (isPaidTransaction) {
+        try {
+          await sendStoreAssetDeliveryEmail({
+            to: customerEmail,
+            productTitle: prodTitle,
+            formatBadge,
+            amountPaid: params.amount || order.order_amount || 0,
+            downloadUrl: prodUrl,
+            orderId: params.orderId,
+          })
+        } catch (emailErr) {
+          console.error('[Store Fulfillment] Email dispatch error:', emailErr)
+        }
       }
 
       // 5. Send Real-Time Notifications to Telegram & Discord
