@@ -101,22 +101,30 @@ export async function fetchPublicStoreProducts(): Promise<StoreProductItem[]> {
 export async function fetchStoreProductBySlug(slug: string): Promise<StoreProductItem | null> {
   try {
     const publicAdmin = getSupabasePublicAdminClient()
+    const cleanSlug = decodeURIComponent(slug || '').trim()
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanSlug)
 
-    const { data, error } = await publicAdmin
-      .from('store_products')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle()
+    let query = publicAdmin.from('store_products').select('*')
+    if (isUuid) {
+      query = query.eq('id', cleanSlug)
+    } else {
+      query = query.eq('slug', cleanSlug)
+    }
+
+    const { data, error } = await query.maybeSingle()
 
     if (!error && data) {
       return mapDbRecordToStoreProduct(data)
     }
 
-    const { data: bmfData } = await publicAdmin
-      .from('bmf_products')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle()
+    let fallbackQuery = publicAdmin.from('bmf_products').select('*')
+    if (isUuid) {
+      fallbackQuery = fallbackQuery.eq('id', cleanSlug)
+    } else {
+      fallbackQuery = fallbackQuery.eq('slug', cleanSlug)
+    }
+
+    const { data: bmfData } = await fallbackQuery.maybeSingle()
 
     if (bmfData) {
       return mapDbRecordToStoreProduct(bmfData)

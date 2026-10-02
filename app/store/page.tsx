@@ -27,9 +27,11 @@ import {
 
 const CATEGORIES = [
   'All',
-  'Fundraising',
+  'Export & Trade',
   'Growth',
+  'Career',
   'Legal & Grants',
+  'Fundraising',
   'Operations',
   'Templates',
 ]
@@ -275,9 +277,9 @@ function StoreCatalogContent() {
                   className="group relative rounded-2xl bg-white border border-neutral-200/90 hover:border-neutral-300 transition-all duration-300 flex flex-col justify-between overflow-hidden shadow-xs hover:shadow-xl hover:shadow-neutral-200/50"
                 >
                   {/* Top: 4:3 Aspect Ratio Thumbnail */}
-                  <div
-                    onClick={() => setPreviewProduct(product)}
-                    className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 cursor-pointer select-none"
+                  <Link
+                    href={`/store/${product.slug}`}
+                    className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-950 block select-none"
                   >
                     {product.thumbnail_url ? (
                       <img
@@ -332,6 +334,7 @@ function StoreCatalogContent() {
                     <button
                       type="button"
                       onClick={(e) => {
+                        e.preventDefault()
                         e.stopPropagation()
                         toggleFavorite(product.id)
                       }}
@@ -344,18 +347,19 @@ function StoreCatalogContent() {
                     >
                       <Heart className={`w-3.5 h-3.5 ${favorited ? 'fill-current' : ''}`} />
                     </button>
-                  </div>
+                  </Link>
 
                   {/* Card Content: Title & Short Description */}
                   <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                     <div className="space-y-1.5">
-                      <h3
-                        onClick={() => setPreviewProduct(product)}
-                        className="text-sm sm:text-base font-bold text-neutral-950 group-hover:text-emerald-700 transition-colors cursor-pointer line-clamp-2 leading-snug"
-                        title={product.title}
-                      >
-                        {product.title}
-                      </h3>
+                      <Link href={`/store/${product.slug}`} className="block group/link">
+                        <h3
+                          className="text-sm sm:text-base font-bold text-neutral-950 group-hover/link:text-emerald-700 transition-colors line-clamp-2 leading-snug"
+                          title={product.title}
+                        >
+                          {product.title}
+                        </h3>
+                      </Link>
                       <p className="text-xs text-neutral-500 line-clamp-2 leading-relaxed">
                         {product.subtitle || product.description}
                       </p>

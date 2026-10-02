@@ -22,21 +22,27 @@ export async function GET(request: NextRequest) {
       const isLocalEnv = process.env.NODE_ENV === 'development'
       const baseHost = (forwardedHost && !isLocalEnv) ? `https://${forwardedHost}` : origin
       
+      const cookieHeader = request.headers.get('cookie') || ''
+      const cookieMatch = cookieHeader.match(/auth_destination=([^;]+)/)
+      const cookieNext = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null
+
       let destination = '/store'
       if (next) {
         destination = next.startsWith('/') ? next : `/${next}`
+      } else if (cookieNext) {
+        destination = cookieNext.startsWith('/') ? cookieNext : `/${cookieNext}`
       } else if (authData?.user) {
-        const { data: member } = await supabase
-          .from('bmf_members')
-          .select('id')
-          .eq('user_id', authData.user.id)
-          .maybeSingle()
-        if (member) {
+        const referer = request.headers.get('referer') || ''
+        if (referer.includes('bmf-club')) {
           destination = '/bmf-club/dashboard'
+        } else {
+          destination = '/store'
         }
       }
 
-      return NextResponse.redirect(`${baseHost}${destination}`)
+      const response = NextResponse.redirect(`${baseHost}${destination}`)
+      response.cookies.delete('auth_destination')
+      return response
     } else {
       console.error('[VerifyOtp Error]:', error.message)
     }

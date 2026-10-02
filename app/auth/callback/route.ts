@@ -13,22 +13,22 @@ export async function GET(request: Request) {
       const forwardedHost = request.headers.get('x-forwarded-host')
       const isLocalEnv = process.env.NODE_ENV === 'development'
       
+      const cookieHeader = request.headers.get('cookie') || ''
+      const cookieMatch = cookieHeader.match(/auth_destination=([^;]+)/)
+      const cookieNext = cookieMatch ? decodeURIComponent(cookieMatch[1]) : null
+
       let destination = '/store'
       if (next) {
         if (next.startsWith('http://') || next.startsWith('https://')) {
           return NextResponse.redirect(next)
         }
         destination = next.startsWith('/') ? next : `/${next}`
+      } else if (cookieNext) {
+        destination = cookieNext.startsWith('/') ? cookieNext : `/${cookieNext}`
       } else if (authData?.user) {
-        // If user already has an established BMF Club profile, direct them to club dashboard;
-        // Otherwise, send them to the public store without creating any BMF member or card records!
-        const { data: member } = await supabase
-          .from('bmf_members')
-          .select('id')
-          .eq('user_id', authData.user.id)
-          .maybeSingle()
-
-        if (member) {
+        // Only redirect to bmf-club if coming explicitly from bmf-club referrer
+        const referer = request.headers.get('referer') || ''
+        if (referer.includes('bmf-club')) {
           destination = '/bmf-club/dashboard'
         } else {
           destination = '/store'
@@ -36,7 +36,9 @@ export async function GET(request: Request) {
       }
 
       const baseHost = (forwardedHost && !isLocalEnv) ? `https://${forwardedHost}` : origin
-      return NextResponse.redirect(`${baseHost}${destination}`)
+      const response = NextResponse.redirect(`${baseHost}${destination}`)
+      response.cookies.delete('auth_destination')
+      return response
     }
   }
 
