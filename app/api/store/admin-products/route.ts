@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabasePublicAdminClient } from '@/lib/supabase/admin'
+import { invalidateStoreProductsCache } from '@/lib/supabase/store'
 
 export const dynamic = 'force-dynamic'
 
@@ -224,9 +225,11 @@ export async function POST(request: NextRequest) {
           .single()
 
         if (bmfErr) throw new Error(bmfErr.message)
+        invalidateStoreProductsCache()
         return NextResponse.json({ success: true, product: bmfData })
       }
 
+      invalidateStoreProductsCache()
       return NextResponse.json({ success: true, product: data })
     }
 
@@ -285,6 +288,7 @@ export async function POST(request: NextRequest) {
         await publicAdmin.from('bmf_products').update(updatePayload).eq('id', id)
       }
 
+      invalidateStoreProductsCache()
       return NextResponse.json({ success: true, product: data || updatePayload })
     }
 
@@ -298,6 +302,7 @@ export async function POST(request: NextRequest) {
       await publicAdmin.from('store_products').delete().eq('id', id)
       await publicAdmin.from('bmf_products').delete().eq('id', id)
 
+      invalidateStoreProductsCache()
       return NextResponse.json({ success: true, deletedId: id })
     }
 

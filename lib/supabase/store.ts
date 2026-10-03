@@ -46,11 +46,35 @@ export interface StorePurchaseItem {
   product?: StoreProductItem
 }
 
+interface StoreProductsCache {
+  data: StoreProductItem[]
+  timestamp: number
+}
+
+// 60-second in-memory server cache
+let storeProductsServerCache: StoreProductsCache | null = null
+const STORE_PRODUCTS_CACHE_TTL_MS = 60 * 1000 // 1 minute
+
+/**
+ * Manually invalidate the server cache (used on admin product mutations)
+ */
+export function invalidateStoreProductsCache() {
+  storeProductsServerCache = null
+}
+
 /**
  * Fetch all published products meant for the public store.
+ * Cached in-memory for 60 seconds with stale-fallback resilience.
  * Supports fallback to bmf_products if store_products is still initializing.
  */
-export async function fetchPublicStoreProducts(): Promise<StoreProductItem[]> {
+export async function fetchPublicStoreProducts(forceRefresh = false): Promise<StoreProductItem[]> {
+  const now = Date.now()
+
+  // Return fresh in-memory cached copy if within 60 seconds
+  if (!forceRefresh && storeProductsServerCache && now - storeProductsServerCache.timestamp < STORE_PRODUCTS_CACHE_TTL_MS) {
+    return storeProductsServerCache.data
+  }
+
   try {
     const publicAdmin = getSupabasePublicAdminClient()
 
@@ -69,7 +93,9 @@ export async function fetchPublicStoreProducts(): Promise<StoreProductItem[]> {
         if (item.slug === 'bmf-community-pass-free') return false
         return true
       })
-      return confirmed.map(mapDbRecordToStoreProduct)
+      const mapped = confirmed.map(mapDbRecordToStoreProduct)
+      storeProductsServerCache = { data: mapped, timestamp: now }
+      return mapped
     }
 
     // 2. Fallback Query on bmf_products view
@@ -85,12 +111,23 @@ export async function fetchPublicStoreProducts(): Promise<StoreProductItem[]> {
         if (item.slug === 'bmf-community-pass-free') return false
         return true
       })
-      return confirmed.map(mapDbRecordToStoreProduct)
+      const mapped = confirmed.map(mapDbRecordToStoreProduct)
+      storeProductsServerCache = { data: mapped, timestamp: now }
+      return mapped
+    }
+
+    // If query returned empty but we have cached data, preserve existing cache
+    if (storeProductsServerCache && storeProductsServerCache.data.length > 0) {
+      return storeProductsServerCache.data
     }
 
     return []
   } catch (err) {
     console.error('[Store DB] Error fetching public store products:', err)
+    // Graceful fallback: return stale cache on database hiccup
+    if (storeProductsServerCache && storeProductsServerCache.data.length > 0) {
+      return storeProductsServerCache.data
+    }
     return []
   }
 }

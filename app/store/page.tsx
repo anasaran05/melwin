@@ -36,12 +36,27 @@ const CATEGORIES = [
   'Templates',
 ]
 
+interface ClientProductsCache {
+  products: StoreProductItem[]
+  timestamp: number
+}
+
+// Module-level client cache across in-app navigations (60s TTL)
+let clientProductsCache: ClientProductsCache | null = null
+const CLIENT_CACHE_TTL_MS = 60 * 1000 // 1 minute
+
 function StoreCatalogContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [products, setProducts] = useState<StoreProductItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const hasFreshCache = Boolean(
+    clientProductsCache &&
+      Date.now() - clientProductsCache.timestamp < CLIENT_CACHE_TTL_MS &&
+      clientProductsCache.products.length > 0
+  )
+
+  const [products, setProducts] = useState<StoreProductItem[]>(() => clientProductsCache?.products || [])
+  const [isLoading, setIsLoading] = useState(!clientProductsCache?.products?.length)
   const [activeCategory, setActiveCategory] = useState('All')
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFormat, setSelectedFormat] = useState('All')
@@ -63,23 +78,50 @@ function StoreCatalogContent() {
     }
   }, [searchParams, setIsCartOpen])
 
-  // 1. Load products from API
+  // 1. Load products from API with Stale-While-Revalidate caching
   useEffect(() => {
-    async function loadProducts() {
+    let isMounted = true
+
+    async function loadProducts(isBackground = false) {
+      if (!isBackground && !clientProductsCache?.products?.length) {
+        setIsLoading(true)
+      }
+
       try {
         const res = await fetch('/api/store/products')
         const data = await res.json()
-        if (data.success && Array.isArray(data.products)) {
+        if (data.success && Array.isArray(data.products) && isMounted) {
           setProducts(data.products)
+          clientProductsCache = {
+            products: data.products,
+            timestamp: Date.now(),
+          }
         }
       } catch (err) {
         console.error('[Store Page] Error fetching products:', err)
       } finally {
-        setIsLoading(false)
+        if (isMounted) {
+          setIsLoading(false)
+        }
       }
     }
-    loadProducts()
-  }, [])
+
+    if (hasFreshCache) {
+      // Data is completely fresh (< 60s), instant display with zero network request
+      setIsLoading(false)
+    } else if (clientProductsCache?.products?.length) {
+      // Stale cache exists: show cached products instantly, refresh silently in the background
+      setIsLoading(false)
+      loadProducts(true)
+    } else {
+      // First visit: initial fetch with skeleton
+      loadProducts(false)
+    }
+
+    return () => {
+      isMounted = false
+    }
+  }, [hasFreshCache])
 
   // 2. Check if logged-in user has active BMF Club discount
   useEffect(() => {
