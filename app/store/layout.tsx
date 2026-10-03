@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { TopEventAnnouncementBanner } from '@/components/bmf-club/top-event-announcement-banner'
 
 export const metadata: Metadata = {
   title: 'The Vault Store | Tested Playbooks, Templates & Frameworks',
@@ -27,10 +26,5 @@ export default function StoreLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <>
-      <TopEventAnnouncementBanner />
-      {children}
-    </>
-  )
+  return children
 }

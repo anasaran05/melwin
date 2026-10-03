@@ -26,7 +26,7 @@ export async function GET() {
         .eq('status', 'paid'),
       publicAdmin
         .from('bmf_orders')
-        .select('id, order_id, amount, status, order_type, metadata')
+        .select('id, order_id, product_id, amount, status, order_type, metadata')
         .eq('status', 'paid'),
     ])
 
@@ -61,12 +61,13 @@ export async function GET() {
         })
 
         // Matches from legacy/supplemental bmf_orders
-        const pBmfOrders = bmfOrders.filter((bo) => {
+        const pBmfOrders = (bmfOrders as any[]).filter((bo) => {
           const meta = bo.metadata || {}
           const metaTitle = (meta.product_title || '').toLowerCase().trim()
           const pTitle = (p.title || '').toLowerCase().trim()
           return (
             bo.product_id === p.id ||
+            meta.product_id === p.id ||
             (metaTitle && pTitle && metaTitle === pTitle) ||
             (meta.slug && meta.slug === p.slug)
           )
